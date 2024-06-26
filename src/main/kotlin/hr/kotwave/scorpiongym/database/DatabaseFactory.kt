@@ -1,5 +1,6 @@
 package hr.kotwave.scorpiongym.database
 
+import java.nio.file.FileSystems
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
@@ -17,7 +18,7 @@ object DatabaseFactory {
     fun connect(): Connection? {
         return try {
             val userHome = System.getProperty("user.home")
-            val dbPath = "$userHome${System.getProperty("file.separator")}ScorpionGym${System.getProperty("file.separator")}gymdatabase.db"
+            val dbPath = "$userHome${FileSystems.getDefault().separator}ScorpionGym${FileSystems.getDefault().separator}gymdatabase.db"
             val url = "jdbc:sqlite:$dbPath"
             DriverManager.getConnection(url)
         } catch (e: Exception) {

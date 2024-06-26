@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import hr.kotwave.scorpiongym.organization.ui.composable.OrganizationDetails
 import hr.kotwave.scorpiongym.otherservice.OtherService
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
 import hr.kotwave.scorpiongym.otherservice.ui.composable.OtherServiceDetails

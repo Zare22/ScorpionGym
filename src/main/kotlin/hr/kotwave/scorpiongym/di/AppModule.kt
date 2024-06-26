@@ -1,10 +1,7 @@
 package hr.kotwave.scorpiongym.di
 
-import org.koin.dsl.module
-
 import hr.kotwave.scorpiongym.database.DatabaseFactory
 import hr.kotwave.scorpiongym.member.*
-import hr.kotwave.scorpiongym.memberotherservice.MemberOtherService
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherServiceDao
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherServiceDaoImpl
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherServiceViewModel
@@ -28,6 +25,7 @@ import hr.kotwave.scorpiongym.trainingsession.TrainingSessionDaoImpl
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationDao
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationDaoImpl
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
+import org.koin.dsl.module
 
 val appModule = module {
     single { DatabaseFactory.connect() }

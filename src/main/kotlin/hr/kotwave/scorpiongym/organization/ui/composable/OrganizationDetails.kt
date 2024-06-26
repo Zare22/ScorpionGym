@@ -13,20 +13,17 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import hr.kotwave.scorpiongym.organization.Organization
-import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganization
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.typeoforganization.ui.window.TypeOfOrganizationWindow
-import hr.kotwave.scorpiongym.ui.theme.Shapes
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
+import hr.kotwave.scorpiongym.ui.theme.Shapes
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
