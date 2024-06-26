@@ -1,0 +1,129 @@
+package hr.kotwave.scorpiongym.member.ui.screen
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import hr.kotwave.scorpiongym.member.Member
+import hr.kotwave.scorpiongym.member.MembersListViewModel
+import hr.kotwave.scorpiongym.member.ui.composable.MemberDetails
+import hr.kotwave.scorpiongym.member.ui.composable.MemberList
+import hr.kotwave.scorpiongym.membership.MembershipViewModel
+import hr.kotwave.scorpiongym.membership.ui.screen.MembershipScreen
+import hr.kotwave.scorpiongym.organization.OrganizationViewModel
+import hr.kotwave.scorpiongym.organization.ui.screen.OrganizationScreen
+import hr.kotwave.scorpiongym.otherservice.ui.screen.OtherServiceScreen
+import hr.kotwave.scorpiongym.status.StatusViewModel
+import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.koin.java.KoinJavaComponent.getKoin
+import java.time.LocalDate
+import java.time.LocalDateTime
+
+class MainScreen : Screen {
+
+    @Composable
+    override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
+
+        var selectedMember by remember { mutableStateOf<Member?>(null) }
+        var isCreatingNewMember by remember { mutableStateOf(false) }
+        var detailsVisible by remember { mutableStateOf(false) }
+
+        //ViewModel init
+        val membersListViewModel: MembersListViewModel = getKoin().get()
+        val membershipViewModel: MembershipViewModel = getKoin().get()
+        val statusViewModel: StatusViewModel = getKoin().get()
+        val organizationViewModel: OrganizationViewModel = getKoin().get()
+
+        val members by remember { derivedStateOf { membersListViewModel.members } }
+
+        //Coroutine
+        val coroutineScope = rememberCoroutineScope()
+
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.weight(1f)) {
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        HoverableButton(
+                            onClick = {
+                                selectedMember = Member(
+                                    id = 0,
+                                    name = "",
+                                    surname = "",
+                                    phoneNumber = "",
+                                    signedUpDate = LocalDateTime.now(),
+                                    membershipRecordId = 0,
+                                    organizationId = 0,
+                                    statusId = 0,
+                                    remark = "",
+                                    dateOfBirth = LocalDate.now()
+                                )
+                                isCreatingNewMember = true
+                                detailsVisible = true
+                            },
+                            text = "Dodaj novog člana"
+                        )
+
+                        HoverableButton(onClick = { navigator.push(MembershipScreen()) }, text = "Članarine")
+                        HoverableButton(onClick = { navigator.push(OrganizationScreen()) }, text = "Organizacije")
+                        HoverableButton(onClick = { navigator.push(OtherServiceScreen()) }, text = "Ostale usluge")
+                    }
+
+                    MemberList(
+                        members = members,
+                        onItemClick = { member ->
+                            selectedMember = member
+                            isCreatingNewMember = false
+                            detailsVisible = true
+                        }
+                    )
+                }
+            }
+
+            // Member Details
+            AnimatedVisibility(
+                modifier = Modifier.fillMaxHeight().weight(2f),
+                visible = detailsVisible,
+                enter = slideInHorizontally(
+                    initialOffsetX = { it },
+                    animationSpec = tween(450, easing = LinearEasing)
+                ),
+                exit = slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(450, easing = LinearEasing))
+            ) {
+                selectedMember?.let { member ->
+                    MemberDetails(
+                        member = member,
+                        memberships = membershipViewModel.memberships,
+                        statuses = statusViewModel.getAllStatuses(),
+                        organizations = organizationViewModel.organizations,
+                        onBackClick = {
+                            detailsVisible = false
+                            coroutineScope.launch {
+                                delay(450)
+                                selectedMember = null
+                            }
+                        },
+                        onUpdateClick = { updatedMember ->
+                            if (isCreatingNewMember) {
+                                membersListViewModel.addMember(updatedMember)
+                                isCreatingNewMember = false
+                            } else {
+                                membersListViewModel.updateMember(updatedMember)
+                            }
+                            selectedMember = updatedMember
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
