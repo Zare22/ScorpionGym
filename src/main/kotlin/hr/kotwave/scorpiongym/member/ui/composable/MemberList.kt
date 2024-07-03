@@ -10,37 +10,35 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.WindowState
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberFilterOption
 import hr.kotwave.scorpiongym.member.MemberViewModel
-import hr.kotwave.scorpiongym.memberotherservice.ui.window.AddMemberOtherServiceWindow
-import hr.kotwave.scorpiongym.trainingsession.ui.window.AddTrainingSessionWindow
+import hr.kotwave.scorpiongym.member.MembersListViewModel
+import hr.kotwave.scorpiongym.memberotherservice.ui.window.AddMemberOtherServiceDialog
+import hr.kotwave.scorpiongym.trainingsession.ui.window.AddTrainingSessionDialog
+import hr.kotwave.scorpiongym.trainingsession.ui.window.TrainingSessionsDialog
+import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import org.koin.core.parameter.parametersOf
 import org.koin.java.KoinJavaComponent.getKoin
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun MemberList(members: List<Member>, onItemClick: (Member) -> Unit) {
+fun MemberList(onItemClick: (Member) -> Unit) {
     var searchQuery by remember { mutableStateOf("") }
     var memberFilterOption by remember { mutableStateOf<MemberFilterOption?>(null) }
     var expanded by remember { mutableStateOf(false) }
     val lazyListState = rememberLazyListState(0)
 
-    val sortedMembers = members.sortedWith(compareBy({ it.surname }, { it.name }))
+    val membersListViewModel: MembersListViewModel = getKoin().get()
+    val sortedMembers = membersListViewModel.members.sortedWith(compareBy({ it.surname }, { it.name }))
 
     Column {
-        Row(
+        FlowRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
 
             TextField(
@@ -124,7 +122,10 @@ fun MemberList(members: List<Member>, onItemClick: (Member) -> Unit) {
                 state = lazyListState
             ) {
                 items(filteredMembers) { member ->
-                    MemberItem(member = member, onClick = { onItemClick(member) })
+                    MemberItem(
+                        member = member,
+                        onClick = { onItemClick(member) }
+                    )
                 }
             }
             VerticalScrollbar(
@@ -135,39 +136,48 @@ fun MemberList(members: List<Member>, onItemClick: (Member) -> Unit) {
     }
 }
 
-
 @Composable
 fun MemberItem(member: Member, onClick: () -> Unit) {
-    var addTrainingSessionWindowOpened by remember { mutableStateOf(false) }
-    var addMemberOtherServiceWindowOpened by remember { mutableStateOf(false) }
+    var addTrainingSessionDialogOpened by remember { mutableStateOf(false) }
+    var addMemberOtherServiceDialogOpened by remember { mutableStateOf(false) }
+    var showDeleteDialogAlert by remember { mutableStateOf(false) }
 
-    if (addTrainingSessionWindowOpened) {
-        Window(
-            onCloseRequest = { addTrainingSessionWindowOpened = false },
-            title = "Novi trening za člana",
-            alwaysOnTop = true,
-            state = WindowState(
-                position = WindowPosition.Aligned(Alignment.Center),
-                height = 200.dp, width = 600.dp
-            ),
-            icon = painterResource("ScorpionWindowIcon.png")
-        ) {
-            AddTrainingSessionWindow(member, onClose = { addTrainingSessionWindowOpened = false })
+    var trainingSessionsDialogOpened by remember { mutableStateOf(false) }
+
+    val membersListViewModel: MembersListViewModel = getKoin().get()
+
+    when {
+        addTrainingSessionDialogOpened -> {
+            AddTrainingSessionDialog(member, onClose = { addTrainingSessionDialogOpened = false })
         }
-    }
 
-    if (addMemberOtherServiceWindowOpened) {
-        Window(
-            onCloseRequest = { addMemberOtherServiceWindowOpened = false },
-            title = "Novi trening za člana",
-            alwaysOnTop = true,
-            state = WindowState(
-                position = WindowPosition.Aligned(Alignment.Center),
-                height = 400.dp, width = 600.dp
-            ),
-            icon = painterResource("ScorpionWindowIcon.png")
-        ) {
-            AddMemberOtherServiceWindow(member, onClose = { addMemberOtherServiceWindowOpened = false })
+        addMemberOtherServiceDialogOpened -> {
+            AddMemberOtherServiceDialog(member, onClose = { addMemberOtherServiceDialogOpened = false })
+        }
+
+        showDeleteDialogAlert -> {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialogAlert = false },
+                title = { Text("Brisanje člana", color = Color.Red) },
+                text = { Text("Ukoliko nastavite pobrisat ćete člana ${member.name} ${member.surname} i sve njegove vezane podatke") },
+                confirmButton = {
+                    HoverableButton(
+                        text = "Potvrdi",
+                        buttonBackgroundColor = Color.Red,
+                        onClick = { membersListViewModel.deleteMember(member) }
+                    )
+                },
+                dismissButton = {
+                    HoverableButton(
+                        text = "Odustani",
+                        onClick = { showDeleteDialogAlert = false }
+                    )
+                }
+            )
+        }
+
+        trainingSessionsDialogOpened -> {
+            TrainingSessionsDialog(member, onClose = { trainingSessionsDialogOpened = false })
         }
     }
 
@@ -181,17 +191,22 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
     ) {
         ContextMenuArea(
             items = {
-                listOf(
-                    ContextMenuItem("Upiši trening članu") {
-                        addTrainingSessionWindowOpened = true
-                    },
-                    ContextMenuItem("Upiši dodatnu uslugu članu") {
-                        addMemberOtherServiceWindowOpened = true
-                    }
-                )
+                val items = mutableListOf<ContextMenuItem>()
+
+                if (member.membershipRecordId != null && member.membershipRecordId != 0) {
+                    items.add(ContextMenuItem(label = "Upiši trening članu") { addTrainingSessionDialogOpened = true })
+                    items.add(ContextMenuItem("Pregled treninga aktivne članarine") { trainingSessionsDialogOpened = true })
+                }
+                items.add(ContextMenuItem("Upiši dodatnu uslugu članu") { addMemberOtherServiceDialogOpened = true })
+                items.add(ContextMenuItem("Obriši člana") { showDeleteDialogAlert = true })
+
+                items
             }
         ) {
-            Box(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
                 Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
                     Text(text = "${member.surname} ${member.name}", style = MaterialTheme.typography.h6)
                     Text(text = member.phoneNumber ?: "", style = MaterialTheme.typography.body2)
@@ -208,12 +223,14 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
     }
 }
 
+
 fun getRibbonColor(member: Member): Color {
     val memberViewModel: MemberViewModel = getKoin().get { parametersOf(member) }
 
     return when {
         memberViewModel.memberRecords.count { record -> !record.isPaid } >= 1 -> Color.Red
-        memberViewModel.memberRecords.find { record -> record.isActive } == null -> Color.Yellow
+        memberViewModel.memberRecords.find { record -> record.isActive } == null -> Color(0xFFFFC107)
         else -> Color.Green
     }
 }
+

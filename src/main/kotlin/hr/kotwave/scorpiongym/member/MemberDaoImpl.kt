@@ -60,8 +60,8 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
 
     override fun insertMember(member: Member) : Int {
         val query = """
-            INSERT INTO Member (name, surname, phoneNumber, signedUpDate, organizationId, statusId, remark)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO Member (name, surname, phoneNumber, signedUpDate, organizationId, remark)
+            VALUES (?, ?, ?, ?, ?, ?)
         """
 
         dbConnection.prepareStatement(query).use { statement ->
@@ -70,22 +70,21 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
             statement.setString(3, member.phoneNumber)
             statement.setString(4, member.signedUpDate.toString())
             member.organizationId?.let { statement.setInt(5, it) } ?: statement.setNull(5, java.sql.Types.INTEGER)
-            member.statusId?.let { statement.setInt(6, it) } ?: statement.setNull(7, java.sql.Types.INTEGER)
-            statement.setString(7, member.remark)
+            statement.setString(6, member.remark)
 
             statement.executeUpdate()
             val generatedKeys = statement.generatedKeys
             return if (generatedKeys.next()) {
                 generatedKeys.getInt(1)
             } else {
-                throw SQLException("Failed to retrieve the inserted ID.")
+                throw SQLException("Neuspješno kreiranje člana!")
             }
         }
     }
 
     override fun updateMember(member: Member) {
         val query = """
-            UPDATE Member SET name = ?, surname = ?, phoneNumber = ?, signedUpDate = ?, organizationId = ?, statusId = ?, remark = ?
+            UPDATE Member SET name = ?, surname = ?, phoneNumber = ?, signedUpDate = ?, organizationId = ?, statusId = ?, remark = ?, membershipRecordId = ?
             WHERE id = ?
         """
 
@@ -98,6 +97,7 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
             member.statusId?.let { statement.setInt(6, it) } ?: statement.setNull(6, java.sql.Types.INTEGER)
             statement.setString(7, member.remark)
             statement.setInt(8, member.id)
+            member.membershipRecordId?.let { statement.setInt(9, it) } ?: statement.setNull(9, java.sql.Types.INTEGER)
             statement.executeUpdate()
         }
     }

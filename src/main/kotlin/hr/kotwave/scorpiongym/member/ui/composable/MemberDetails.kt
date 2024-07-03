@@ -50,7 +50,7 @@ fun MemberDetails(
     var surname by remember(member) { mutableStateOf(TextFieldValue(member.surname, selection = TextRange(member.surname.length))) }
     var phoneNumber by remember(member) { mutableStateOf(TextFieldValue(member.phoneNumber ?: "", selection = TextRange((member.phoneNumber ?: "").length))) }
     var signedUpDate by remember(member) { mutableStateOf(member.signedUpDate) }
-    var membership by remember(member) { mutableStateOf(member.membershipRecordId.toString()) }
+    var membership by remember(member) { mutableStateOf("") }
     var organization by remember(member) { mutableStateOf(member.organizationId.toString()) }
     var status by remember(member) { mutableStateOf(member.statusId.toString()) }
     var remark by remember(member) { mutableStateOf(TextFieldValue(member.remark ?: "", selection = TextRange(member.remark?.length ?: 0))) }
@@ -68,7 +68,6 @@ fun MemberDetails(
         name = TextFieldValue(member.name, selection = TextRange(member.name.length))
         surname = TextFieldValue(member.surname, selection = TextRange(member.surname.length))
         phoneNumber = TextFieldValue(member.phoneNumber ?: "", selection = TextRange((member.phoneNumber ?: "").length))
-        membership = member.membershipRecordId.toString()
         organization = member.organizationId.toString()
         status = member.statusId.toString()
         remark = TextFieldValue(member.remark ?: "", selection = TextRange(member.remark?.length ?: 0))
@@ -162,12 +161,15 @@ fun MemberDetails(
                             nextFocusRequester = focusRequesters[4],
                             itemLabel = { it.name }
                         )
-
+                        Spacer(modifier = Modifier.width(8.dp))
                         Checkbox(
+
                             modifier = Modifier.wrapContentWidth(),
                             checked = isPaid,
                             onCheckedChange = { isPaid = !isPaid }
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Plaćeno")
 
                         HoverableButton(
                             modifier = Modifier.wrapContentWidth(),
@@ -181,6 +183,17 @@ fun MemberDetails(
                                         isPaid = isPaid
                                     )
                                 )
+                                val updatedMember = member.copy(
+                                    name = name.text,
+                                    surname = surname.text,
+                                    phoneNumber = phoneNumber.text,
+                                    signedUpDate = signedUpDate,
+                                    membershipRecordId = member.membershipRecordId,
+                                    organizationId = organization.toIntOrNull() ?: member.organizationId,
+                                    statusId = status.toIntOrNull() ?: member.statusId,
+                                    remark = remark.text
+                                )
+                                onUpdateClick(updatedMember)
                                 currentRecordFinished = memberViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateFinished
                             },
                             text = "Obnovi članarinu"
@@ -189,17 +202,17 @@ fun MemberDetails(
                 }
 
                 //Status člana --> Aktivan/neaktivan...
-                Dropdown(
-                    expanded = expandedStatus,
-                    onExpandedChange = { expandedStatus = it },
-                    label = "Status člana",
-                    items = statuses,
-                    selectedItem = statuses.find { it.id.toString() == status },
-                    onItemSelected = { status = it.id.toString() },
-                    focusRequester = focusRequesters[4],
-                    nextFocusRequester = focusRequesters[5],
-                    itemLabel = { it.description }
-                )
+//                Dropdown(
+//                    expanded = expandedStatus,
+//                    onExpandedChange = { expandedStatus = it },
+//                    label = "Status člana",
+//                    items = statuses,
+//                    selectedItem = statuses.find { it.id.toString() == status },
+//                    onItemSelected = { status = it.id.toString() },
+//                    focusRequester = focusRequesters[if (currentRecordFinished == null) 4 else 3],
+//                    nextFocusRequester = focusRequesters[if (currentRecordFinished == null) 5 else 4],
+//                    itemLabel = { it.description }
+//                )
 
                 //Organizacija kojoj član pripada --> Škola, fakultet, posao....
                 Dropdown(
@@ -209,8 +222,8 @@ fun MemberDetails(
                     items = organizations,
                     selectedItem = organizations.find { it.id.toString() == organization },
                     onItemSelected = { organization = it.id.toString() },
-                    focusRequester = focusRequesters[5],
-                    nextFocusRequester = focusRequesters[6],
+                    focusRequester = focusRequesters[if (currentRecordFinished == null) 4 else 3],
+                    nextFocusRequester = focusRequesters[if (currentRecordFinished == null) 5 else 4],
                     itemLabel = { it.name }
                 )
 
@@ -218,8 +231,8 @@ fun MemberDetails(
                     value = remark,
                     onValueChange = { remark = it },
                     label = "Napomena",
-                    currentFocusRequester = focusRequesters[6],
-                    nextFocusRequester = focusRequesters[7],
+                    currentFocusRequester = focusRequesters[if (currentRecordFinished == null) 5 else 4],
+                    nextFocusRequester = focusRequesters[if (currentRecordFinished == null) 6 else 5],
                     maxLines = 3
                 )
 
@@ -236,7 +249,7 @@ fun MemberDetails(
                     )
                     HoverableButton(
                         modifier = Modifier
-                            .focusRequester(focusRequesters[7])
+                            .focusRequester(focusRequesters[if (currentRecordFinished == null) 6 else 5])
                             .onPreviewKeyEvent {
                                 if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
                                     focusRequesters[0].requestFocus()
@@ -249,7 +262,7 @@ fun MemberDetails(
                                 surname = surname.text,
                                 phoneNumber = phoneNumber.text,
                                 signedUpDate = signedUpDate,
-                                membershipRecordId = null,
+                                membershipRecordId = member.membershipRecordId,
                                 organizationId = organization.toIntOrNull() ?: member.organizationId,
                                 statusId = status.toIntOrNull() ?: member.statusId,
                                 remark = remark.text

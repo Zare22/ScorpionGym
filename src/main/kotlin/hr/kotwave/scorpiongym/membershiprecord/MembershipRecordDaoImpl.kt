@@ -2,6 +2,7 @@ package hr.kotwave.scorpiongym.membershiprecord
 
 import hr.kotwave.scorpiongym.util.parseToLocalDateTime
 import java.sql.Connection
+import java.sql.SQLException
 
 class MembershipRecordDaoImpl(private val dbConnection: Connection) : MembershipRecordDao {
     override fun getAllMembershipRecords(): List<MembershipRecord> {
@@ -50,7 +51,7 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         return record
     }
 
-    override fun insertMembershipRecord(record: MembershipRecord) {
+    override fun insertMembershipRecord(record: MembershipRecord) : Int {
         val query = """
             INSERT INTO MembershipRecord (memberId, membershipId, dateStarted, dateFinished, isActive, isPaid)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -64,6 +65,13 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
             statement.setBoolean(5, record.isActive)
             statement.setBoolean(6, record.isPaid)
             statement.executeUpdate()
+
+            val generatedKeys = statement.generatedKeys
+            return if (generatedKeys.next()) {
+                generatedKeys.getInt(1)
+            } else {
+                throw SQLException("Neuspješno kreiranje članarine!")
+            }
         }
     }
 

@@ -24,6 +24,7 @@ dependencies {
     implementation("io.insert-koin:koin-core:3.2.0")
     implementation("cafe.adriel.voyager:voyager-navigator:1.1.0-beta01")
     implementation("cafe.adriel.voyager:voyager-transitions:1.1.0-beta01")
+    implementation("io.github.dzirbel:compose-material-context-menu:0.2.0")
 }
 
 compose.desktop {
@@ -36,10 +37,6 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "ScorpionGym"
             packageVersion = "1.0.0"
-
-//            windows {
-//                iconFile.set(project.file("src/main/resources/ScorpionBarIcon.ico"))
-//            }
         }
 
         buildTypes.release {

@@ -7,7 +7,9 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -30,6 +32,7 @@ import java.time.LocalDateTime
 
 class MainScreen : Screen {
 
+    @OptIn(ExperimentalLayoutApi::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
@@ -52,8 +55,13 @@ class MainScreen : Screen {
         Row(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.weight(1f)) {
                 Column {
-                    Row(modifier = Modifier.fillMaxWidth()) {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
+                    ) {
                         HoverableButton(
+                            padding = 8.dp,
                             onClick = {
                                 selectedMember = Member(
                                     id = 0,
@@ -73,13 +81,24 @@ class MainScreen : Screen {
                             text = "Dodaj novog člana"
                         )
 
-                        HoverableButton(onClick = { navigator.push(MembershipScreen()) }, text = "Članarine")
-                        HoverableButton(onClick = { navigator.push(OrganizationScreen()) }, text = "Organizacije")
-                        HoverableButton(onClick = { navigator.push(OtherServiceScreen()) }, text = "Ostale usluge")
+                        HoverableButton(
+                            padding = 8.dp,
+                            onClick = { navigator.push(MembershipScreen()) },
+                            text = "Članarine"
+                        )
+                        HoverableButton(
+                            padding = 8.dp,
+                            onClick = { navigator.push(OrganizationScreen()) },
+                            text = "Organizacije"
+                        )
+                        HoverableButton(
+                            padding = 8.dp,
+                            onClick = { navigator.push(OtherServiceScreen()) },
+                            text = "Ostale usluge"
+                        )
                     }
 
                     MemberList(
-                        members = members,
                         onItemClick = { member ->
                             selectedMember = member
                             isCreatingNewMember = false

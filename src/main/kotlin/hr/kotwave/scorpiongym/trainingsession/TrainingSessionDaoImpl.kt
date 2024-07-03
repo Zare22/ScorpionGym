@@ -2,6 +2,7 @@ package hr.kotwave.scorpiongym.trainingsession
 
 import hr.kotwave.scorpiongym.util.parseToLocalDateTime
 import java.sql.Connection
+import java.sql.SQLException
 
 class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSessionDao {
     override fun getAllTrainingSessions(): List<TrainingSession> {
@@ -42,7 +43,7 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
         return trainingSession
     }
 
-    override fun insertTrainingSession(trainingSession: TrainingSession) {
+    override fun insertTrainingSession(trainingSession: TrainingSession) : Int {
         val query = """
             INSERT INTO TrainingSession (membershipRecordId, sessionDateTime)
             VALUES (?, ?)
@@ -52,6 +53,14 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
             statement.setInt(1, trainingSession.membershipRecordId)
             statement.setString(2, trainingSession.sessionDateTime.toString())
             statement.executeUpdate()
+
+            statement.executeUpdate()
+            val generatedKeys = statement.generatedKeys
+            return if (generatedKeys.next()) {
+                generatedKeys.getInt(1)
+            } else {
+                throw SQLException("Neuspješno kreiranje treninga!")
+            }
         }
     }
 
@@ -75,5 +84,24 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
             statement.setInt(1, id)
             statement.executeUpdate()
         }
+    }
+
+    override fun getAllTrainingSessionsForMembershipRecord(membershipRecordId: Int): List<TrainingSession> {
+        val sessions = mutableListOf<TrainingSession>()
+        val query = "SELECT * FROM TrainingSession WHERE membershipRecordId = $membershipRecordId ORDER BY sessionDateTime DESC"
+
+        dbConnection.createStatement().use { statement ->
+            val resultSet = statement.executeQuery(query)
+            while (resultSet.next()) {
+                val session = TrainingSession(
+                    id = resultSet.getInt("id"),
+                    membershipRecordId = resultSet.getInt("membershipRecordId"),
+                    sessionDateTime = parseToLocalDateTime(resultSet.getString("sessionDateTime"))
+                )
+                sessions.add(session)
+            }
+        }
+
+        return sessions
     }
 }

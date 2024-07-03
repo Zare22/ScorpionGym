@@ -1,14 +1,14 @@
 package hr.kotwave.scorpiongym
 
-import androidx.compose.foundation.DarkDefaultContextMenuRepresentation
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.LightDefaultContextMenuRepresentation
-import androidx.compose.foundation.LocalContextMenuRepresentation
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material.Surface
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
@@ -23,7 +23,9 @@ import hr.kotwave.scorpiongym.ui.theme.ScorpionGymTheme
 import hr.kotwave.scorpiongym.util.PreferencesHelper
 import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
+import java.awt.Dimension
 
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 fun main() = application {
     startKoin {
         modules(appModule)
@@ -39,18 +41,23 @@ fun main() = application {
         state = windowState,
         icon = painterResource("ScorpionWindowIcon.png")
     ) {
+        window.minimumSize = Dimension(1000, 800)
         val preferencesHelper = remember { PreferencesHelper() }
         var darkTheme by remember { mutableStateOf(preferencesHelper.isDarkTheme) }
         val coroutineScope = rememberCoroutineScope()
 
+        val contextMenuRepresentation = if (darkTheme) {
+            DarkDefaultContextMenuRepresentation
+        } else {
+            LightDefaultContextMenuRepresentation
+        }
         ScorpionGymTheme(darkTheme = darkTheme) {
-
-            val contextMenuRepresentation = if (darkTheme) {
-                DarkDefaultContextMenuRepresentation
-            } else {
-                LightDefaultContextMenuRepresentation
-            }
-            CompositionLocalProvider(LocalContextMenuRepresentation provides contextMenuRepresentation) {
+            CompositionLocalProvider(
+                LocalContextMenuRepresentation provides contextMenuRepresentation,
+                LocalMinimumInteractiveComponentEnforcement provides false
+//                LocalContextMenuRepresentation provides MaterialContextMenuRepresentation(),
+//                LocalTextContextMenu provides MaterialTextContextMenu
+            ) {
                 Surface {
                     Box(modifier = Modifier.fillMaxSize()) {
                         MenuBar {

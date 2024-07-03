@@ -19,8 +19,8 @@ class MembersListViewModel(private val memberDao: MemberDao) : KoinComponent {
 
     fun addMember(member: Member) {
         val insertedId = memberDao.insertMember(member)
-        val memberWithId = member.copy(id = insertedId)
-        _members.add(memberWithId)
+        member.id = insertedId
+        _members.add(member)
     }
 
     fun updateMember(member: Member) {
@@ -29,5 +29,10 @@ class MembersListViewModel(private val memberDao: MemberDao) : KoinComponent {
         if (index != -1) {
             _members[index] = member
         }
+    }
+
+    fun deleteMember(member: Member) {
+        memberDao.deleteMember(member.id)
+        _members.removeAll { it.id == member.id }
     }
 }

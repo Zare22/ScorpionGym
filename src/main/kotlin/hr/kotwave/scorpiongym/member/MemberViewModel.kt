@@ -1,7 +1,13 @@
 package hr.kotwave.scorpiongym.member
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherService
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherServiceDao
+import hr.kotwave.scorpiongym.membership.MembershipDao
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
 import hr.kotwave.scorpiongym.trainingsession.TrainingSession
@@ -11,6 +17,7 @@ import java.time.LocalDateTime
 
 class MemberViewModel(
     private val member: Member,
+    private val membershipDao: MembershipDao,
     private val membershipRecordDao: MembershipRecordDao,
     private val trainingSessionDao: TrainingSessionDao,
     private val memberOtherServiceDao: MemberOtherServiceDao
@@ -18,6 +25,15 @@ class MemberViewModel(
 
     private val _memberRecords = mutableListOf<MembershipRecord>()
     val memberRecords: List<MembershipRecord> get() = _memberRecords
+
+    var activeMembershipRecord by mutableStateOf<MembershipRecord?>(null)
+        private set
+
+    private val _trainingSessionsInActiveMembership = mutableStateListOf<TrainingSession>()
+    val trainingSessionsInActiveMembership: SnapshotStateList<TrainingSession> get() = _trainingSessionsInActiveMembership
+
+    var numberOfTrainingsAvailable by mutableStateOf(0)
+        private set
 
     init {
         initMembersRecords()
@@ -27,17 +43,27 @@ class MemberViewModel(
         val loadedRecords = membershipRecordDao.getMembersMembershipRecords(member.id)
         _memberRecords.clear()
         _memberRecords.addAll(loadedRecords)
+        activeMembershipRecord = memberRecords.find { membershipRecord -> membershipRecord.isActive }
+        if (activeMembershipRecord != null) {
+            val membership = membershipDao.getMembershipById(activeMembershipRecord!!.membershipId)
+            numberOfTrainingsAvailable = membership?.numberOfTrainingsAvailable ?: 0
+            val trainingSessions = trainingSessionDao.getAllTrainingSessionsForMembershipRecord(activeMembershipRecord!!.id)
+            _trainingSessionsInActiveMembership.clear()
+            _trainingSessionsInActiveMembership.addAll(trainingSessions)
+        }
+
     }
 
     fun addNewMembershipRecord(membershipRecord: MembershipRecord) {
-        membershipRecordDao.insertMembershipRecord(membershipRecord)
+        val membershipRecordId = membershipRecordDao.insertMembershipRecord(membershipRecord)
+        member.membershipRecordId = membershipRecordId
         _memberRecords.add(membershipRecord)
     }
 
     fun addNewTrainingSessionToMember() {
         if (member.membershipRecordId == null) throw Exception("Ne postoji trenutno aktivna članarina")
         val trainingSession =
-            TrainingSession(membershipRecordId = member.membershipRecordId, sessionDateTime = LocalDateTime.now())
+            TrainingSession(membershipRecordId = member.membershipRecordId!!, sessionDateTime = LocalDateTime.now())
         trainingSessionDao.insertTrainingSession(trainingSession)
     }
 
@@ -48,5 +74,28 @@ class MemberViewModel(
             dateOfService = LocalDateTime.now()
         )
         memberOtherServiceDao.insertMemberOtherService(memberOtherService)
+    }
+
+    fun updateTrainingSession(index: Int, updatedSession: TrainingSession) {
+        if (index in _trainingSessionsInActiveMembership.indices) {
+            _trainingSessionsInActiveMembership[index] = updatedSession
+        }
+    }
+
+    fun confirmTrainingSessionUpdates() {
+        trainingSessionsInActiveMembership.forEach { session ->
+            if (session.id == 0) {
+                val id = trainingSessionDao.insertTrainingSession(session)
+                session.id = id
+            } else {
+                trainingSessionDao.updateTrainingSession(session)
+            }
+        }
+    }
+
+    fun addTrainingSession(newSession: TrainingSession) {
+        if (_trainingSessionsInActiveMembership.size < numberOfTrainingsAvailable) {
+            _trainingSessionsInActiveMembership.add(newSession)
+        }
     }
 }

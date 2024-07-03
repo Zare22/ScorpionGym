@@ -20,7 +20,14 @@ object DatabaseFactory {
             val userHome = System.getProperty("user.home")
             val dbPath = "$userHome${FileSystems.getDefault().separator}ScorpionGym${FileSystems.getDefault().separator}gymdatabase.db"
             val url = "jdbc:sqlite:$dbPath"
-            DriverManager.getConnection(url)
+            val connection = DriverManager.getConnection(url)
+
+            connection.createStatement().use { statement ->
+                statement.execute("PRAGMA foreign_keys = ON;")
+            }
+
+            connection
+
         } catch (e: Exception) {
             e.printStackTrace()
             null

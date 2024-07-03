@@ -25,6 +25,7 @@ import hr.kotwave.scorpiongym.trainingsession.TrainingSessionDaoImpl
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationDao
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationDaoImpl
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val appModule = module {
@@ -42,7 +43,10 @@ val appModule = module {
     single<MemberOtherServiceDao> { MemberOtherServiceDaoImpl(get()) }
 
     // ViewModel bindings
-    factory { (member: Member) -> MemberViewModel(member, get(), get(), get()) }
+    scope(named("MemberScope")) {
+        scoped { (member: Member) -> MemberViewModel(member, get(), get(), get(), get()) }
+    }
+    factory { (member: Member) -> MemberViewModel(member, get(), get(), get(), get()) }
     single { MembersListViewModel(get()) }
     single { MembershipViewModel(get()) }
     single { MembershipRecordViewModel(get()) }
