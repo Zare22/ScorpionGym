@@ -22,6 +22,8 @@ import hr.kotwave.scorpiongym.trainingsession.ui.window.TrainingSessionsDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import org.koin.core.parameter.parametersOf
 import org.koin.java.KoinJavaComponent.getKoin
+import java.text.Collator
+import java.util.*
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -32,7 +34,9 @@ fun MemberList(onItemClick: (Member) -> Unit) {
     val lazyListState = rememberLazyListState(0)
 
     val membersListViewModel: MembersListViewModel = getKoin().get()
-    val sortedMembers = membersListViewModel.members.sortedWith(compareBy({ it.surname }, { it.name }))
+
+    val croatianLocale = Locale.Builder().setLanguage("hr").setRegion("HR").build()
+    val sortedMembers = membersListViewModel.members.sortedWith(compareBy({ it.surname.lowercase(croatianLocale) }, { it.name.lowercase(croatianLocale) }))
 
     Column {
         FlowRow(
