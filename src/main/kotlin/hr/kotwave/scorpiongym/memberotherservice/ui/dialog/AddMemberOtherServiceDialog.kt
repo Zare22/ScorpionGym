@@ -1,4 +1,4 @@
-package hr.kotwave.scorpiongym.memberotherservice.ui.window
+package hr.kotwave.scorpiongym.memberotherservice.ui.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Card
@@ -68,6 +68,19 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                         }
                     }
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                if (selectedServiceId.isNotEmpty()) {
+                    Text(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        text = buildAnnotatedString {
+                            append("Cijena usluge je: ")
+
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append("${otherServiceViewModel.otherServices.find { otherService -> otherService.id == selectedServiceId.toIntOrNull() }?.price}")
+                            }
+                        }
+                    )
+                }
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),

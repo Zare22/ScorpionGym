@@ -1,6 +1,7 @@
 package hr.kotwave.scorpiongym.otherservice
 
 import java.sql.Connection
+import java.sql.SQLException
 
 class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDao {
     override fun getAllOtherServices(): List<OtherService> {
@@ -41,7 +42,7 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
         return otherService
     }
 
-    override fun insertOtherService(otherService: OtherService) {
+    override fun insertOtherService(otherService: OtherService): Int {
         val query = """
             INSERT INTO OtherService (name, price)
             VALUES (?, ?)
@@ -52,7 +53,11 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
             statement.setDouble(2, otherService.price)
             statement.executeUpdate()
 
-
+            val generatedKeys = statement.generatedKeys
+            return if (generatedKeys.next()) {
+                generatedKeys.getInt(1)
+            } else
+                throw SQLException("Neuspješno kreiranje ostale usluge!")
         }
     }
 

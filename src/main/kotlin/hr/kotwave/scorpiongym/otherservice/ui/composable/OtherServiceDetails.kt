@@ -60,7 +60,7 @@ fun OtherServiceDetails(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Ostala usluga", style = MaterialTheme.typography.h5)
+                    Text(text = "Ostala usluga", style = MaterialTheme.typography.h2)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 

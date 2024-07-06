@@ -1,6 +1,5 @@
 package hr.kotwave.scorpiongym.ui.custom.elements
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,12 +25,17 @@ fun <T> Dropdown(
     focusRequester: FocusRequester,
     nextFocusRequester: FocusRequester,
     itemLabel: (T) -> String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    readOnly: Boolean = false
 ) {
     Box(modifier = modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         ExposedDropdownMenuBox(
             expanded = expanded,
-            onExpandedChange = onExpandedChange
+            onExpandedChange = {
+                if (!readOnly) {
+                    onExpandedChange(it)
+                }
+            }
         ) {
             OutlinedTextField(
                 value = selectedItem?.let(itemLabel) ?: "",
@@ -39,7 +43,6 @@ fun <T> Dropdown(
                 label = { Text(label) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onExpandedChange(true) }
                     .focusRequester(focusRequester)
                     .onPreviewKeyEvent {
                         if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
@@ -50,7 +53,9 @@ fun <T> Dropdown(
                     .pointerHoverIcon(PointerIcon.Hand, true),
                 readOnly = true,
                 trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    if (!readOnly) {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    }
                 }
             )
             ExposedDropdownMenu(
@@ -58,10 +63,11 @@ fun <T> Dropdown(
                 onDismissRequest = { onExpandedChange(false) }
             ) {
                 items.forEach { item ->
-                    DropdownMenuItem(onClick = {
-                        onItemSelected(item)
-                        onExpandedChange(false)
-                    }) {
+                    DropdownMenuItem(
+                        onClick = {
+                            onItemSelected(item)
+                            onExpandedChange(false)
+                        }) {
                         Text(itemLabel(item))
                     }
                 }

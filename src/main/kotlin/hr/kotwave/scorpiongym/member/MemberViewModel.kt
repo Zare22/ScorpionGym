@@ -23,7 +23,9 @@ class MemberViewModel(
     private val memberOtherServiceDao: MemberOtherServiceDao
 ) : KoinComponent {
 
-    private val _memberRecords = mutableListOf<MembershipRecord>()
+    val currentMember: Member get() = member
+
+    private val _memberRecords = mutableStateListOf<MembershipRecord>()
     val memberRecords: List<MembershipRecord> get() = _memberRecords
 
     var activeMembershipRecord by mutableStateOf<MembershipRecord?>(null)
@@ -39,24 +41,23 @@ class MemberViewModel(
         initMembersRecords()
     }
 
-    private fun initMembersRecords() {
+    fun initMembersRecords() {
         val loadedRecords = membershipRecordDao.getMembersMembershipRecords(member.id)
         _memberRecords.clear()
+        _trainingSessionsInActiveMembership.clear()
+        numberOfTrainingsAvailable = 0
         _memberRecords.addAll(loadedRecords)
         activeMembershipRecord = memberRecords.find { membershipRecord -> membershipRecord.isActive }
         if (activeMembershipRecord != null) {
             val membership = membershipDao.getMembershipById(activeMembershipRecord!!.membershipId)
             numberOfTrainingsAvailable = membership?.numberOfTrainingsAvailable ?: 0
             val trainingSessions = trainingSessionDao.getAllTrainingSessionsForMembershipRecord(activeMembershipRecord!!.id)
-            _trainingSessionsInActiveMembership.clear()
             _trainingSessionsInActiveMembership.addAll(trainingSessions)
         }
-
     }
 
     fun addNewMembershipRecord(membershipRecord: MembershipRecord) {
-        val membershipRecordId = membershipRecordDao.insertMembershipRecord(membershipRecord)
-        member.membershipRecordId = membershipRecordId
+        member.membershipRecordId = membershipRecordDao.insertMembershipRecord(membershipRecord)
         _memberRecords.add(membershipRecord)
     }
 
@@ -76,26 +77,41 @@ class MemberViewModel(
         memberOtherServiceDao.insertMemberOtherService(memberOtherService)
     }
 
-    fun updateTrainingSession(index: Int, updatedSession: TrainingSession) {
-        if (index in _trainingSessionsInActiveMembership.indices) {
-            _trainingSessionsInActiveMembership[index] = updatedSession
-        }
-    }
-
     fun confirmTrainingSessionUpdates() {
-        trainingSessionsInActiveMembership.forEach { session ->
+        _trainingSessionsInActiveMembership.forEach { session ->
             if (session.id == 0) {
                 val id = trainingSessionDao.insertTrainingSession(session)
                 session.id = id
-            } else {
+            } else
                 trainingSessionDao.updateTrainingSession(session)
-            }
         }
     }
 
     fun addTrainingSession(newSession: TrainingSession) {
         if (_trainingSessionsInActiveMembership.size < numberOfTrainingsAvailable) {
             _trainingSessionsInActiveMembership.add(newSession)
+        }
+    }
+
+    fun updateTrainingSession(index: Int, updatedSession: TrainingSession) {
+        if (index in _trainingSessionsInActiveMembership.indices) {
+            _trainingSessionsInActiveMembership[index] = updatedSession
+        }
+    }
+
+    fun removeTrainingSessionsWithoutId() {
+        _trainingSessionsInActiveMembership.removeIf { training -> training.id == 0 }
+    }
+
+    fun updateMembershipRecordsIsPaid(index: Int, updatedMembershipRecord: MembershipRecord) {
+        if (index in _memberRecords.indices) {
+            _memberRecords[index] = updatedMembershipRecord
+        }
+    }
+
+    fun confirmMembershipRecordsIsPaid() {
+        _memberRecords.forEach { record ->
+            membershipRecordDao.updateMembershipRecord(record)
         }
     }
 }

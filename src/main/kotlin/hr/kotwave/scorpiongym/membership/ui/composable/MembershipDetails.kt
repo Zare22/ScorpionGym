@@ -14,9 +14,9 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import hr.kotwave.scorpiongym.membership.Membership
-import hr.kotwave.scorpiongym.ui.theme.Shapes
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
+import hr.kotwave.scorpiongym.ui.theme.Shapes
 
 @Composable
 fun MembershipDetails(
@@ -54,8 +54,10 @@ fun MembershipDetails(
     LaunchedEffect(membership) {
         name = TextFieldValue(membership.name, selection = TextRange(membership.name.length))
         price = TextFieldValue(membership.price.toString(), selection = TextRange(membership.price.toString().length))
-        numberOfTrainings = TextFieldValue(membership.numberOfTrainingsAvailable.toString(), selection = TextRange(membership.numberOfTrainingsAvailable.toString().length))
-        focusRequesters[0].requestFocus()
+        numberOfTrainings = TextFieldValue(
+            membership.numberOfTrainingsAvailable.toString(),
+            selection = TextRange(membership.numberOfTrainingsAvailable.toString().length)
+        )
     }
 
     Surface(
@@ -76,7 +78,7 @@ fun MembershipDetails(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Članarina", style = MaterialTheme.typography.h5)
+                    Text(text = "Članarina", style = MaterialTheme.typography.h2)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 

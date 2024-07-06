@@ -1,7 +1,6 @@
 package hr.kotwave.scorpiongym.membership
 
 import androidx.compose.runtime.mutableStateListOf
-import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
 import org.koin.core.component.KoinComponent
 
 class MembershipViewModel(private val membershipDao: MembershipDao) : KoinComponent {
@@ -18,7 +17,8 @@ class MembershipViewModel(private val membershipDao: MembershipDao) : KoinCompon
     }
 
     fun addMembership(membership: Membership) {
-        membershipDao.insertMembership(membership)
+        val membershipId = membershipDao.insertMembership(membership)
+        membership.id = membershipId
         _memberships.add(membership)
     }
 

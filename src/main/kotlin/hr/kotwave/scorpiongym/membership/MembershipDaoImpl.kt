@@ -1,6 +1,7 @@
 package hr.kotwave.scorpiongym.membership
 
 import java.sql.Connection
+import java.sql.SQLException
 
 class MembershipDaoImpl(private val dbConnection: Connection) : MembershipDao {
     override fun getAllMemberships(): List<Membership> {
@@ -43,7 +44,7 @@ class MembershipDaoImpl(private val dbConnection: Connection) : MembershipDao {
         return membership
     }
 
-    override fun insertMembership(membership: Membership) {
+    override fun insertMembership(membership: Membership) : Int {
         val query = """
             INSERT INTO Membership (name, price, numberOfTrainingsAvailable)
             VALUES (?, ?, ?)
@@ -54,6 +55,13 @@ class MembershipDaoImpl(private val dbConnection: Connection) : MembershipDao {
             statement.setDouble(2, membership.price)
             statement.setInt(3, membership.numberOfTrainingsAvailable)
             statement.executeUpdate()
+
+            val generatedKeys = statement.generatedKeys
+            return if (generatedKeys.next()) {
+                generatedKeys.getInt(1)
+            } else {
+                throw SQLException("Neuspješno kreiranje članarine!")
+            }
         }
     }
 

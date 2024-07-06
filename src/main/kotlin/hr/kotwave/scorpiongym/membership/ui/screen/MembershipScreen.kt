@@ -34,8 +34,6 @@ class MembershipScreen : Screen {
 
         val membershipViewModel: MembershipViewModel = getKoin().get()
 
-        val memberships by remember { derivedStateOf { membershipViewModel.memberships } }
-
         val coroutineScope = rememberCoroutineScope()
 
         Row(modifier = Modifier.fillMaxSize()) {
@@ -49,12 +47,7 @@ class MembershipScreen : Screen {
 
                         HoverableButton(
                             onClick = {
-                                selectedMemberShip = Membership(
-                                    id = 0,
-                                    name = "",
-                                    price = 0.0,
-                                    numberOfTrainingsAvailable = 0
-                                )
+                                selectedMemberShip = Membership()
                                 isCreatingNewMembership = true
                                 detailsVisible = true
                             },
@@ -63,7 +56,6 @@ class MembershipScreen : Screen {
                     }
 
                     MembershipList(
-                        memberships = memberships,
                         onItemClick = { membership ->
                             selectedMemberShip = membership
                             isCreatingNewMembership = false

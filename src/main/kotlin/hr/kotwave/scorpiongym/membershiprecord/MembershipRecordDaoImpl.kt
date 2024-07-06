@@ -77,7 +77,7 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
 
     override fun updateMembershipRecord(record: MembershipRecord) {
         val query = """
-            UPDATE MembershipRecord SET memberId = ?, membershipId = ?, dateStarted = ?, dateFinished = ?, numberOfTrainingsDone = ?, isActive = ?
+            UPDATE MembershipRecord SET memberId = ?, membershipId = ?, dateStarted = ?, dateFinished = ?, isActive = ?, isPaid = ?
             WHERE id = ?
         """
 
@@ -86,7 +86,8 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
             statement.setInt(2, record.membershipId)
             statement.setString(3, record.dateStarted.toString())
             statement.setString(4, record.dateFinished.toString())
-            statement.setBoolean(6, record.isActive)
+            statement.setBoolean(5, record.isActive)
+            statement.setBoolean(6, record.isPaid)
             statement.setInt(7, record.id)
             statement.executeUpdate()
         }

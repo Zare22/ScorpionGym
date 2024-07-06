@@ -17,6 +17,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import hr.kotwave.scorpiongym.organization.Organization
 import hr.kotwave.scorpiongym.organization.OrganizationViewModel
+import hr.kotwave.scorpiongym.util.Locales
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
@@ -35,11 +36,12 @@ fun OrganizationList(onItemClick: (Organization) -> Unit) {
         )
 
         val filteredOrganizations = if (searchQuery.isEmpty()) {
-            organizationViewModel.organizations
+            organizationViewModel.organizations.sortedWith(compareBy { it.name.lowercase(Locales.CroatianLocale) })
         } else {
-            organizationViewModel.organizations.filter { organization ->
-                organization.name.contains(searchQuery, ignoreCase = true)
-            }
+            organizationViewModel.organizations.sortedWith(compareBy { it.name.lowercase(Locales.CroatianLocale) })
+                .filter { organization ->
+                    organization.name.contains(searchQuery, ignoreCase = true)
+                }
         }
 
         LazyColumn {

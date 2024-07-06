@@ -52,7 +52,6 @@ fun OrganizationDetails(
     LaunchedEffect(organization) {
         name = TextFieldValue(organization.name, selection = TextRange(organization.name.length))
         typeOfOrganization = organization.typeOfOrganizationId.toString()
-        focusRequesters[0].requestFocus()
     }
 
     Surface(
@@ -69,7 +68,7 @@ fun OrganizationDetails(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Organizacija", style = MaterialTheme.typography.h5)
+                    Text(text = "Organizacija", style = MaterialTheme.typography.h2)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 

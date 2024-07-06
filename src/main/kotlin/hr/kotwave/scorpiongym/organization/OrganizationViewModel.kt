@@ -17,7 +17,7 @@ class OrganizationViewModel(private val organizationDao: OrganizationDao) : Koin
     }
 
     fun addOrganization(organization: Organization) {
-        organizationDao.insertOrganization(organization)
+        organization.id = organizationDao.insertOrganization(organization)
         _organizations.add(organization)
     }
 

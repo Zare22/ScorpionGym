@@ -1,5 +1,7 @@
 package hr.kotwave.scorpiongym.di
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import hr.kotwave.scorpiongym.database.DatabaseFactory
 import hr.kotwave.scorpiongym.member.*
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherServiceDao
@@ -25,8 +27,10 @@ import hr.kotwave.scorpiongym.trainingsession.TrainingSessionDaoImpl
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationDao
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationDaoImpl
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
+import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import org.koin.java.KoinJavaComponent.getKoin
 
 val appModule = module {
     single { DatabaseFactory.connect() }
@@ -42,10 +46,6 @@ val appModule = module {
     single<OtherServiceDao> { OtherServiceDaoImpl(get()) }
     single<MemberOtherServiceDao> { MemberOtherServiceDaoImpl(get()) }
 
-    // ViewModel bindings
-    scope(named("MemberScope")) {
-        scoped { (member: Member) -> MemberViewModel(member, get(), get(), get(), get()) }
-    }
     factory { (member: Member) -> MemberViewModel(member, get(), get(), get(), get()) }
     single { MembersListViewModel(get()) }
     single { MembershipViewModel(get()) }
@@ -55,4 +55,31 @@ val appModule = module {
     single { StatusViewModel(get()) }
     single { OtherServiceViewModel(get()) }
     single { MemberOtherServiceViewModel(get()) }
+}
+
+val memberScopeModule = module {
+    scope(named<Member>()) {
+        scoped { (member: Member) -> MemberViewModel(member, get(), get(), get(), get()) }
+    }
+}
+
+fun getMemberViewModel(member: Member): MemberViewModel {
+    val koin = getKoin()
+    val scope = koin.createScope(member.id.toString(), named<Member>())
+    return scope.get { parametersOf(member) }
+}
+
+fun closeMemberScope(member: Member) {
+    val koin = getKoin()
+    koin.getScopeOrNull(member.id.toString())?.close()
+}
+
+@Composable
+fun rememberMemberViewModel(member: Member): MemberViewModel {
+    val koin = getKoin()
+    val scope = remember(member) {
+        koin.getScopeOrNull(member.id.toString())
+            ?: koin.createScope(member.id.toString(), named<Member>())
+    }
+    return scope.get { parametersOf(member) }
 }

@@ -1,34 +1,37 @@
-package hr.kotwave.scorpiongym.trainingsession.ui.window
+package hr.kotwave.scorpiongym.trainingsession.ui.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.*
+import androidx.compose.material.Card
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import hr.kotwave.scorpiongym.di.rememberMemberViewModel
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.trainingsession.TrainingSession
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
-import org.koin.core.parameter.parametersOf
-import org.koin.java.KoinJavaComponent.getKoin
+import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 
 @Composable
 fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
-    val memberViewModel: MemberViewModel = getKoin().get { parametersOf(member) }
+    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
     val listState = rememberLazyListState()
     val trainingSessions by remember { derivedStateOf { memberViewModel.trainingSessionsInActiveMembership.sortedBy { it.sessionDateTime } } }
     var updateTrigger by remember { mutableStateOf(false) }
+    var expiredMembershipDialogOpened by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = { onClose() }) {
         Card(modifier = Modifier.fillMaxHeight(0.8f)) {
@@ -39,15 +42,26 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                     contentPadding = PaddingValues(16.dp)
                 ) {
                     itemsIndexed(trainingSessions) { index, session ->
-                        var sessionDateTime by remember { mutableStateOf(TextFieldValue(session.sessionDateTime.format(dateFormatter))) }
-                        Row(modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)) {
+                        var sessionDateTime by remember {
+                            mutableStateOf(
+                                TextFieldValue(
+                                    session.sessionDateTime.format(
+                                        dateFormatter
+                                    )
+                                )
+                            )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                        ) {
                             FocusableOutlinedTextField(
                                 value = sessionDateTime,
                                 onValueChange = { newValue ->
                                     sessionDateTime = newValue
-                                    val parsedDateTime = runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
+                                    val parsedDateTime =
+                                        runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
                                     if (parsedDateTime != null) {
                                         memberViewModel.updateTrainingSession(
                                             index,
@@ -69,16 +83,17 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                                     .padding(vertical = 4.dp),
                                 horizontalArrangement = Arrangement.Center
                             ) {
-                                Button(onClick = {
-                                    val newSession = TrainingSession(
-                                        sessionDateTime = LocalDateTime.now(),
-                                        membershipRecordId = memberViewModel.activeMembershipRecord!!.id
-                                    )
-                                    memberViewModel.addTrainingSession(newSession)
-                                    updateTrigger = !updateTrigger
-                                }) {
-                                    Text("+ Dodaj novi trening")
-                                }
+                                HoverableButton(
+                                    text = "+ Dodaj novi trening",
+                                    onClick = {
+                                        val newSession = TrainingSession(
+                                            sessionDateTime = LocalDateTime.now(),
+                                            membershipRecordId = memberViewModel.activeMembershipRecord!!.id
+                                        )
+                                        memberViewModel.addTrainingSession(newSession)
+                                        updateTrigger = !updateTrigger
+                                    }
+                                )
                             }
                         }
                     }
@@ -98,15 +113,35 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(onClick = { memberViewModel.confirmTrainingSessionUpdates() }) {
-                        Text("Potvrdi promjene")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { onClose() }) {
-                        Text("Povratak")
-                    }
+                    HoverableButton(
+                        text = "Povratak",
+                        onClick = {
+                            memberViewModel.removeTrainingSessionsWithoutId()
+                            onClose()
+                        }
+                    )
+                    HoverableButton(
+                        text = "Potvrdi promjene",
+                        onClick = {
+                            memberViewModel.confirmTrainingSessionUpdates()
+                            if (memberViewModel.memberRecords.size >= memberViewModel.numberOfTrainingsAvailable) {
+                                memberViewModel.initMembersRecords()
+                                expiredMembershipDialogOpened = true
+                            }
+                        },
+                        buttonBackgroundColor = Color.Green
+                    )
                 }
             }
         }
+    }
+    if (expiredMembershipDialogOpened) {
+        InformativeDialog(
+            message = "Članu ${memberViewModel.currentMember.name} ${memberViewModel.currentMember.surname} je istekla trenutna članarina",
+            onDismiss = {
+                expiredMembershipDialogOpened = false
+                onClose()
+            }
+        )
     }
 }

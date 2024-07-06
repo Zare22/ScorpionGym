@@ -22,13 +22,10 @@ import hr.kotwave.scorpiongym.membership.ui.screen.MembershipScreen
 import hr.kotwave.scorpiongym.organization.OrganizationViewModel
 import hr.kotwave.scorpiongym.organization.ui.screen.OrganizationScreen
 import hr.kotwave.scorpiongym.otherservice.ui.screen.OtherServiceScreen
-import hr.kotwave.scorpiongym.status.StatusViewModel
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent.getKoin
-import java.time.LocalDate
-import java.time.LocalDateTime
 
 class MainScreen : Screen {
 
@@ -44,10 +41,7 @@ class MainScreen : Screen {
         //ViewModel init
         val membersListViewModel: MembersListViewModel = getKoin().get()
         val membershipViewModel: MembershipViewModel = getKoin().get()
-        val statusViewModel: StatusViewModel = getKoin().get()
         val organizationViewModel: OrganizationViewModel = getKoin().get()
-
-        val members by remember { derivedStateOf { membersListViewModel.members } }
 
         //Coroutine
         val coroutineScope = rememberCoroutineScope()
@@ -63,18 +57,7 @@ class MainScreen : Screen {
                         HoverableButton(
                             padding = 8.dp,
                             onClick = {
-                                selectedMember = Member(
-                                    id = 0,
-                                    name = "",
-                                    surname = "",
-                                    phoneNumber = "",
-                                    signedUpDate = LocalDateTime.now(),
-                                    membershipRecordId = 0,
-                                    organizationId = 0,
-                                    statusId = 0,
-                                    remark = "",
-                                    dateOfBirth = LocalDate.now()
-                                )
+                                selectedMember = Member()
                                 isCreatingNewMember = true
                                 detailsVisible = true
                             },
@@ -122,7 +105,6 @@ class MainScreen : Screen {
                     MemberDetails(
                         member = member,
                         memberships = membershipViewModel.memberships,
-                        statuses = statusViewModel.getAllStatuses(),
                         organizations = organizationViewModel.organizations,
                         onBackClick = {
                             detailsVisible = false

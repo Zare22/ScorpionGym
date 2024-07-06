@@ -1,6 +1,7 @@
 package hr.kotwave.scorpiongym.organization
 
 import java.sql.Connection
+import java.sql.SQLException
 
 class OrganizationDaoImpl(private val dbConnection: Connection) : OrganizationDao {
     override fun getAllOrganizations(): List<Organization> {
@@ -41,7 +42,7 @@ class OrganizationDaoImpl(private val dbConnection: Connection) : OrganizationDa
         return organization
     }
 
-    override fun insertOrganization(organization: Organization) {
+    override fun insertOrganization(organization: Organization): Int {
         val query = """
             INSERT INTO Organization (name, typeOfOrganizationId)
             VALUES (?, ?)
@@ -51,6 +52,12 @@ class OrganizationDaoImpl(private val dbConnection: Connection) : OrganizationDa
             statement.setString(1, organization.name)
             statement.setInt(2, organization.typeOfOrganizationId)
             statement.executeUpdate()
+
+            val generatedKeys = statement.generatedKeys
+            return if (generatedKeys.next()) {
+                generatedKeys.getInt(1)
+            } else
+                throw SQLException("Neuspješno kreiranje organizacije!")
         }
     }
 

@@ -17,6 +17,7 @@ import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import hr.kotwave.scorpiongym.otherservice.OtherService
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
+import hr.kotwave.scorpiongym.util.Locales
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
@@ -33,11 +34,12 @@ fun OtherServiceList(onItemClick: (OtherService) -> Unit) {
         )
 
         val filteredOtherServices = if (searchQuery.isEmpty()) {
-            otherServiceViewModel.otherServices
+            otherServiceViewModel.otherServices.sortedWith(compareBy { it.name.lowercase(Locales.CroatianLocale) })
         } else {
-            otherServiceViewModel.otherServices.filter { otherService ->
-                otherService.name.contains(searchQuery, ignoreCase = true)
-            }
+            otherServiceViewModel.otherServices.sortedWith(compareBy { it.name.lowercase(Locales.CroatianLocale) })
+                .filter { otherService ->
+                    otherService.name.contains(searchQuery, ignoreCase = true)
+                }
         }
 
         LazyColumn {

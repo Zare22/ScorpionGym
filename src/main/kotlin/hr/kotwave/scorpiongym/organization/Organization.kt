@@ -1,7 +1,7 @@
 package hr.kotwave.scorpiongym.organization
 
 data class Organization(
-    val id: Int,
-    val name: String,
-    val typeOfOrganizationId: Int
+    var id: Int = 0,
+    val name: String = "",
+    val typeOfOrganizationId: Int = 0
 )

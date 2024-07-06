@@ -1,9 +1,9 @@
-package hr.kotwave.scorpiongym.trainingsession.ui.window
+package hr.kotwave.scorpiongym.trainingsession.ui.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Card
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -13,17 +13,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import hr.kotwave.scorpiongym.di.rememberMemberViewModel
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
-import org.koin.core.parameter.parametersOf
-import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun AddTrainingSessionDialog(member: Member, onClose: () -> Unit) {
-    val memberViewModel: MemberViewModel = getKoin().get { parametersOf(member) }
+    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    var expiredMembershipDialogOpened by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = { onClose() }) {
         Card(modifier = Modifier.height(IntrinsicSize.Min)) {
@@ -39,7 +40,7 @@ fun AddTrainingSessionDialog(member: Member, onClose: () -> Unit) {
                             append("Upisat ćete trening za člana ")
 
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append("${member.surname} ${member.name}")
+                                append("${memberViewModel.currentMember.surname} ${memberViewModel.currentMember.name}")
                             }
 
                             append(" na datum: ")
@@ -61,7 +62,10 @@ fun AddTrainingSessionDialog(member: Member, onClose: () -> Unit) {
                         HoverableButton(
                             onClick = {
                                 memberViewModel.addNewTrainingSessionToMember()
-                                onClose()
+                                if (memberViewModel.memberRecords.size >= memberViewModel.numberOfTrainingsAvailable) {
+                                    memberViewModel.initMembersRecords()
+                                    expiredMembershipDialogOpened = true
+                                }
                             },
                             text = "Potvrdi",
                             buttonBackgroundColor = Color.Green
@@ -70,5 +74,14 @@ fun AddTrainingSessionDialog(member: Member, onClose: () -> Unit) {
                 }
             }
         }
+    }
+    if (expiredMembershipDialogOpened) {
+        InformativeDialog(
+            message = "Članu ${memberViewModel.currentMember.name} ${memberViewModel.currentMember.surname} je istekla trenutna članarina",
+            onDismiss = {
+                expiredMembershipDialogOpened = false
+                onClose()
+            }
+        )
     }
 }

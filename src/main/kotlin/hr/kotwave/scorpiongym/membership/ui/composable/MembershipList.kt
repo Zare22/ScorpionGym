@@ -16,9 +16,13 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.unit.dp
 import hr.kotwave.scorpiongym.membership.Membership
+import hr.kotwave.scorpiongym.membership.MembershipViewModel
+import hr.kotwave.scorpiongym.util.Locales
+import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
-fun MembershipList(memberships: List<Membership>, onItemClick: (Membership) -> Unit) {
+fun MembershipList(onItemClick: (Membership) -> Unit) {
+    val membershipViewModel: MembershipViewModel = getKoin().get()
     var searchQuery by remember { mutableStateOf("") }
 
     Column {
@@ -32,11 +36,12 @@ fun MembershipList(memberships: List<Membership>, onItemClick: (Membership) -> U
         )
 
         val filteredMemberships = if (searchQuery.isEmpty()) {
-            memberships
+            membershipViewModel.memberships.sortedWith(compareBy { it.name.lowercase(Locales.CroatianLocale) })
         } else {
-            memberships.filter { membership ->
-                membership.name.contains(searchQuery, ignoreCase = true)
-            }
+            membershipViewModel.memberships.sortedWith(compareBy { it.name.lowercase(Locales.CroatianLocale) })
+                .filter { membership ->
+                    membership.name.contains(searchQuery, ignoreCase = true)
+                }
         }
 
         LazyColumn {

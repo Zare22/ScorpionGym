@@ -1,6 +1,9 @@
 package hr.kotwave.scorpiongym
 
-import androidx.compose.foundation.*
+import androidx.compose.foundation.DarkDefaultContextMenuRepresentation
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.LightDefaultContextMenuRepresentation
+import androidx.compose.foundation.LocalContextMenuRepresentation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,7 +11,6 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material.Surface
 import androidx.compose.runtime.*
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.ContentScale
@@ -18,6 +20,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.SlideTransition
 import hr.kotwave.scorpiongym.database.DatabaseFactory
 import hr.kotwave.scorpiongym.di.appModule
+import hr.kotwave.scorpiongym.di.memberScopeModule
 import hr.kotwave.scorpiongym.member.ui.screen.MainScreen
 import hr.kotwave.scorpiongym.ui.theme.ScorpionGymTheme
 import hr.kotwave.scorpiongym.util.PreferencesHelper
@@ -25,10 +28,10 @@ import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
 import java.awt.Dimension
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 fun main() = application {
     startKoin {
-        modules(appModule)
+        modules(appModule, memberScopeModule)
     }
 
     DatabaseFactory.initDB()

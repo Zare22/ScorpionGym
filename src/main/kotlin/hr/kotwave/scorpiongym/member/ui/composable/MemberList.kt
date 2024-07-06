@@ -10,22 +10,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.*
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import hr.kotwave.scorpiongym.di.rememberMemberViewModel
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberFilterOption
 import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.member.MembersListViewModel
-import hr.kotwave.scorpiongym.memberotherservice.ui.window.AddMemberOtherServiceDialog
-import hr.kotwave.scorpiongym.trainingsession.ui.window.AddTrainingSessionDialog
-import hr.kotwave.scorpiongym.trainingsession.ui.window.TrainingSessionsDialog
+import hr.kotwave.scorpiongym.memberotherservice.ui.dialog.AddMemberOtherServiceDialog
+import hr.kotwave.scorpiongym.membershiprecord.ui.dialog.UserMembershipRecordsDialog
+import hr.kotwave.scorpiongym.trainingsession.ui.dialog.AddTrainingSessionDialog
+import hr.kotwave.scorpiongym.trainingsession.ui.dialog.TrainingSessionsDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
-import org.koin.core.parameter.parametersOf
+import hr.kotwave.scorpiongym.ui.theme.Gold
+import hr.kotwave.scorpiongym.util.Locales
 import org.koin.java.KoinJavaComponent.getKoin
-import java.text.Collator
-import java.util.*
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun MemberList(onItemClick: (Member) -> Unit) {
     var searchQuery by remember { mutableStateOf("") }
@@ -35,8 +41,10 @@ fun MemberList(onItemClick: (Member) -> Unit) {
 
     val membersListViewModel: MembersListViewModel = getKoin().get()
 
-    val croatianLocale = Locale.Builder().setLanguage("hr").setRegion("HR").build()
-    val sortedMembers = membersListViewModel.members.sortedWith(compareBy({ it.surname.lowercase(croatianLocale) }, { it.name.lowercase(croatianLocale) }))
+    val sortedMembers = membersListViewModel.members.sortedWith(
+        compareBy({ it.surname.lowercase(Locales.CroatianLocale) },
+            { it.name.lowercase(Locales.CroatianLocale) })
+    )
 
     Column {
         FlowRow(
@@ -111,9 +119,9 @@ fun MemberList(onItemClick: (Member) -> Unit) {
                     searchQuery.lowercase()
                 )
             val matchesFilter = when (memberFilterOption) {
-                MemberFilterOption.PAID -> getRibbonColor(member) == Color.Green // No specific filtering for this option
+                MemberFilterOption.PAID -> getRibbonColor(member) == Color.Green
                 MemberFilterOption.UNPAID -> getRibbonColor(member) == Color.Red
-                MemberFilterOption.NO_ACTIVE_SUBSCRIPTION -> getRibbonColor(member) == Color.Yellow
+                MemberFilterOption.NO_ACTIVE_SUBSCRIPTION -> getRibbonColor(member) == Gold
                 null -> true
             }
 
@@ -144,11 +152,12 @@ fun MemberList(onItemClick: (Member) -> Unit) {
 fun MemberItem(member: Member, onClick: () -> Unit) {
     var addTrainingSessionDialogOpened by remember { mutableStateOf(false) }
     var addMemberOtherServiceDialogOpened by remember { mutableStateOf(false) }
-    var showDeleteDialogAlert by remember { mutableStateOf(false) }
-
+    var showDeleteDialogAlertOpened by remember { mutableStateOf(false) }
     var trainingSessionsDialogOpened by remember { mutableStateOf(false) }
+    var userMembershipRecordsDialogOpened by remember { mutableStateOf(false) }
 
     val membersListViewModel: MembersListViewModel = getKoin().get()
+    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
 
     when {
         addTrainingSessionDialogOpened -> {
@@ -159,11 +168,27 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
             AddMemberOtherServiceDialog(member, onClose = { addMemberOtherServiceDialogOpened = false })
         }
 
-        showDeleteDialogAlert -> {
+        userMembershipRecordsDialogOpened -> {
+            UserMembershipRecordsDialog(member, onClose = { userMembershipRecordsDialogOpened = false })
+        }
+
+        showDeleteDialogAlertOpened -> {
             AlertDialog(
-                onDismissRequest = { showDeleteDialogAlert = false },
+                onDismissRequest = { showDeleteDialogAlertOpened = false },
                 title = { Text("Brisanje člana", color = Color.Red) },
-                text = { Text("Ukoliko nastavite pobrisat ćete člana ${member.name} ${member.surname} i sve njegove vezane podatke") },
+                text = {
+                    Text(
+                        text = buildAnnotatedString {
+                            append("Ukoliko nastavite pobrisat ćete člana ")
+
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append("${memberViewModel.currentMember.name} ${memberViewModel.currentMember.surname}")
+                            }
+
+                            append(" i sve njegove vezane podatke!")
+                        }
+                    )
+                },
                 confirmButton = {
                     HoverableButton(
                         text = "Potvrdi",
@@ -174,7 +199,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                 dismissButton = {
                     HoverableButton(
                         text = "Odustani",
-                        onClick = { showDeleteDialogAlert = false }
+                        onClick = { showDeleteDialogAlertOpened = false }
                     )
                 }
             )
@@ -197,12 +222,16 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
             items = {
                 val items = mutableListOf<ContextMenuItem>()
 
-                if (member.membershipRecordId != null && member.membershipRecordId != 0) {
+                if (memberViewModel.activeMembershipRecord != null) {
                     items.add(ContextMenuItem(label = "Upiši trening članu") { addTrainingSessionDialogOpened = true })
-                    items.add(ContextMenuItem("Pregled treninga aktivne članarine") { trainingSessionsDialogOpened = true })
+                    items.add(ContextMenuItem("Pregled treninga aktivne članarine") {
+                        trainingSessionsDialogOpened = true
+                    })
                 }
+                if (memberViewModel.memberRecords.isNotEmpty())
+                    items.add(ContextMenuItem("Pregled svih članarina") { userMembershipRecordsDialogOpened = true })
                 items.add(ContextMenuItem("Upiši dodatnu uslugu članu") { addMemberOtherServiceDialogOpened = true })
-                items.add(ContextMenuItem("Obriši člana") { showDeleteDialogAlert = true })
+                items.add(ContextMenuItem("Obriši člana") { showDeleteDialogAlertOpened = true })
 
                 items
             }
@@ -227,14 +256,13 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
     }
 }
 
-
+@Composable
 fun getRibbonColor(member: Member): Color {
-    val memberViewModel: MemberViewModel = getKoin().get { parametersOf(member) }
+    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
 
     return when {
         memberViewModel.memberRecords.count { record -> !record.isPaid } >= 1 -> Color.Red
-        memberViewModel.memberRecords.find { record -> record.isActive } == null -> Color(0xFFFFC107)
+        memberViewModel.memberRecords.find { record -> record.isActive } == null -> Gold
         else -> Color.Green
     }
 }
-
