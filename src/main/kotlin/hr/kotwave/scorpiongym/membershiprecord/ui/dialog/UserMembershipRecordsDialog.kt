@@ -19,8 +19,10 @@ import hr.kotwave.scorpiongym.di.rememberMemberViewModel
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
+import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
+import hr.kotwave.scorpiongym.ui.custom.elements.HoverableCheckbox
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.format.DateTimeFormatter
 
@@ -31,6 +33,8 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
     val listState = rememberLazyListState()
     val records by remember { derivedStateOf { memberViewModel.memberRecords.sortedBy { it.dateStarted } } }
+
+    val initialIsPaidValues = remember { records.map { it.isPaid }.toMutableStateList() }
 
 
     Dialog(
@@ -87,16 +91,30 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     modifier = Modifier.weight(1f)
                 ) {
                     itemsIndexed(records) { index, record ->
-                        val membershipTypeName =
-                            membershipViewModel.memberships.find { membership -> membership.id == record.membershipId }?.name?.let {
-                                TextFieldValue(
-                                    it
-                                )
-                            }
+                        val membershipType =
+                            membershipViewModel.memberships.find { membership -> membership.id == record.membershipId }
+
+                        val membershipTypeName = membershipType?.name?.let { TextFieldValue(it) }
                         val recordDateStart = TextFieldValue(record.dateStarted.format(dateFormatter))
                         val recordDateFinished = TextFieldValue(record.dateFinished.format(dateFormatter))
 
                         var isPaid by remember { mutableStateOf(record.isPaid) }
+                        var price = membershipType?.price
+
+                        memberViewModel.currentMember.organizationId?.let { organizationId ->
+                            if (organizationId != 0) {
+                                val typeOfOrganizationViewModel: TypeOfOrganizationViewModel = getKoin().get()
+                                val typeOfOrganization = typeOfOrganizationViewModel.organizationTypes.find { typeOfOrg ->
+                                    typeOfOrg.id == organizationId
+                                }
+                                if (typeOfOrganization != null) {
+                                    val discountRate = typeOfOrganization.discountRate / 100.0
+                                    price?.let { originalPrice ->
+                                        price = originalPrice * (1 - discountRate)
+                                    }
+                                }
+                            }
+                        }
 
                         Row(
                             modifier = Modifier
@@ -131,7 +149,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 readOnly = true,
                                 modifier = Modifier.weight(1f).padding(end = 8.dp)
                             )
-                            Checkbox(
+                            HoverableCheckbox(
                                 modifier = Modifier.weight(0.5f).padding(end = 8.dp),
                                 checked = isPaid,
                                 onCheckedChange = {
@@ -142,7 +160,9 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                             isPaid = isPaid
                                         )
                                     )
-                                }
+                                },
+                                hoverText = "$price €",
+                                showPopupOnHover = !isPaid
                             )
                             Checkbox(
                                 modifier = Modifier.weight(0.5f).padding(end = 4.dp),
@@ -165,6 +185,14 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     HoverableButton(
                         text = "Povratak",
                         onClick = {
+                            records.forEachIndexed { index, record ->
+                                memberViewModel.updateMembershipRecordsIsPaid(
+                                    index,
+                                    record.copy(
+                                        isPaid = initialIsPaidValues[index]
+                                    )
+                                )
+                            }
                             onClose()
                         }
                     )
