@@ -24,6 +24,7 @@ fun <T> Dropdown(
     onItemSelected: (T) -> Unit,
     focusRequester: FocusRequester,
     nextFocusRequester: FocusRequester,
+    canSwitchWithTab: Boolean = true,
     itemLabel: (T) -> String,
     modifier: Modifier = Modifier,
     readOnly: Boolean = false
@@ -43,13 +44,18 @@ fun <T> Dropdown(
                 label = { Text(label) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(focusRequester)
-                    .onPreviewKeyEvent {
-                        if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
-                            nextFocusRequester.requestFocus()
-                            true
-                        } else false
-                    }
+                    .then(
+                        if (canSwitchWithTab) {
+                            Modifier
+                                .focusRequester(focusRequester)
+                                .onPreviewKeyEvent {
+                                    if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
+                                        nextFocusRequester.requestFocus()
+                                        true
+                                    } else false
+                                }
+                        } else Modifier
+                    )
                     .pointerHoverIcon(PointerIcon.Hand, true),
                 readOnly = true,
                 trailingIcon = {

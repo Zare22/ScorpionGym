@@ -23,13 +23,16 @@ import hr.kotwave.scorpiongym.member.MemberFilterOption
 import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.member.MembersListViewModel
 import hr.kotwave.scorpiongym.memberotherservice.ui.dialog.AddMemberOtherServiceDialog
+import hr.kotwave.scorpiongym.memberotherservice.ui.dialog.OtherServicesDialog
+import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.membershiprecord.ui.dialog.UserMembershipRecordsDialog
-import hr.kotwave.scorpiongym.trainingsession.ui.dialog.AddTrainingSessionDialog
+import hr.kotwave.scorpiongym.trainingsession.ui.dialog.AddSingleTrainingSessionDialog
 import hr.kotwave.scorpiongym.trainingsession.ui.dialog.TrainingSessionsDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.theme.Gold
 import hr.kotwave.scorpiongym.util.Locales
 import org.koin.java.KoinJavaComponent.getKoin
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -150,31 +153,32 @@ fun MemberList(onItemClick: (Member) -> Unit) {
 
 @Composable
 fun MemberItem(member: Member, onClick: () -> Unit) {
-    var addTrainingSessionDialogOpened by remember { mutableStateOf(false) }
-    var addMemberOtherServiceDialogOpened by remember { mutableStateOf(false) }
-    var showDeleteDialogAlertOpened by remember { mutableStateOf(false) }
-    var trainingSessionsDialogOpened by remember { mutableStateOf(false) }
-    var userMembershipRecordsDialogOpened by remember { mutableStateOf(false) }
+    var showAddSingleTrainingSessionDialog by remember { mutableStateOf(false) }
+    var showAddMemberOtherServiceDialog by remember { mutableStateOf(false) }
+    var showDeleteMemberDialogAlertOpened by remember { mutableStateOf(false) }
+    var showManageTrainingSessionsDialog by remember { mutableStateOf(false) }
+    var showMangeMembershipRecordsDialog by remember { mutableStateOf(false) }
+    var showMangeMemberOtherServicesDialog by remember { mutableStateOf(false) }
 
     val membersListViewModel: MembersListViewModel = getKoin().get()
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
 
     when {
-        addTrainingSessionDialogOpened -> {
-            AddTrainingSessionDialog(member, onClose = { addTrainingSessionDialogOpened = false })
+        showAddSingleTrainingSessionDialog -> {
+            AddSingleTrainingSessionDialog(member, onClose = { showAddSingleTrainingSessionDialog = false })
         }
 
-        addMemberOtherServiceDialogOpened -> {
-            AddMemberOtherServiceDialog(member, onClose = { addMemberOtherServiceDialogOpened = false })
+        showAddMemberOtherServiceDialog -> {
+            AddMemberOtherServiceDialog(member, onClose = { showAddMemberOtherServiceDialog = false })
         }
 
-        userMembershipRecordsDialogOpened -> {
-            UserMembershipRecordsDialog(member, onClose = { userMembershipRecordsDialogOpened = false })
+        showMangeMembershipRecordsDialog -> {
+            UserMembershipRecordsDialog(member, onClose = { showMangeMembershipRecordsDialog = false })
         }
 
-        showDeleteDialogAlertOpened -> {
+        showDeleteMemberDialogAlertOpened -> {
             AlertDialog(
-                onDismissRequest = { showDeleteDialogAlertOpened = false },
+                onDismissRequest = { showDeleteMemberDialogAlertOpened = false },
                 title = { Text("Brisanje člana", color = Color.Red) },
                 text = {
                     Text(
@@ -199,14 +203,18 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                 dismissButton = {
                     HoverableButton(
                         text = "Odustani",
-                        onClick = { showDeleteDialogAlertOpened = false }
+                        onClick = { showDeleteMemberDialogAlertOpened = false }
                     )
                 }
             )
         }
 
-        trainingSessionsDialogOpened -> {
-            TrainingSessionsDialog(member, onClose = { trainingSessionsDialogOpened = false })
+        showManageTrainingSessionsDialog -> {
+            TrainingSessionsDialog(member, onClose = { showManageTrainingSessionsDialog = false })
+        }
+
+        showMangeMemberOtherServicesDialog -> {
+            OtherServicesDialog(member, onClose = { showMangeMemberOtherServicesDialog = false })
         }
     }
 
@@ -223,15 +231,17 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                 val items = mutableListOf<ContextMenuItem>()
 
                 if (memberViewModel.activeMembershipRecord != null) {
-                    items.add(ContextMenuItem(label = "Upiši trening članu") { addTrainingSessionDialogOpened = true })
+                    items.add(ContextMenuItem(label = "Upiši trening članu") { showAddSingleTrainingSessionDialog = true })
                     items.add(ContextMenuItem("Pregled treninga aktivne članarine") {
-                        trainingSessionsDialogOpened = true
+                        showManageTrainingSessionsDialog = true
                     })
                 }
                 if (memberViewModel.memberRecords.isNotEmpty())
-                    items.add(ContextMenuItem("Pregled svih članarina") { userMembershipRecordsDialogOpened = true })
-                items.add(ContextMenuItem("Upiši dodatnu uslugu članu") { addMemberOtherServiceDialogOpened = true })
-                items.add(ContextMenuItem("Obriši člana") { showDeleteDialogAlertOpened = true })
+                    items.add(ContextMenuItem("Pregled svih članarina") { showMangeMembershipRecordsDialog = true })
+                items.add(ContextMenuItem("Upiši dodatnu uslugu članu") { showAddMemberOtherServiceDialog = true })
+                if (memberViewModel.memberOtherServices.isNotEmpty())
+                    items.add(ContextMenuItem("Pregled svih ostalih usluga") { showMangeMemberOtherServicesDialog = true })
+                items.add(ContextMenuItem("Obriši člana") { showDeleteMemberDialogAlertOpened = true })
 
                 items
             }
@@ -241,8 +251,62 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                     .fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-                    Text(text = "${member.surname} ${member.name}", style = MaterialTheme.typography.h6)
-                    Text(text = member.phoneNumber ?: "", style = MaterialTheme.typography.body2)
+                    Text(
+                        text = "${memberViewModel.currentMember.surname} ${memberViewModel.currentMember.name}",
+                        style = MaterialTheme.typography.h6
+                    )
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    memberViewModel.currentMember.dateOfBirth?.let { dateOfBirth ->
+                        Text(
+                            text = buildAnnotatedString {
+                                append("Datum rođenja: ")
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    append(dateOfBirth.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")))
+                                }
+                            },
+                            style = MaterialTheme.typography.body2
+                        )
+                    }
+                    memberViewModel.currentMember.phoneNumber?.takeIf { it.isNotEmpty() }?.let { phoneNumber ->
+                        Text(
+                            text = buildAnnotatedString {
+                                append("Broj telefona: ")
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    append(phoneNumber)
+                                }
+                            },
+                            style = MaterialTheme.typography.body2
+                        )
+                    }
+                    if (memberViewModel.activeMembershipRecord != null) {
+                        val membershipViewModel: MembershipViewModel = getKoin().get()
+                        val typeOfMembership =
+                            membershipViewModel.memberships.find { memb -> memb.id == memberViewModel.activeMembershipRecord!!.membershipId }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                buildAnnotatedString {
+                                    append("Tip aktivne članarine: ")
+                                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                        typeOfMembership?.let { append(it.name) }
+                                    }
+                                },
+                                style = MaterialTheme.typography.body2
+                            )
+                            Text(
+                                text = buildAnnotatedString {
+                                    append("Preostalo treninga u aktivnoj članarini: ")
+                                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                        append("${memberViewModel.numberOfTrainingsAvailable - memberViewModel.trainingSessionsInActiveMembership.size}")
+                                    }
+                                },
+                                style = MaterialTheme.typography.body2
+                            )
+                        }
+                    }
                 }
                 Box(
                     modifier = Modifier

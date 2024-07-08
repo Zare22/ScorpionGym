@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -32,6 +33,7 @@ import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.theme.Shapes
 import org.koin.java.KoinJavaComponent.getKoin
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -47,7 +49,7 @@ fun MemberDetails(
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
 
     //Elements that can gain focus
-    val focusRequesters = List(8) { FocusRequester() }
+    val focusRequesters = List(9) { FocusRequester() }
     val verticalScrollState = rememberScrollState(0)
 
     // Member properties
@@ -81,6 +83,15 @@ fun MemberDetails(
                 memberViewModel.currentMember.remark ?: "",
                 selection = TextRange(memberViewModel.currentMember.remark?.length ?: 0)
             )
+        )
+    }
+
+    val dateOfBirthFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    var dateOfBirth by remember(memberViewModel.currentMember) {
+        mutableStateOf(
+            memberViewModel.currentMember.dateOfBirth?.let {
+                TextFieldValue(it.format(dateOfBirthFormatter))
+            } ?: TextFieldValue("")
         )
     }
 
@@ -123,6 +134,10 @@ fun MemberDetails(
         signedUpDate = memberViewModel.currentMember.signedUpDate
         currentRecordFinishDate =
             memberViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateFinished
+
+        dateOfBirth = TextFieldValue(
+            memberViewModel.currentMember.dateOfBirth?.format(dateOfBirthFormatter) ?: ""
+        )
     }
 
     when {
@@ -161,7 +176,13 @@ fun MemberDetails(
                                         append("${memberViewModel.currentMember.surname} ${memberViewModel.currentMember.name}")
                                     }
 
-                                    append(" ćete upisati člarinu ${selectedMembership?.name} sa početkom na datum: ")
+                                    append(" ćete upisati članarinu ")
+
+                                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                        append(selectedMembership?.name)
+                                    }
+
+                                    append(" sa početkom na datum: ")
 
                                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                         append(
@@ -224,12 +245,13 @@ fun MemberDetails(
                                             remark = remark.text
                                         )
                                         onUpdateClick(updatedMember)
-                                        memberViewModel.initMembersRecords()
+                                        memberViewModel.initViewModel()
                                         currentRecordFinishDate =
                                             memberViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateFinished
                                         renewMembershipDialogOpened = false
                                     },
-                                    text = "Obnovi"
+                                    text = "Obnovi",
+                                    buttonBackgroundColor = Color.Green
                                 )
                             }
                         }
@@ -285,6 +307,15 @@ fun MemberDetails(
                     currentFocusRequester = focusRequesters[2],
                     nextFocusRequester = focusRequesters[3]
                 )
+                FocusableOutlinedTextField(
+                    value = dateOfBirth,
+                    onValueChange = { newValue ->
+                        dateOfBirth = newValue
+                    },
+                    label = "Datum rođenja",
+                    currentFocusRequester = focusRequesters[3],
+                    nextFocusRequester = focusRequesters[4]
+                )
 
                 OutlinedTextField(
                     value = signedUpDate.format(dateFormatter),
@@ -296,52 +327,58 @@ fun MemberDetails(
                     readOnly = true
                 )
 
-                OutlinedTextField(
-                    value = currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine",
-                    onValueChange = {},
-                    label = { Text("Datum isteka trenutne članarine") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    readOnly = true
-                )
-
-
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Dropdown(
-                        modifier = Modifier.weight(1f),
-                        expanded = expandedMembership,
-                        onExpandedChange = { expandedMembership = it },
-                        label = "Tip članarine",
-                        items = memberships,
-                        selectedItem = memberships.find { it.id.toString() == membership },
-                        onItemSelected = { membership = it.id.toString() },
-                        focusRequester = focusRequesters[3],
-                        nextFocusRequester = focusRequesters[4],
-                        itemLabel = { it.name },
-                        readOnly = memberViewModel.activeMembershipRecord != null
+                memberViewModel.currentMember.id.takeIf { it != 0 }?.let {
+                    OutlinedTextField(
+                        value = currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine",
+                        onValueChange = {},
+                        label = { Text("Datum isteka trenutne članarine") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        readOnly = true
                     )
-                    if (memberViewModel.activeMembershipRecord == null) {
-                        HoverableButton(
-                            modifier = Modifier
-                                .wrapContentWidth()
-                                .focusRequester(focusRequesters[4])
-                                .onPreviewKeyEvent {
-                                    if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
-                                        focusRequesters[5].requestFocus()
-                                        true
-                                    } else false
-                                },
-                            onClick = { renewMembershipDialogOpened = true },
-                            text = "Obnovi članarinu"
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Dropdown(
+                            modifier = Modifier.weight(1f),
+                            expanded = expandedMembership,
+                            onExpandedChange = { expandedMembership = it },
+                            label = "Tip članarine",
+                            items = memberships,
+                            selectedItem = memberships.find { it.id.toString() == membership },
+                            onItemSelected = { membership = it.id.toString() },
+                            focusRequester = focusRequesters[4],
+                            nextFocusRequester = focusRequesters[5],
+                            itemLabel = { it.name },
+                            readOnly = memberViewModel.activeMembershipRecord != null
                         )
+
+                        if (memberViewModel.activeMembershipRecord == null) {
+                            HoverableButton(
+                                modifier = Modifier
+                                    .wrapContentWidth()
+                                    .focusRequester(focusRequesters[5])
+                                    .onPreviewKeyEvent {
+                                        if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
+                                            focusRequesters[6].requestFocus()
+                                            true
+                                        } else false
+                                    },
+                                onClick = { renewMembershipDialogOpened = true },
+                                text = "Obnovi članarinu"
+                            )
+                        }
                     }
                 }
 
-                //Organizacija kojoj član pripada --> Škola, fakultet, posao....
+                val nextFocusIndex = when {
+                    memberViewModel.currentMember.id == 0 -> 4
+                    memberViewModel.currentMember.id != 0 && memberViewModel.activeMembershipRecord != null -> 5
+                    else -> 6
+                }
                 Dropdown(
                     expanded = expandedOrganization,
                     onExpandedChange = { expandedOrganization = it },
@@ -349,8 +386,8 @@ fun MemberDetails(
                     items = organizations,
                     selectedItem = organizations.find { it.id.toString() == organization },
                     onItemSelected = { organization = it.id.toString() },
-                    focusRequester = focusRequesters[if (memberViewModel.activeMembershipRecord == null) 5 else 4],
-                    nextFocusRequester = focusRequesters[if (memberViewModel.activeMembershipRecord == null) 6 else 5],
+                    focusRequester = focusRequesters[nextFocusIndex],
+                    nextFocusRequester = focusRequesters[nextFocusIndex + 1],
                     itemLabel = { it.name }
                 )
 
@@ -358,8 +395,8 @@ fun MemberDetails(
                     value = remark,
                     onValueChange = { remark = it },
                     label = "Napomena",
-                    currentFocusRequester = focusRequesters[if (memberViewModel.activeMembershipRecord == null) 6 else 5],
-                    nextFocusRequester = focusRequesters[if (memberViewModel.activeMembershipRecord == null) 7 else 6],
+                    currentFocusRequester = focusRequesters[nextFocusIndex + 1],
+                    nextFocusRequester = focusRequesters[nextFocusIndex + 2],
                     maxLines = 3
                 )
 
@@ -376,7 +413,7 @@ fun MemberDetails(
                     )
                     HoverableButton(
                         modifier = Modifier
-                            .focusRequester(focusRequesters[if (currentRecordFinishDate == null) 7 else 6])
+                            .focusRequester(focusRequesters[nextFocusIndex + 2])
                             .onPreviewKeyEvent {
                                 if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
                                     focusRequesters[0].requestFocus()
@@ -392,11 +429,14 @@ fun MemberDetails(
                                 membershipRecordId = memberViewModel.currentMember.membershipRecordId,
                                 organizationId = organization.toIntOrNull()
                                     ?: memberViewModel.currentMember.organizationId,
-                                remark = remark.text
+                                remark = remark.text,
+                                dateOfBirth = kotlin.runCatching { LocalDate.parse(dateOfBirth.text, dateOfBirthFormatter) }.getOrNull(),
                             )
+                            memberViewModel.updateMember(updatedMember)
                             onUpdateClick(updatedMember)
                         },
-                        text = if (memberViewModel.currentMember.id != 0) "Ažuriraj" else "Dodaj"
+                        text = if (memberViewModel.currentMember.id != 0) "Ažuriraj" else "Dodaj",
+                        buttonBackgroundColor = Color.Green
                     )
                 }
             }

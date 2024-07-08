@@ -46,15 +46,16 @@ object DatabaseFactory {
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             name TEXT NOT NULL,
                             surname TEXT NOT NULL,
-                            phoneNumber TEXT NOT NULL,
+                            phoneNumber TEXT NULL,
                             signedUpDate DATE NOT NULL,
+                            dateOfBirth DATE NULL,
                             membershipRecordId INTEGER,
                             organizationId INTEGER,
                             statusId INTEGER,
                             remark TEXT,
-                            FOREIGN KEY (membershipRecordId) REFERENCES MembershipRecord(id),
-                            FOREIGN KEY (organizationId) REFERENCES Organization(id),
-                            FOREIGN KEY (statusId) REFERENCES Status(id)
+                            FOREIGN KEY (membershipRecordId) REFERENCES MembershipRecord(id) ON DELETE SET NULL,
+                            FOREIGN KEY (organizationId) REFERENCES Organization(id) ON DELETE RESTRICT,
+                            FOREIGN KEY (statusId) REFERENCES Status(id) ON DELETE RESTRICT
                         )
                     """
                     )
@@ -67,8 +68,8 @@ object DatabaseFactory {
                             dateStarted DATE NOT NULL,
                             dateFinished DATE,
                             isActive BOOLEAN NOT NULL DEFAULT TRUE,
-                            FOREIGN KEY (memberId) REFERENCES Member(id),
-                            FOREIGN KEY (membershipId) REFERENCES Membership(id)
+                            FOREIGN KEY (memberId) REFERENCES Member(id) ON DELETE CASCADE,
+                            FOREIGN KEY (membershipId) REFERENCES Membership(id) ON DELETE RESTRICT
                         )
                     """
                     )
@@ -88,7 +89,7 @@ object DatabaseFactory {
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             name TEXT NOT NULL,
                             typeOfOrganizationId INTEGER NOT NULL,
-                            FOREIGN KEY (typeOfOrganizationId) REFERENCES TypeOfOrganization(id)
+                            FOREIGN KEY (typeOfOrganizationId) REFERENCES TypeOfOrganization(id) ON DELETE RESTRICT
                         )
                     """
                     )
@@ -115,13 +116,13 @@ object DatabaseFactory {
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             membershipRecordId INTEGER NOT NULL,
                             sessionDateTime DATETIME NOT NULL,
-                            FOREIGN KEY (membershipRecordId) REFERENCES MembershipRecord(id)
+                            FOREIGN KEY (membershipRecordId) REFERENCES MembershipRecord(id) ON DELETE RESTRICT
                         )
                     """
                     )
                     statement.execute(
                         """
-                        CREATE TABLE IF NOT EXISTS OtherServices (
+                        CREATE TABLE IF NOT EXISTS OtherService (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             name TEXT NOT NULL,
                             price DECIMAL(10, 2) NOT NULL
@@ -130,13 +131,13 @@ object DatabaseFactory {
                     )
                     statement.execute(
                         """
-                        CREATE TABLE IF NOT EXISTS MemberOtherServices (
+                        CREATE TABLE IF NOT EXISTS MemberOtherService (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             dateOfService DATETIME NOT NULL,
                             memberId INTEGER NOT NULL,
                             otherServiceId INTEGER NOT NULL,
-                            FOREIGN KEY (memberId) REFERENCES Member(id),
-                            FOREIGN KEY (otherServiceId) REFERENCES OtherServices(id)
+                            FOREIGN KEY (memberId) REFERENCES Member(id) ON DELETE CASCADE,
+                            FOREIGN KEY (otherServiceId) REFERENCES OtherService(id) ON DELETE RESTRICT
                         )
                     """
                     )
@@ -161,6 +162,18 @@ object DatabaseFactory {
                                 WHERE id = NEW.membershipRecordId;
                             END
                     """
+                    )
+                    statement.execute(
+                        """
+                        CREATE TRIGGER IF NOT EXISTS SetMembershipRecordIdToNull AFTER UPDATE ON MembershipRecord
+                            FOR EACH ROW
+                            WHEN NEW.isActive = FALSE
+                            BEGIN
+                                UPDATE Member
+                                SET membershipRecordId = NULL
+                                WHERE membershipRecordId = NEW.id;
+                            END
+                        """
                     )
                 }
                 con.commit()

@@ -13,7 +13,7 @@ fun parseToLocalDateTime(dateString: String): LocalDateTime {
 }
 
 fun parseToLocalDate(dateString: String): LocalDate? {
-    val formatter = DateTimeFormatter.ofPattern("d.M.yyyy")
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     return dateString.trimEnd('.').let {
         LocalDate.parse(it, formatter)
     }

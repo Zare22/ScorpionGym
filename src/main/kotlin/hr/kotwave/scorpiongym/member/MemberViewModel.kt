@@ -16,17 +16,21 @@ import org.koin.core.component.KoinComponent
 import java.time.LocalDateTime
 
 class MemberViewModel(
-    private val member: Member,
+    member: Member,
     private val membershipDao: MembershipDao,
     private val membershipRecordDao: MembershipRecordDao,
     private val trainingSessionDao: TrainingSessionDao,
     private val memberOtherServiceDao: MemberOtherServiceDao
 ) : KoinComponent {
 
-    val currentMember: Member get() = member
+    private val _currentMember = mutableStateOf(member)
+    val currentMember: Member get() = _currentMember.value
 
     private val _memberRecords = mutableStateListOf<MembershipRecord>()
     val memberRecords: List<MembershipRecord> get() = _memberRecords
+
+    private val _memberOtherServices = mutableStateListOf<MemberOtherService>()
+     val memberOtherServices: List<MemberOtherService> get() = _memberOtherServices
 
     var activeMembershipRecord by mutableStateOf<MembershipRecord?>(null)
         private set
@@ -38,53 +42,41 @@ class MemberViewModel(
         private set
 
     init {
-        initMembersRecords()
+        initViewModel()
     }
 
-    fun initMembersRecords() {
-        val loadedRecords = membershipRecordDao.getMembersMembershipRecords(member.id)
+    fun initViewModel() {
         _memberRecords.clear()
         _trainingSessionsInActiveMembership.clear()
+        _memberOtherServices.clear()
         numberOfTrainingsAvailable = 0
-        _memberRecords.addAll(loadedRecords)
+        _memberRecords.addAll(membershipRecordDao.getMembersMembershipRecords(currentMember.id))
         activeMembershipRecord = memberRecords.find { membershipRecord -> membershipRecord.isActive }
         if (activeMembershipRecord != null) {
             val membership = membershipDao.getMembershipById(activeMembershipRecord!!.membershipId)
             numberOfTrainingsAvailable = membership?.numberOfTrainingsAvailable ?: 0
-            val trainingSessions = trainingSessionDao.getAllTrainingSessionsForMembershipRecord(activeMembershipRecord!!.id)
-            _trainingSessionsInActiveMembership.addAll(trainingSessions)
+
+            _trainingSessionsInActiveMembership.addAll(trainingSessionDao.getAllTrainingSessionsForMembershipRecord(activeMembershipRecord!!.id))
         }
+        _memberOtherServices.addAll(memberOtherServiceDao.getMembersOtherServices(currentMember.id))
     }
 
     fun addNewMembershipRecord(membershipRecord: MembershipRecord) {
-        member.membershipRecordId = membershipRecordDao.insertMembershipRecord(membershipRecord)
+        currentMember.membershipRecordId = membershipRecordDao.insertMembershipRecord(membershipRecord)
         _memberRecords.add(membershipRecord)
     }
 
     fun addNewTrainingSessionToMember() {
-        if (member.membershipRecordId == null) throw Exception("Ne postoji trenutno aktivna članarina")
+        if (currentMember.membershipRecordId == null) throw Exception("Ne postoji trenutno aktivna članarina")
         val trainingSession =
-            TrainingSession(membershipRecordId = member.membershipRecordId!!, sessionDateTime = LocalDateTime.now())
-        trainingSessionDao.insertTrainingSession(trainingSession)
+            TrainingSession(membershipRecordId = currentMember.membershipRecordId!!, sessionDateTime = LocalDateTime.now())
+        trainingSession.id = trainingSessionDao.insertTrainingSession(trainingSession)
+        _trainingSessionsInActiveMembership.add(trainingSession)
     }
 
-    fun addNewMemberOtherService(otherServiceId: Int) {
-        val memberOtherService = MemberOtherService(
-            memberId = member.id,
-            otherServiceId = otherServiceId,
-            dateOfService = LocalDateTime.now()
-        )
-        memberOtherServiceDao.insertMemberOtherService(memberOtherService)
-    }
-
-    fun confirmTrainingSessionUpdates() {
-        _trainingSessionsInActiveMembership.forEach { session ->
-            if (session.id == 0) {
-                val id = trainingSessionDao.insertTrainingSession(session)
-                session.id = id
-            } else
-                trainingSessionDao.updateTrainingSession(session)
-        }
+    fun addNewMemberOtherService(memberOtherService: MemberOtherService) {
+        memberOtherService.id = memberOtherServiceDao.insertMemberOtherService(memberOtherService)
+        _memberOtherServices.add(memberOtherService)
     }
 
     fun addTrainingSession(newSession: TrainingSession) {
@@ -99,19 +91,62 @@ class MemberViewModel(
         }
     }
 
-    fun removeTrainingSessionsWithoutId() {
-        _trainingSessionsInActiveMembership.removeIf { training -> training.id == 0 }
-    }
-
-    fun updateMembershipRecordsIsPaid(index: Int, updatedMembershipRecord: MembershipRecord) {
+    fun updateMembershipRecord(index: Int, updatedMembershipRecord: MembershipRecord) {
         if (index in _memberRecords.indices) {
             _memberRecords[index] = updatedMembershipRecord
         }
     }
 
-    fun confirmMembershipRecordsIsPaid() {
+    fun updateMember(updatedMember: Member) {
+        _currentMember.value = updatedMember
+    }
+
+    fun updateMemberOtherService(index: Int, updatedMemberOtherService: MemberOtherService) {
+        if (index in _memberOtherServices.indices) {
+            _memberOtherServices[index] = updatedMemberOtherService
+        }
+    }
+
+    fun removeTrainingSession(trainingSession: TrainingSession) {
+        _trainingSessionsInActiveMembership.remove(trainingSession)
+        if (trainingSession.id != 0)
+            trainingSessionDao.deleteSessionById(trainingSession.id)
+    }
+
+    fun removeTrainingSessionsWithoutId() {
+        _trainingSessionsInActiveMembership.removeIf { training -> training.id == 0 }
+    }
+
+    fun removeMembershipRecord(record: MembershipRecord) {
+        _memberRecords.remove(record)
+        membershipRecordDao.deleteMembershipRecord(record.id)
+    }
+
+    fun removeMemberOtherService(memberOtherService: MemberOtherService) {
+        _memberOtherServices.remove(memberOtherService)
+        memberOtherServiceDao.deleteMemberOtherServiceById(memberOtherService.id)
+    }
+
+    //Confirm from management dialogs
+    fun confirmTrainingSessionUpdates() {
+        _trainingSessionsInActiveMembership.forEach { session ->
+            if (session.id == 0) {
+                val id = trainingSessionDao.insertTrainingSession(session)
+                session.id = id
+            } else
+                trainingSessionDao.updateTrainingSession(session)
+        }
+    }
+
+    fun confirmMembershipRecordsUpdates() {
         _memberRecords.forEach { record ->
             membershipRecordDao.updateMembershipRecord(record)
+        }
+    }
+
+    fun confirmMemberOtherServicesUpdates() {
+        _memberOtherServices.forEach { memberOtherService ->
+            memberOtherServiceDao.updateMemberOtherService(memberOtherService)
         }
     }
 }

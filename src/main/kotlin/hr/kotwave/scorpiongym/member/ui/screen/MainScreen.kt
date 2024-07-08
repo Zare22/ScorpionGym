@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import hr.kotwave.scorpiongym.di.closeMemberScope
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MembersListViewModel
 import hr.kotwave.scorpiongym.member.ui.composable.MemberDetails
@@ -116,6 +117,7 @@ class MainScreen : Screen {
                         onUpdateClick = { updatedMember ->
                             if (isCreatingNewMember) {
                                 membersListViewModel.addMember(updatedMember)
+                                closeMemberScope(Member(0))
                                 isCreatingNewMember = false
                             } else {
                                 membersListViewModel.updateMember(updatedMember)

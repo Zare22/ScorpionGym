@@ -22,7 +22,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun AddTrainingSessionDialog(member: Member, onClose: () -> Unit) {
+fun AddSingleTrainingSessionDialog(member: Member, onClose: () -> Unit) {
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
     var expiredMembershipDialogOpened by remember { mutableStateOf(false) }
 
@@ -63,9 +63,10 @@ fun AddTrainingSessionDialog(member: Member, onClose: () -> Unit) {
                             onClick = {
                                 memberViewModel.addNewTrainingSessionToMember()
                                 if (memberViewModel.memberRecords.size >= memberViewModel.numberOfTrainingsAvailable) {
-                                    memberViewModel.initMembersRecords()
+                                    memberViewModel.initViewModel()
                                     expiredMembershipDialogOpened = true
                                 }
+                                onClose()
                             },
                             text = "Potvrdi",
                             buttonBackgroundColor = Color.Green

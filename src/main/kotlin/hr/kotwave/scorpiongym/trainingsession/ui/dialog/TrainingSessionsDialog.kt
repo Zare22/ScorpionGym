@@ -4,13 +4,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.Card
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import hr.kotwave.scorpiongym.di.rememberMemberViewModel
@@ -32,6 +38,48 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
     val trainingSessions by remember { derivedStateOf { memberViewModel.trainingSessionsInActiveMembership.sortedBy { it.sessionDateTime } } }
     var updateTrigger by remember { mutableStateOf(false) }
     var expiredMembershipDialogOpened by remember { mutableStateOf(false) }
+
+    var selectedSessionToDelete by remember { mutableStateOf<TrainingSession?>(null) }
+    var confirmSessionDeleteDialog by remember { mutableStateOf(false) }
+
+    when {
+        confirmSessionDeleteDialog -> {
+            AlertDialog(
+                onDismissRequest = { confirmSessionDeleteDialog = false },
+                title = { Text("Brisanje trening", color = Color.Red) },
+                text = {
+                    Text(
+                        text = buildAnnotatedString {
+                            append("Ukoliko nastavite pobrisat ćete trening na datum: ")
+
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append(selectedSessionToDelete?.sessionDateTime?.format(dateFormatter))
+                            }
+                        }
+                    )
+                },
+                confirmButton = {
+                    HoverableButton(
+                        text = "Potvrdi",
+                        buttonBackgroundColor = Color.Red,
+                        onClick = {
+                            selectedSessionToDelete?.let {
+                                memberViewModel.removeTrainingSession(it)
+                                memberViewModel.initViewModel()
+                            }
+                            confirmSessionDeleteDialog = false
+                        }
+                    )
+                },
+                dismissButton = {
+                    HoverableButton(
+                        text = "Odustani",
+                        onClick = { confirmSessionDeleteDialog = false }
+                    )
+                }
+            )
+        }
+    }
 
     Dialog(onDismissRequest = { onClose() }) {
         Card(modifier = Modifier.fillMaxHeight(0.8f)) {
@@ -57,6 +105,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                                 .padding(vertical = 4.dp)
                         ) {
                             FocusableOutlinedTextField(
+                                modifier = Modifier.weight(0.8f),
                                 value = sessionDateTime,
                                 onValueChange = { newValue ->
                                     sessionDateTime = newValue
@@ -72,7 +121,24 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                                 label = "Datum treninga",
                                 currentFocusRequester = FocusRequester(),
                                 nextFocusRequester = FocusRequester(),
+                                canSwitchWithTab = false
                             )
+                            session.id.takeIf { it != 0 }?.let {
+                                IconButton(
+                                    onClick = {
+                                        selectedSessionToDelete = session
+                                        confirmSessionDeleteDialog = true
+                                    },
+                                    modifier = Modifier.weight(0.2f).padding(end = 4.dp)
+                                        .align(Alignment.CenterVertically)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Obriši",
+                                        tint = Color.Red
+                                    )
+                                }
+                            }
                         }
                     }
                     if (memberViewModel.trainingSessionsInActiveMembership.size < memberViewModel.numberOfTrainingsAvailable) {
@@ -125,9 +191,10 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                         onClick = {
                             memberViewModel.confirmTrainingSessionUpdates()
                             if (memberViewModel.memberRecords.size >= memberViewModel.numberOfTrainingsAvailable) {
-                                memberViewModel.initMembersRecords()
+                                memberViewModel.initViewModel()
                                 expiredMembershipDialogOpened = true
                             }
+                            onClose()
                         },
                         buttonBackgroundColor = Color.Green
                     )

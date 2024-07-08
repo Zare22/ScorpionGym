@@ -1,15 +1,17 @@
 package hr.kotwave.scorpiongym.typeoforganization.ui.window
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Surface
+import androidx.compose.material.Card
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganization
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
@@ -17,7 +19,7 @@ import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
-fun TypeOfOrganizationWindow(onClose: () -> Unit) {
+fun TypeOfOrganizationDialog(onClose: () -> Unit) {
     val typeOfOrganizationViewModel: TypeOfOrganizationViewModel = getKoin().get()
 
     val focusRequesters = List(3) { FocusRequester() }
@@ -30,8 +32,8 @@ fun TypeOfOrganizationWindow(onClose: () -> Unit) {
         focusRequesters[0].requestFocus()
     }
 
-    Surface {
-        Box(modifier = Modifier.fillMaxSize()) {
+    Dialog(onDismissRequest = { onClose() }) {
+        Card(modifier = Modifier.height(IntrinsicSize.Min)) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -71,21 +73,25 @@ fun TypeOfOrganizationWindow(onClose: () -> Unit) {
                         onClick = { onClose() }, text = "Povratak"
                     )
                     HoverableButton(
-                        modifier = Modifier.focusRequester(focusRequesters[2]
-                    ).onPreviewKeyEvent {
-                        if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
-                            focusRequesters[0].requestFocus()
-                            true
-                        } else false
-                    }, onClick = {
-                        typeOfOrganizationViewModel.addOrganization(
-                            typeOfOrganization = TypeOfOrganization(
-                                name = typeName.text,
-                                discountRate = discountRate
+                        modifier = Modifier
+                            .focusRequester(focusRequesters[2])
+                            .onPreviewKeyEvent {
+                                if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
+                                    focusRequesters[0].requestFocus()
+                                    true
+                                } else false
+                            },
+                        onClick = {
+                            typeOfOrganizationViewModel.addOrganization(
+                                typeOfOrganization = TypeOfOrganization(
+                                    name = typeName.text,
+                                    discountRate = discountRate
+                                )
                             )
-                        )
-                        onClose()
-                    }, text = "Dodaj"
+                            onClose()
+                        },
+                        text = "Dodaj",
+                        buttonBackgroundColor = Color.Green
                     )
 
                 }

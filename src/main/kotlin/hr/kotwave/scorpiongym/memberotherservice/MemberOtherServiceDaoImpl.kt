@@ -2,6 +2,7 @@ package hr.kotwave.scorpiongym.memberotherservice
 
 import hr.kotwave.scorpiongym.util.parseToLocalDateTime
 import java.sql.Connection
+import java.sql.SQLException
 
 class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOtherServiceDao {
     override fun getAllMemberOtherServices(): List<MemberOtherService> {
@@ -16,6 +17,7 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
                     dateOfService = parseToLocalDateTime(resultSet.getString("dateOfService")),
                     memberId = resultSet.getInt("memberId"),
                     otherServiceId = resultSet.getInt("otherServiceId"),
+                    isPaid = resultSet.getBoolean("isPaid")
                 )
                 memberOtherServices.add(memberOtherService)
             }
@@ -37,6 +39,7 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
                     dateOfService = parseToLocalDateTime(resultSet.getString("dateOfService")),
                     memberId = resultSet.getInt("memberId"),
                     otherServiceId = resultSet.getInt("otherServiceId"),
+                    isPaid = resultSet.getBoolean("isPaid")
                 )
             }
         }
@@ -44,23 +47,30 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
         return memberOtherService
     }
 
-    override fun insertMemberOtherService(memberOtherService: MemberOtherService) {
+    override fun insertMemberOtherService(memberOtherService: MemberOtherService): Int {
         val query = """
-            INSERT INTO MemberOtherService (dateOfService, memberId, otherServiceId)
-            VALUES (?, ?, ?)
+            INSERT INTO MemberOtherService (dateOfService, memberId, otherServiceId, isPaid)
+            VALUES (?, ?, ?, ?)
         """
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setString(1, memberOtherService.dateOfService.toString())
             statement.setInt(2, memberOtherService.memberId)
             statement.setInt(3, memberOtherService.otherServiceId)
+            statement.setBoolean(4, memberOtherService.isPaid)
             statement.executeUpdate()
+
+            val generatedKeys = statement.generatedKeys
+            return if (generatedKeys.next()) {
+                generatedKeys.getInt(1)
+            } else
+                throw SQLException("Neuspješno kreiranje ostale usluge za člana!")
         }
     }
 
     override fun updateMemberOtherService(memberOtherService: MemberOtherService) {
         val query = """
-            UPDATE MemberOtherService SET dateOfService = ?, memberId = ?, otherServiceId = ?
+            UPDATE MemberOtherService SET dateOfService = ?, memberId = ?, otherServiceId = ?, isPaid = ?
             WHERE id = ?
         """
 
@@ -68,7 +78,8 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
             statement.setString(1, memberOtherService.dateOfService.toString())
             statement.setInt(2, memberOtherService.memberId)
             statement.setInt(3, memberOtherService.otherServiceId)
-            statement.setInt(2, memberOtherService.id)
+            statement.setBoolean(4, memberOtherService.isPaid)
+            statement.setInt(5, memberOtherService.id)
             statement.executeUpdate()
         }
     }
@@ -80,5 +91,27 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
             statement.setInt(1, id)
             statement.executeUpdate()
         }
+    }
+
+    override fun getMembersOtherServices(memberId: Int): List<MemberOtherService> {
+        val memberOtherServices = mutableListOf<MemberOtherService>()
+        val query = "SELECT * FROM MemberOtherService WHERE memberId = ?"
+
+        dbConnection.prepareStatement(query).use { statement ->
+            statement.setInt(1, memberId)
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
+                val otherService = MemberOtherService(
+                    id = resultSet.getInt("id"),
+                    dateOfService = parseToLocalDateTime(resultSet.getString("dateOfService")),
+                    isPaid =  resultSet.getBoolean("isPaid"),
+                    memberId = resultSet.getInt("memberId"),
+                    otherServiceId = resultSet.getInt("otherServiceId"),
+                )
+                memberOtherServices.add(otherService)
+            }
+        }
+
+        return memberOtherServices
     }
 }

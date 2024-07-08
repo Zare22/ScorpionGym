@@ -21,6 +21,7 @@ fun FocusableOutlinedTextField(
     label: String,
     currentFocusRequester: FocusRequester,
     nextFocusRequester: FocusRequester,
+    canSwitchWithTab: Boolean = true,
     modifier: Modifier = Modifier,
     readOnly: Boolean = false,
     maxLines: Int = 1
@@ -32,13 +33,18 @@ fun FocusableOutlinedTextField(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .focusRequester(currentFocusRequester)
-            .onPreviewKeyEvent {
-                if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
-                    nextFocusRequester.requestFocus()
-                    true
-                } else false
-            }
+            .then(
+                if (canSwitchWithTab) {
+                    Modifier
+                        .focusRequester(currentFocusRequester)
+                        .onPreviewKeyEvent {
+                            if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
+                                nextFocusRequester.requestFocus()
+                                true
+                            } else false
+                        }
+                } else Modifier
+            )
             .onFocusChanged { focusState ->
                 if (focusState.isFocused) {
                     onValueChange(value.copy(selection = TextRange(value.text.length)))

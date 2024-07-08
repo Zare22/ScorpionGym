@@ -58,10 +58,10 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
         return member
     }
 
-    override fun insertMember(member: Member) : Int {
+    override fun insertMember(member: Member): Int {
         val query = """
-            INSERT INTO Member (name, surname, phoneNumber, signedUpDate, organizationId, remark)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO Member (name, surname, phoneNumber, signedUpDate, organizationId, remark, dateOfBirth)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """
 
         dbConnection.prepareStatement(query).use { statement ->
@@ -69,10 +69,16 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
             statement.setString(2, member.surname)
             statement.setString(3, member.phoneNumber)
             statement.setString(4, member.signedUpDate.toString())
-            member.organizationId?.let { statement.setInt(5, it) } ?: statement.setNull(5, java.sql.Types.INTEGER)
+            member.organizationId?.takeIf { it != 0 }?.let {
+                statement.setInt(5, it)
+            } ?: statement.setNull(5, java.sql.Types.INTEGER)
             statement.setString(6, member.remark)
+            member.dateOfBirth?.let {
+                statement.setString(7, it.toString())
+            } ?: statement.setNull(7, java.sql.Types.DATE)
 
             statement.executeUpdate()
+
             val generatedKeys = statement.generatedKeys
             return if (generatedKeys.next()) {
                 generatedKeys.getInt(1)
@@ -84,7 +90,7 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
 
     override fun updateMember(member: Member) {
         val query = """
-            UPDATE Member SET name = ?, surname = ?, phoneNumber = ?, organizationId = ?, remark = ?, membershipRecordId = ?
+            UPDATE Member SET name = ?, surname = ?, phoneNumber = ?, organizationId = ?, remark = ?, membershipRecordId = ?, dateOfBirth = ?
             WHERE id = ?
         """
 
@@ -92,14 +98,18 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
             statement.setString(1, member.name)
             statement.setString(2, member.surname)
             statement.setString(3, member.phoneNumber)
-            (member.organizationId?.takeIf { it != 0 })?.let {
+            member.organizationId?.takeIf { it != 0 }?.let {
                 statement.setInt(4, it)
             } ?: statement.setNull(4, java.sql.Types.INTEGER)
             statement.setString(5, member.remark)
-            (member.membershipRecordId?.takeIf { it != 0 })?.let {
+            member.membershipRecordId?.takeIf { it != 0 }?.let {
                 statement.setInt(6, it)
             } ?: statement.setNull(6, java.sql.Types.INTEGER)
-            statement.setInt(7, member.id)
+            member.dateOfBirth?.let {
+                statement.setString(7, it.toString())
+            } ?: statement.setNull(7, java.sql.Types.DATE)
+            statement.setInt(8, member.id)
+
             statement.executeUpdate()
         }
 

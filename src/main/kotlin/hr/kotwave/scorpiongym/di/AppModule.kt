@@ -63,12 +63,6 @@ val memberScopeModule = module {
     }
 }
 
-fun getMemberViewModel(member: Member): MemberViewModel {
-    val koin = getKoin()
-    val scope = koin.createScope(member.id.toString(), named<Member>())
-    return scope.get { parametersOf(member) }
-}
-
 fun closeMemberScope(member: Member) {
     val koin = getKoin()
     koin.getScopeOrNull(member.id.toString())?.close()

@@ -9,17 +9,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.WindowState
 import hr.kotwave.scorpiongym.organization.Organization
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
-import hr.kotwave.scorpiongym.typeoforganization.ui.window.TypeOfOrganizationWindow
+import hr.kotwave.scorpiongym.typeoforganization.ui.window.TypeOfOrganizationDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
@@ -105,18 +102,7 @@ fun OrganizationDetails(
                 }
 
                 if (organizationTypeWindowOpened) {
-                    Window(
-                        onCloseRequest = { organizationTypeWindowOpened = false },
-                        title = "Kreiraj novi tip organizacije",
-                        alwaysOnTop = true,
-                        state = WindowState(
-                            position = WindowPosition.Aligned(Alignment.Center),
-                            height = 400.dp, width = 400.dp
-                        ),
-                        icon = painterResource("ScorpionWindowIcon.png")
-                    ) {
-                        TypeOfOrganizationWindow(onClose = { organizationTypeWindowOpened = false })
-                    }
+                    TypeOfOrganizationDialog(onClose = { organizationTypeWindowOpened = false })
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -129,7 +115,7 @@ fun OrganizationDetails(
                     HoverableButton(
                         onClick = { onBackClick() }, text = "Povratak"
                     )
-                    HoverableButton(modifier = Modifier.focusRequester(focusRequesters[3]).onPreviewKeyEvent {
+                    HoverableButton(modifier = Modifier.focusRequester(focusRequesters[2]).onPreviewKeyEvent {
                         if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
                             focusRequesters[0].requestFocus()
                             true
@@ -140,7 +126,8 @@ fun OrganizationDetails(
                             typeOfOrganizationId = typeOfOrganization.toIntOrNull() ?: organization.typeOfOrganizationId
                         )
                         onUpdateClick(updatedOrganization)
-                    }, text = if (organization.id != 0) "Ažuriraj" else "Dodaj"
+                    }, text = if (organization.id != 0) "Ažuriraj" else "Dodaj",
+                        buttonBackgroundColor = Color.Green
                     )
                 }
             }

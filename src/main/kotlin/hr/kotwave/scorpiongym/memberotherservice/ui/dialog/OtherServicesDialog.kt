@@ -1,4 +1,4 @@
-package hr.kotwave.scorpiongym.membershiprecord.ui.dialog
+package hr.kotwave.scorpiongym.memberotherservice.ui.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,8 +24,8 @@ import androidx.compose.ui.window.DialogProperties
 import hr.kotwave.scorpiongym.di.rememberMemberViewModel
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
-import hr.kotwave.scorpiongym.membership.MembershipViewModel
-import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
+import hr.kotwave.scorpiongym.memberotherservice.MemberOtherService
+import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
@@ -35,43 +35,37 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
+fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
-    val membershipViewModel: MembershipViewModel = getKoin().get()
+    val otherServiceViewModel: OtherServiceViewModel = getKoin().get()
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
     val listState = rememberLazyListState()
-    val records by remember { derivedStateOf { memberViewModel.memberRecords.sortedBy { it.dateStarted } } }
+    val memberOtherServices by remember { derivedStateOf { memberViewModel.memberOtherServices.sortedBy { it.dateOfService } } }
+    val initialIsPaidValues = remember { memberOtherServices.map { it.isPaid }.toMutableStateList() }
 
-    val initialIsPaidValues = remember { records.map { it.isPaid }.toMutableStateList() }
+    var selectedMemberOtherServiceToDelete by remember { mutableStateOf<MemberOtherService?>(null) }
+    var nameOfOtherService by remember { mutableStateOf("") }
+    var confirmOtherServiceDeleteDialog by remember { mutableStateOf(false) }
 
-    var selectedRecordToDelete by remember { mutableStateOf<MembershipRecord?>(null) }
-    var nameOfMembershipType by remember { mutableStateOf("") }
-    var confirmRecordDeleteDialog by remember { mutableStateOf(false) }
 
     when {
-        confirmRecordDeleteDialog -> {
+        confirmOtherServiceDeleteDialog -> {
             AlertDialog(
-                onDismissRequest = { confirmRecordDeleteDialog = false },
-                title = { Text("Brisanje članarine", color = Color.Red) },
+                onDismissRequest = { confirmOtherServiceDeleteDialog = false },
+                title = { Text("Brisanje usluge", color = Color.Red) },
                 text = {
                     Text(
                         text = buildAnnotatedString {
-                            append("Ukoliko nastavite pobrisat ćete članarinu: ")
+                            append("Ukoliko nastavite pobrisat ćete uslugu: ")
 
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append(nameOfMembershipType)
+                                append(nameOfOtherService)
                             }
 
-                            append(" sa početkom na datum: ")
+                            append(" na datum: ")
 
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append(selectedRecordToDelete?.dateStarted?.format(dateFormatter))
-                            }
-
-                            append(" i završetkom na datum: ")
-
-                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append(selectedRecordToDelete?.dateFinished?.format(dateFormatter))
+                                append(selectedMemberOtherServiceToDelete?.dateOfService?.format(dateFormatter))
                             }
                         }
                     )
@@ -81,18 +75,15 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                         text = "Potvrdi",
                         buttonBackgroundColor = Color.Red,
                         onClick = {
-                            selectedRecordToDelete?.let {
-                                memberViewModel.removeMembershipRecord(it)
-                                memberViewModel.initViewModel()
-                            }
-                            confirmRecordDeleteDialog = false
+                            selectedMemberOtherServiceToDelete?.let { memberViewModel.removeMemberOtherService(it) }
+                            confirmOtherServiceDeleteDialog = false
                         }
                     )
                 },
                 dismissButton = {
                     HoverableButton(
                         text = "Odustani",
-                        onClick = { confirmRecordDeleteDialog = false }
+                        onClick = { confirmOtherServiceDeleteDialog = false }
                     )
                 }
             )
@@ -117,19 +108,13 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Tip članarine",
+                        text = "Tip usluge",
                         modifier = Modifier.weight(1f).padding(end = 8.dp),
                         style = MaterialTheme.typography.h6,
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "Početak članarine",
-                        modifier = Modifier.weight(1f).padding(end = 8.dp),
-                        style = MaterialTheme.typography.h6,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "Kraj članarine",
+                        text = "Datum usluge",
                         modifier = Modifier.weight(1f).padding(end = 8.dp),
                         style = MaterialTheme.typography.h6,
                         textAlign = TextAlign.Center
@@ -137,12 +122,6 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     Text(
                         text = "Plaćeno",
                         modifier = Modifier.weight(0.5f).padding(end = 8.dp),
-                        style = MaterialTheme.typography.h6,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "Aktivno",
-                        modifier = Modifier.weight(0.5f).padding(end = 4.dp),
                         style = MaterialTheme.typography.h6,
                         textAlign = TextAlign.Center
                     )
@@ -159,24 +138,22 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     state = listState,
                     modifier = Modifier.weight(1f)
                 ) {
-                    itemsIndexed(records) { index, record ->
-                        val membershipType =
-                            membershipViewModel.memberships.find { membership -> membership.id == record.membershipId }
-
-                        val membershipTypeName = membershipType?.name?.let { TextFieldValue(it) }
-                        val recordDateStart = TextFieldValue(record.dateStarted.format(dateFormatter))
-                        var recordDateFinished by remember {
+                    itemsIndexed(memberOtherServices) { index, memberOtherService ->
+                        val otherServiceType =
+                            otherServiceViewModel.otherServices.find { otherService -> otherService.id == memberOtherService.otherServiceId }
+                        val otherServiceTypeName = otherServiceType?.name?.let { TextFieldValue(it) }
+                        var memberOtherServiceDate by remember {
                             mutableStateOf(
                                 TextFieldValue(
-                                    record.dateFinished.format(
+                                    memberOtherService.dateOfService.format(
                                         dateFormatter
                                     )
                                 )
                             )
                         }
 
-                        var isPaid by remember { mutableStateOf(record.isPaid) }
-                        var price = membershipType?.price
+                        var isPaid by remember { mutableStateOf(memberOtherService.isPaid) }
+                        var price = otherServiceType?.price
 
                         memberViewModel.currentMember.organizationId?.let { organizationId ->
                             if (organizationId != 0) {
@@ -201,7 +178,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             FocusableOutlinedTextField(
-                                value = membershipTypeName ?: TextFieldValue(""),
+                                value = otherServiceTypeName ?: TextFieldValue(""),
                                 onValueChange = {},
                                 label = "",
                                 currentFocusRequester = FocusRequester(),
@@ -211,25 +188,15 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 modifier = Modifier.weight(1f).padding(end = 8.dp)
                             )
                             FocusableOutlinedTextField(
-                                value = recordDateStart,
-                                onValueChange = {},
-                                label = "",
-                                currentFocusRequester = FocusRequester(),
-                                nextFocusRequester = FocusRequester(),
-                                canSwitchWithTab = false,
-                                readOnly = true,
-                                modifier = Modifier.weight(1f).padding(end = 8.dp)
-                            )
-                            FocusableOutlinedTextField(
-                                value = recordDateFinished,
+                                value = memberOtherServiceDate,
                                 onValueChange = { newValue ->
-                                    recordDateFinished = newValue
+                                    memberOtherServiceDate = newValue
                                     val parsedDateTime =
                                         runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
                                     if (parsedDateTime != null) {
-                                        memberViewModel.updateMembershipRecord(
+                                        memberViewModel.updateMemberOtherService(
                                             index,
-                                            record.copy(dateFinished = parsedDateTime),
+                                            memberOtherService.copy(dateOfService = parsedDateTime)
                                         )
                                     }
                                 },
@@ -245,9 +212,9 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 checked = isPaid,
                                 onCheckedChange = {
                                     isPaid = !isPaid
-                                    memberViewModel.updateMembershipRecord(
+                                    memberViewModel.updateMemberOtherService(
                                         index,
-                                        record.copy(
+                                        memberOtherService.copy(
                                             isPaid = isPaid
                                         )
                                     )
@@ -255,23 +222,17 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 hoverText = "$price €",
                                 showPopupOnHover = !isPaid
                             )
-                            Checkbox(
-                                modifier = Modifier.weight(0.5f).padding(end = 4.dp),
-                                checked = record.isActive,
-                                onCheckedChange = { },
-                                enabled = false
-                            )
                             IconButton(
                                 onClick = {
-                                    selectedRecordToDelete = record
-                                    nameOfMembershipType = membershipTypeName?.text ?: ""
-                                    confirmRecordDeleteDialog = true
+                                    selectedMemberOtherServiceToDelete = memberOtherService
+                                    nameOfOtherService = otherServiceTypeName?.text ?: ""
+                                    confirmOtherServiceDeleteDialog = true
                                 },
                                 modifier = Modifier.weight(0.5f).padding(end = 4.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete",
+                                    contentDescription = "Obriši",
                                     tint = Color.Red
                                 )
                             }
@@ -290,8 +251,8 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     HoverableButton(
                         text = "Povratak",
                         onClick = {
-                            records.forEachIndexed { index, record ->
-                                memberViewModel.updateMembershipRecord(
+                            memberOtherServices.forEachIndexed { index, record ->
+                                memberViewModel.updateMemberOtherService(
                                     index,
                                     record.copy(
                                         isPaid = initialIsPaidValues[index]
@@ -304,7 +265,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     HoverableButton(
                         text = "Potvrdi promjene",
                         onClick = {
-                            memberViewModel.confirmMembershipRecordsUpdates()
+                            memberViewModel.confirmMemberOtherServicesUpdates()
                             onClose()
                         },
                         buttonBackgroundColor = Color.Green

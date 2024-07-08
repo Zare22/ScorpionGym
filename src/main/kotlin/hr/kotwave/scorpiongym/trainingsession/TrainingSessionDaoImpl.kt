@@ -5,6 +5,7 @@ import java.sql.Connection
 import java.sql.SQLException
 
 class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSessionDao {
+
     override fun getAllTrainingSessions(): List<TrainingSession> {
         val sessions = mutableListOf<TrainingSession>()
         val query = "SELECT * FROM TrainingSession"
@@ -54,7 +55,6 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
             statement.setString(2, trainingSession.sessionDateTime.toString())
             statement.executeUpdate()
 
-            statement.executeUpdate()
             val generatedKeys = statement.generatedKeys
             return if (generatedKeys.next()) {
                 generatedKeys.getInt(1)
@@ -88,10 +88,11 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
 
     override fun getAllTrainingSessionsForMembershipRecord(membershipRecordId: Int): List<TrainingSession> {
         val sessions = mutableListOf<TrainingSession>()
-        val query = "SELECT * FROM TrainingSession WHERE membershipRecordId = $membershipRecordId ORDER BY sessionDateTime DESC"
+        val query = "SELECT * FROM TrainingSession WHERE membershipRecordId = ? ORDER BY sessionDateTime DESC"
 
-        dbConnection.createStatement().use { statement ->
-            val resultSet = statement.executeQuery(query)
+        dbConnection.prepareStatement(query).use { statement ->
+            statement.setInt(1, membershipRecordId)
+            val resultSet = statement.executeQuery()
             while (resultSet.next()) {
                 val session = TrainingSession(
                     id = resultSet.getInt("id"),

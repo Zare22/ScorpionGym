@@ -17,7 +17,7 @@ class TypeOfOrganizationViewModel(private val typeOfOrganizationDao: TypeOfOrgan
     }
 
     fun addOrganization(typeOfOrganization: TypeOfOrganization) {
-        typeOfOrganizationDao.insertTypeOfOrganization(typeOfOrganization)
+        typeOfOrganization.id = typeOfOrganizationDao.insertTypeOfOrganization(typeOfOrganization)
         _organizationTypes.add(typeOfOrganization)
     }
 

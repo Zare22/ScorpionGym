@@ -13,5 +13,5 @@ data class Member(
     val organizationId: Int? = 0,
     val statusId: Int? = 0,
     val remark: String? = "",
-    val dateOfBirth: LocalDate? = LocalDate.now(),
+    val dateOfBirth: LocalDate? = null,
 )

@@ -2,6 +2,7 @@ package hr.kotwave.scorpiongym.memberotherservice.ui.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Card
+import androidx.compose.material.Checkbox
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,25 +15,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import hr.kotwave.scorpiongym.di.rememberMemberViewModel
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.memberotherservice.MemberOtherService
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
-import org.koin.core.parameter.parametersOf
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
-    val focusRequesters = List(3) { FocusRequester() }
 
-    val memberViewModel: MemberViewModel = getKoin().get { parametersOf(member) }
+    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
     val otherServiceViewModel: OtherServiceViewModel = getKoin().get()
 
     var selectedServiceId by remember { mutableStateOf("") }
     var servicesExpanded by remember { mutableStateOf(false) }
+
+    var isPaid by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = { onClose() }) {
         Card(modifier = Modifier.height(IntrinsicSize.Min)) {
@@ -48,8 +51,9 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                     items = otherServiceViewModel.otherServices,
                     selectedItem = otherServiceViewModel.otherServices.find { it.id.toString() == selectedServiceId },
                     onItemSelected = { selectedServiceId = it.id.toString() },
-                    focusRequester = focusRequesters[0],
-                    nextFocusRequester = focusRequesters[1],
+                    focusRequester = FocusRequester(),
+                    nextFocusRequester = FocusRequester(),
+                    canSwitchWithTab = false,
                     itemLabel = { it.name }
                 )
                 Text(
@@ -80,6 +84,16 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                             }
                         }
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        Checkbox(
+                            modifier = Modifier.wrapContentWidth(),
+                            checked = isPaid,
+                            onCheckedChange = { isPaid = !isPaid }
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Plaćeno")
+                    }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
@@ -92,7 +106,15 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                     )
                     HoverableButton(
                         onClick = {
-                            selectedServiceId.toIntOrNull()?.let { memberViewModel.addNewMemberOtherService(it) }
+                            selectedServiceId.toIntOrNull()?.let {
+                                val memberOtherService = MemberOtherService(
+                                    dateOfService = LocalDateTime.now(),
+                                    memberId = memberViewModel.currentMember.id,
+                                    isPaid = isPaid,
+                                    otherServiceId = selectedServiceId.toInt()
+                                )
+                                memberViewModel.addNewMemberOtherService(memberOtherService)
+                            }
                             onClose()
                         },
                         text = "Potvrdi",
@@ -103,4 +125,3 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
         }
     }
 }
-
