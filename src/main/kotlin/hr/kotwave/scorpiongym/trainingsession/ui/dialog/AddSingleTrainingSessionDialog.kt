@@ -62,11 +62,11 @@ fun AddSingleTrainingSessionDialog(member: Member, onClose: () -> Unit) {
                         HoverableButton(
                             onClick = {
                                 memberViewModel.addNewTrainingSessionToMember()
-                                if (memberViewModel.memberRecords.size >= memberViewModel.numberOfTrainingsAvailable) {
+                                if (memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
                                     memberViewModel.initViewModel()
                                     expiredMembershipDialogOpened = true
-                                }
-                                onClose()
+                                } else
+                                    onClose()
                             },
                             text = "Potvrdi",
                             buttonBackgroundColor = Color.Green

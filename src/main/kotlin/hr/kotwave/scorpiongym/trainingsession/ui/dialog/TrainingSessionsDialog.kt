@@ -81,7 +81,11 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
         }
     }
 
-    Dialog(onDismissRequest = { onClose() }) {
+    Dialog(
+        onDismissRequest = {
+            memberViewModel.removeTrainingSessionsWithoutId()
+            onClose()
+        }) {
         Card(modifier = Modifier.fillMaxHeight(0.8f)) {
             Column {
                 LazyColumn(
@@ -190,11 +194,11 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                         text = "Potvrdi promjene",
                         onClick = {
                             memberViewModel.confirmTrainingSessionUpdates()
-                            if (memberViewModel.memberRecords.size >= memberViewModel.numberOfTrainingsAvailable) {
+                            if (memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
                                 memberViewModel.initViewModel()
                                 expiredMembershipDialogOpened = true
-                            }
-                            onClose()
+                            } else
+                                onClose()
                         },
                         buttonBackgroundColor = Color.Green
                     )
