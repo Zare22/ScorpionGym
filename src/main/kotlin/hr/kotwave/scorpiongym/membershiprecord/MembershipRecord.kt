@@ -7,7 +7,7 @@ data class MembershipRecord(
     val memberId: Int,
     val membershipId: Int,
     val dateStarted: LocalDateTime = LocalDateTime.now(),
-    val dateFinished: LocalDateTime = LocalDateTime.now().plusMonths(1),
+    val dateFinished: LocalDateTime = LocalDateTime.now().plusMonths(1).minusDays(1),
     val isActive: Boolean,
     val isPaid: Boolean,
 )

@@ -80,11 +80,11 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                             append("Cijena usluge je: ")
 
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append("${otherServiceViewModel.otherServices.find { otherService -> otherService.id == selectedServiceId.toIntOrNull() }?.price}")
+                                append("${otherServiceViewModel.otherServices.find { otherService -> otherService.id == selectedServiceId.toIntOrNull() }?.price} €")
                             }
                         }
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                         Checkbox(
                             modifier = Modifier.wrapContentWidth(),

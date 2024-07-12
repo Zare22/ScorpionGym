@@ -127,7 +127,6 @@ class MemberViewModel(
         memberOtherServiceDao.deleteMemberOtherServiceById(memberOtherService.id)
     }
 
-    //Confirm from management dialogs
     fun confirmTrainingSessionUpdates() {
         _trainingSessionsInActiveMembership.forEach { session ->
             if (session.id == 0) {

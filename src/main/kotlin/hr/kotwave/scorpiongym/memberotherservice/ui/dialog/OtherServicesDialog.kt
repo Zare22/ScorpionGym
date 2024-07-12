@@ -26,7 +26,6 @@ import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherService
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
-import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableCheckbox
@@ -153,23 +152,24 @@ fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
                         }
 
                         var isPaid by remember { mutableStateOf(memberOtherService.isPaid) }
-                        var price = otherServiceType?.price
+                        val price = otherServiceType?.price
 
-                        memberViewModel.currentMember.organizationId?.let { organizationId ->
-                            if (organizationId != 0) {
-                                val typeOfOrganizationViewModel: TypeOfOrganizationViewModel = getKoin().get()
-                                val typeOfOrganization =
-                                    typeOfOrganizationViewModel.organizationTypes.find { typeOfOrg ->
-                                        typeOfOrg.id == organizationId
-                                    }
-                                if (typeOfOrganization != null) {
-                                    val discountRate = typeOfOrganization.discountRate / 100.0
-                                    price?.let { originalPrice ->
-                                        price = originalPrice * (1 - discountRate)
-                                    }
-                                }
-                            }
-                        }
+                        //Leave if we want to introduce discount on other services
+//                        memberViewModel.currentMember.organizationId?.let { organizationId ->
+//                            if (organizationId != 0) {
+//                                val typeOfOrganizationViewModel: TypeOfOrganizationViewModel = getKoin().get()
+//                                val typeOfOrganization =
+//                                    typeOfOrganizationViewModel.organizationTypes.find { typeOfOrg ->
+//                                        typeOfOrg.id == organizationId
+//                                    }
+//                                if (typeOfOrganization != null) {
+//                                    val discountRate = typeOfOrganization.discountRate / 100.0
+//                                    price?.let { originalPrice ->
+//                                        price = originalPrice * (1 - discountRate)
+//                                    }
+//                                }
+//                            }
+//                        }
 
                         Row(
                             modifier = Modifier
