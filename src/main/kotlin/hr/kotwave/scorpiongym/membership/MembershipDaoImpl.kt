@@ -48,20 +48,17 @@ class MembershipDaoImpl(private val dbConnection: Connection) : MembershipDao {
         val query = """
             INSERT INTO Membership (name, price, numberOfTrainingsAvailable)
             VALUES (?, ?, ?)
+            RETURNING id
         """
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setString(1, membership.name)
             statement.setDouble(2, membership.price)
             statement.setInt(3, membership.numberOfTrainingsAvailable)
-            statement.executeUpdate()
 
-            val generatedKeys = statement.generatedKeys
-            return if (generatedKeys.next()) {
-                generatedKeys.getInt(1)
-            } else {
-                throw SQLException("Neuspješno kreiranje članarine!")
-            }
+            val resultSet = statement.executeQuery()
+
+            return resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID tipa članarine nije kreiran!")
         }
     }
 

@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "hr.kotwave"
-version = "1.0-SNAPSHOT"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -20,7 +20,7 @@ dependencies {
     // (in a separate module for demo project and in testMain).
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
-    implementation("org.xerial:sqlite-jdbc:3.34.0")
+    implementation("org.xerial:sqlite-jdbc:3.43.0.0")
     implementation("io.insert-koin:koin-core:3.2.0")
     implementation("cafe.adriel.voyager:voyager-navigator:1.1.0-beta01")
     implementation("cafe.adriel.voyager:voyager-transitions:1.1.0-beta01")
@@ -36,7 +36,12 @@ compose.desktop {
             includeAllModules = true
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "ScorpionGym"
-            packageVersion = "1.0.0"
+            packageVersion = "1.0.1"
+
+            windows {
+                upgradeUuid = "123e4567-e89b-12d3-a456-426614174000"
+                menuGroup = "Scorpion Gym"
+            }
         }
 
         buildTypes.release {

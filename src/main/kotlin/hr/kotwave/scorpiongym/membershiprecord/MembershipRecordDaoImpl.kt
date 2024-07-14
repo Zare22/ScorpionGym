@@ -55,6 +55,7 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         val query = """
             INSERT INTO MembershipRecord (memberId, membershipId, dateStarted, dateFinished, isActive, isPaid)
             VALUES (?, ?, ?, ?, ?, ?)
+            RETURNING id
         """
 
         dbConnection.prepareStatement(query).use { statement ->
@@ -64,14 +65,10 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
             statement.setString(4, record.dateFinished.toString())
             statement.setBoolean(5, record.isActive)
             statement.setBoolean(6, record.isPaid)
-            statement.executeUpdate()
 
-            val generatedKeys = statement.generatedKeys
-            return if (generatedKeys.next()) {
-                generatedKeys.getInt(1)
-            } else {
-                throw SQLException("Neuspješno kreiranje članarine!")
-            }
+            val resultSet = statement.executeQuery()
+
+            return resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID članarine nije kreiran!")
         }
     }
 

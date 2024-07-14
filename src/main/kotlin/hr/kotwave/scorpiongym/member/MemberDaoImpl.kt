@@ -62,6 +62,7 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
         val query = """
             INSERT INTO Member (name, surname, phoneNumber, signedUpDate, organizationId, remark, dateOfBirth)
             VALUES (?, ?, ?, ?, ?, ?, ?)
+            RETURNING id
         """
 
         dbConnection.prepareStatement(query).use { statement ->
@@ -77,14 +78,10 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
                 statement.setString(7, it.toString())
             } ?: statement.setNull(7, java.sql.Types.DATE)
 
-            statement.executeUpdate()
+            val resultSet = statement.executeQuery()
 
-            val generatedKeys = statement.generatedKeys
-            return if (generatedKeys.next()) {
-                generatedKeys.getInt(1)
-            } else {
-                throw SQLException("Neuspješno kreiranje člana!")
-            }
+            return resultSet.takeIf { it.next() }?.getInt(1)
+                ?: throw SQLException("ID člana se nije kreirao!")
         }
     }
 

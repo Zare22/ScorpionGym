@@ -51,6 +51,7 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
         val query = """
             INSERT INTO MemberOtherService (dateOfService, memberId, otherServiceId, isPaid)
             VALUES (?, ?, ?, ?)
+            RETURNING id
         """
 
         dbConnection.prepareStatement(query).use { statement ->
@@ -58,13 +59,12 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
             statement.setInt(2, memberOtherService.memberId)
             statement.setInt(3, memberOtherService.otherServiceId)
             statement.setBoolean(4, memberOtherService.isPaid)
-            statement.executeUpdate()
 
-            val generatedKeys = statement.generatedKeys
-            return if (generatedKeys.next()) {
-                generatedKeys.getInt(1)
-            } else
-                throw SQLException("Neuspješno kreiranje ostale usluge za člana!")
+            val resultSet = statement.executeQuery()
+
+            return resultSet.takeIf { it.next() }?.getInt(1)
+                ?: throw SQLException("ID ostale usluge se nije kreirao")
+
         }
     }
 

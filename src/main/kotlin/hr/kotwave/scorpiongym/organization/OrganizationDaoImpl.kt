@@ -46,18 +46,16 @@ class OrganizationDaoImpl(private val dbConnection: Connection) : OrganizationDa
         val query = """
             INSERT INTO Organization (name, typeOfOrganizationId)
             VALUES (?, ?)
+            RETURNING id
         """
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setString(1, organization.name)
             statement.setInt(2, organization.typeOfOrganizationId)
-            statement.executeUpdate()
 
-            val generatedKeys = statement.generatedKeys
-            return if (generatedKeys.next()) {
-                generatedKeys.getInt(1)
-            } else
-                throw SQLException("Neuspješno kreiranje organizacije!")
+            val resultSet = statement.executeQuery()
+
+            return resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID organizacije nije kreiran!")
         }
     }
 

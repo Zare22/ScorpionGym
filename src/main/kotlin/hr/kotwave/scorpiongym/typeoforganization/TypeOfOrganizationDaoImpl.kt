@@ -46,18 +46,16 @@ class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOr
         val query = """
             INSERT INTO TypeOfOrganization (name, discountRate)
             VALUES (?, ?)
+            RETURNING id
         """
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setString(1, typeOfOrganization.name)
             statement.setDouble(2, typeOfOrganization.discountRate)
-            statement.executeUpdate()
 
-            val generatedKeys = statement.generatedKeys
-            return if (generatedKeys.next())
-                generatedKeys.getInt(1)
-            else
-                throw SQLException("Failed to retrieve the inserted ID.")
+            val resultSet = statement.executeQuery()
+
+            return resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID tipa organizacije nije kreiran!")
         }
     }
 

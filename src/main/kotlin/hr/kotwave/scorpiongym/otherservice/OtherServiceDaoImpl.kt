@@ -46,18 +46,16 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
         val query = """
             INSERT INTO OtherService (name, price)
             VALUES (?, ?)
+            RETURNING id
         """
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setString(1, otherService.name)
             statement.setDouble(2, otherService.price)
-            statement.executeUpdate()
 
-            val generatedKeys = statement.generatedKeys
-            return if (generatedKeys.next()) {
-                generatedKeys.getInt(1)
-            } else
-                throw SQLException("Neuspješno kreiranje ostale usluge!")
+            val resultSet = statement.executeQuery()
+
+            return resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID ostale usluge nije kreiran!")
         }
     }
 

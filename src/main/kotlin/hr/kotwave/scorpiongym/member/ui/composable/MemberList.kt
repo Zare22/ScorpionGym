@@ -197,7 +197,10 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                     HoverableButton(
                         text = "Potvrdi",
                         buttonBackgroundColor = Color.Red,
-                        onClick = { membersListViewModel.deleteMember(member) }
+                        onClick = {
+                            membersListViewModel.deleteMember(member)
+                            showDeleteMemberDialogAlertOpened = false
+                        }
                     )
                 },
                 dismissButton = {

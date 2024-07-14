@@ -48,19 +48,17 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
         val query = """
             INSERT INTO TrainingSession (membershipRecordId, sessionDateTime)
             VALUES (?, ?)
+            RETURNING id
         """
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, trainingSession.membershipRecordId)
             statement.setString(2, trainingSession.sessionDateTime.toString())
-            statement.executeUpdate()
 
-            val generatedKeys = statement.generatedKeys
-            return if (generatedKeys.next()) {
-                generatedKeys.getInt(1)
-            } else {
-                throw SQLException("Neuspješno kreiranje treninga!")
-            }
+            val resultSet = statement.executeQuery()
+
+            return resultSet.takeIf { it.next() }?.getInt(1)
+                ?: throw SQLException("ID treninga se nije kreirao!")
         }
     }
 
