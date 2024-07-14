@@ -8,25 +8,25 @@ class TypeOfOrganizationViewModel(private val typeOfOrganizationDao: TypeOfOrgan
     val organizationTypes: List<TypeOfOrganization> get() = _organizationTypes
 
     init {
-        getOrganizations()
+        getTypeOfOrganizations()
     }
 
-    private fun getOrganizations() {
+    private fun getTypeOfOrganizations() {
         val loadedOrganizations = typeOfOrganizationDao.getAllTypesOfOrganizations()
         _organizationTypes.addAll(loadedOrganizations)
     }
 
-    fun addOrganization(typeOfOrganization: TypeOfOrganization) {
+    fun addTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
         typeOfOrganization.id = typeOfOrganizationDao.insertTypeOfOrganization(typeOfOrganization)
         _organizationTypes.add(typeOfOrganization)
     }
 
-    fun deleteOrganization(typeOfOrganization: TypeOfOrganization) {
+    fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
         typeOfOrganizationDao.deleteTypeOfOrganization(typeOfOrganization.id)
         _organizationTypes.remove(typeOfOrganization)
     }
 
-    fun updateOrganization(typeOfOrganization: TypeOfOrganization) {
+    fun updateTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
         typeOfOrganizationDao.updateTypeOfOrganization(typeOfOrganization)
         val index = _organizationTypes.indexOfFirst { it.id == typeOfOrganization.id }
         if (index != -1) {

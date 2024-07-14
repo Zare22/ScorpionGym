@@ -1,4 +1,4 @@
-package hr.kotwave.scorpiongym.typeoforganization.ui.window
+package hr.kotwave.scorpiongym.typeoforganization.ui.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Card
@@ -57,7 +57,7 @@ fun TypeOfOrganizationDialog(onClose: () -> Unit) {
                             discountRate = filteredInput.toDoubleOrNull() ?: 0.0
                         }
                     },
-                    label = "Popust",
+                    label = "Popust(u postotcima)",
                     currentFocusRequester = focusRequesters[1],
                     nextFocusRequester = focusRequesters[2]
                 )
@@ -82,7 +82,7 @@ fun TypeOfOrganizationDialog(onClose: () -> Unit) {
                                 } else false
                             },
                         onClick = {
-                            typeOfOrganizationViewModel.addOrganization(
+                            typeOfOrganizationViewModel.addTypeOfOrganization(
                                 typeOfOrganization = TypeOfOrganization(
                                     name = typeName.text,
                                     discountRate = discountRate

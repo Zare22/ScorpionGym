@@ -16,7 +16,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import hr.kotwave.scorpiongym.organization.Organization
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
-import hr.kotwave.scorpiongym.typeoforganization.ui.window.TypeOfOrganizationDialog
+import hr.kotwave.scorpiongym.typeoforganization.ui.dialog.TypeOfOrganizationDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
@@ -72,7 +72,7 @@ fun OrganizationDetails(
                 FocusableOutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = "Ime organizacije",
+                    label = "Naziv organizacije",
                     currentFocusRequester = focusRequesters[0],
                     nextFocusRequester = focusRequesters[1]
                 )

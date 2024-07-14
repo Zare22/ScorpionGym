@@ -23,6 +23,7 @@ import hr.kotwave.scorpiongym.membership.ui.screen.MembershipScreen
 import hr.kotwave.scorpiongym.organization.OrganizationViewModel
 import hr.kotwave.scorpiongym.organization.ui.screen.OrganizationScreen
 import hr.kotwave.scorpiongym.otherservice.ui.screen.OtherServiceScreen
+import hr.kotwave.scorpiongym.typeoforganization.ui.screen.TypeOfOrganizationScreen
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -74,6 +75,11 @@ class MainScreen : Screen {
                             padding = 8.dp,
                             onClick = { navigator.push(OrganizationScreen()) },
                             text = "Organizacije"
+                        )
+                        HoverableButton(
+                            padding = 8.dp,
+                            onClick = { navigator.push(TypeOfOrganizationScreen()) },
+                            text = "Tipovi organizacija"
                         )
                         HoverableButton(
                             padding = 8.dp,
