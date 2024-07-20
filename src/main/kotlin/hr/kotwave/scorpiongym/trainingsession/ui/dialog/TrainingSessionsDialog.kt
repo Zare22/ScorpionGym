@@ -22,10 +22,12 @@ import androidx.compose.ui.window.Dialog
 import hr.kotwave.scorpiongym.di.rememberMemberViewModel
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.trainingsession.TrainingSession
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
+import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -33,6 +35,9 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    val membershipViewModel: MembershipViewModel = getKoin().get()
+    val membership = membershipViewModel.memberships.find { membership ->
+        membership.id == (memberViewModel.activeMembershipRecord?.membershipId) }
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
     val listState = rememberLazyListState()
     val trainingSessions by remember { derivedStateOf { memberViewModel.trainingSessionsInActiveMembership.sortedBy { it.sessionDateTime } } }
@@ -88,6 +93,33 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
         }) {
         Card(modifier = Modifier.fillMaxHeight(0.8f)) {
             Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        modifier = Modifier.padding(8.dp),
+                        text = buildAnnotatedString {
+                            append("Naziv članarine: ")
+
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append(membership?.name)
+                            }
+                        }
+                    )
+                    Text(
+                        modifier = Modifier.padding(8.dp),
+                        text = buildAnnotatedString {
+                            append("Broj treninga u članarini: ")
+
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append(membership?.numberOfTrainingsAvailable.toString())
+                            }
+                        }
+                    )
+                }
+                Divider(modifier = Modifier.height(2.dp))
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.weight(1f),

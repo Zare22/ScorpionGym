@@ -90,7 +90,7 @@ fun MemberList(onItemClick: (Member) -> Unit) {
                         memberFilterOption = MemberFilterOption.PAID
                         expanded = false
                     }) {
-                        Text("Podmireni svi dugovi")
+                        Text("Aktivni(podmireni dugovi)")
                     }
                     DropdownMenuItem(onClick = {
                         memberFilterOption = MemberFilterOption.UNPAID
