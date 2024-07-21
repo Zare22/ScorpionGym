@@ -111,10 +111,16 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                     Text(
                         modifier = Modifier.padding(8.dp),
                         text = buildAnnotatedString {
-                            append("Broj treninga u članarini: ")
+                            membership?.takeIf { it.isNoLimit }?.run {
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    append("No limit")
+                                }
+                            } ?: run {
+                                append("Broj treninga u članarini: ")
 
-                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append(membership?.numberOfTrainingsAvailable.toString())
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    append(membership?.numberOfTrainingsAvailable.toString())
+                                }
                             }
                         }
                     )

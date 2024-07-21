@@ -24,14 +24,15 @@ fun FocusableOutlinedTextField(
     canSwitchWithTab: Boolean = true,
     modifier: Modifier = Modifier,
     readOnly: Boolean = false,
-    maxLines: Int = 1
+    maxLines: Int = 1,
+    isMaxWidth: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
         modifier = modifier
-            .fillMaxWidth()
+            .then(if (isMaxWidth) Modifier.fillMaxWidth() else Modifier)
             .padding(vertical = 8.dp)
             .then(
                 if (canSwitchWithTab) {

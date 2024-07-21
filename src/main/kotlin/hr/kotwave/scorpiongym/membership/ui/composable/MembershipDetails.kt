@@ -1,6 +1,7 @@
 package hr.kotwave.scorpiongym.membership.ui.composable
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.Checkbox
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -25,7 +26,7 @@ fun MembershipDetails(
     onBackClick: () -> Unit,
     onUpdateClick: (Membership) -> Unit
 ) {
-    val focusRequesters = List(4) { FocusRequester() }
+    val focusRequesters = List(6) { FocusRequester() }
 
     var name by remember(membership) {
         mutableStateOf(
@@ -46,19 +47,31 @@ fun MembershipDetails(
     var numberOfTrainings by remember(membership) {
         mutableStateOf(
             TextFieldValue(
-                membership.numberOfTrainingsAvailable.toString(),
+                if (membership.numberOfTrainingsAvailable != Int.MAX_VALUE) membership.numberOfTrainingsAvailable.toString() else "0",
                 selection = TextRange(membership.numberOfTrainingsAvailable.toString().length)
             )
         )
     }
+    var duration by remember(membership) {
+        mutableStateOf(
+            TextFieldValue(
+                membership.duration.toString(),
+                selection = TextRange(membership.duration.toString().length)
+            )
+        )
+    }
+    var isNoLimit by remember(membership) { mutableStateOf(membership.isNoLimit) }
 
     LaunchedEffect(membership) {
         name = TextFieldValue(membership.name, selection = TextRange(membership.name.length))
         price = TextFieldValue(membership.price.toString(), selection = TextRange(membership.price.toString().length))
         numberOfTrainings = TextFieldValue(
-            membership.numberOfTrainingsAvailable.toString(),
+            if (membership.numberOfTrainingsAvailable != Int.MAX_VALUE) membership.numberOfTrainingsAvailable.toString() else "0",
             selection = TextRange(membership.numberOfTrainingsAvailable.toString().length)
         )
+        duration =
+            TextFieldValue(membership.duration.toString(), selection = TextRange(membership.duration.toString().length))
+        isNoLimit = membership.isNoLimit
     }
 
     Surface(
@@ -95,15 +108,46 @@ fun MembershipDetails(
                     onValueChange = { price = it },
                     label = "Cijena članarine",
                     currentFocusRequester = focusRequesters[1],
-                    nextFocusRequester = focusRequesters[2]
+                    nextFocusRequester = focusRequesters[2],
+                    isMaxWidth = false
                 )
                 FocusableOutlinedTextField(
-                    value = numberOfTrainings,
-                    onValueChange = { numberOfTrainings = it },
-                    label = "Broj dozvoljenih treninga",
+                    value = duration,
+                    onValueChange = { duration = it },
+                    label = "Duljina članarine(u mjesecima)",
                     currentFocusRequester = focusRequesters[2],
-                    nextFocusRequester = focusRequesters[3]
+                    nextFocusRequester = focusRequesters[3],
+                    isMaxWidth = false
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FocusableOutlinedTextField(
+                        value = numberOfTrainings,
+                        onValueChange = { numberOfTrainings = it },
+                        label = "Broj dozvoljenih treninga",
+                        currentFocusRequester = focusRequesters[3],
+                        nextFocusRequester = focusRequesters[4],
+                        isMaxWidth = false,
+                        readOnly = isNoLimit
+                    )
+
+                    Spacer(modifier = Modifier.width(30.dp))
+
+                    Checkbox(
+                        checked = isNoLimit,
+                        onCheckedChange = {
+                            numberOfTrainings = TextFieldValue(
+                                "0",
+                                selection = TextRange("0".length)
+                            )
+                            isNoLimit = !isNoLimit
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("No limit")
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -118,7 +162,7 @@ fun MembershipDetails(
                     )
                     HoverableButton(
                         modifier = Modifier
-                            .focusRequester(focusRequesters[3])
+                            .focusRequester(focusRequesters[4])
                             .onPreviewKeyEvent {
                                 if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
                                     focusRequesters[0].requestFocus()
@@ -129,7 +173,9 @@ fun MembershipDetails(
                             val updatedMembership = membership.copy(
                                 name = name.text,
                                 price = price.text.toDouble(),
-                                numberOfTrainingsAvailable = numberOfTrainings.text.toInt()
+                                numberOfTrainingsAvailable = if (isNoLimit) Int.MAX_VALUE else numberOfTrainings.text.toInt(),
+                                duration = duration.text.toLong(),
+                                isNoLimit = isNoLimit
                             )
                             onUpdateClick(updatedMembership)
                         },

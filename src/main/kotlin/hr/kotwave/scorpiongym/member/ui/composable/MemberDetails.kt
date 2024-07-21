@@ -231,7 +231,10 @@ fun MemberDetails(
                                                 memberId = memberViewModel.currentMember.id,
                                                 membershipId = membership.toInt(),
                                                 isActive = true,
-                                                isPaid = isPaid
+                                                isPaid = isPaid,
+                                                dateFinished = selectedMembership?.let {
+                                                    LocalDateTime.now().plusMonths(it.duration).minusDays(1)
+                                                } ?: LocalDateTime.now().plusMonths(1).minusDays(1)
                                             )
                                         )
                                         val updatedMember = memberViewModel.currentMember.copy(
@@ -430,7 +433,12 @@ fun MemberDetails(
                                 organizationId = organization.toIntOrNull()
                                     ?: memberViewModel.currentMember.organizationId,
                                 remark = remark.text,
-                                dateOfBirth = kotlin.runCatching { LocalDate.parse(dateOfBirth.text, dateOfBirthFormatter) }.getOrNull(),
+                                dateOfBirth = kotlin.runCatching {
+                                    LocalDate.parse(
+                                        dateOfBirth.text,
+                                        dateOfBirthFormatter
+                                    )
+                                }.getOrNull(),
                             )
                             memberViewModel.updateMember(updatedMember)
                             onUpdateClick(updatedMember)

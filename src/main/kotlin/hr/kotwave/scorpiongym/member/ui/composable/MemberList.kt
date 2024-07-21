@@ -301,10 +301,18 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                             )
                             Text(
                                 text = buildAnnotatedString {
-                                    append("Preostalo treninga u aktivnoj članarini: ")
-                                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        append("${memberViewModel.numberOfTrainingsAvailable - memberViewModel.trainingSessionsInActiveMembership.size}")
+                                    typeOfMembership?.takeIf { it.isNoLimit }?.run {
+                                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                            append("No limit")
+                                        }
+                                    } ?: run {
+                                        append("Preostalo treninga u aktivnoj članarini: ")
+                                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                            val remainingTrainings = memberViewModel.numberOfTrainingsAvailable - memberViewModel.trainingSessionsInActiveMembership.size
+                                            append("$remainingTrainings")
+                                        }
                                     }
+
                                 },
                                 style = MaterialTheme.typography.body2
                             )

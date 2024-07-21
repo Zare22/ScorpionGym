@@ -15,7 +15,9 @@ class MembershipDaoImpl(private val dbConnection: Connection) : MembershipDao {
                     id = resultSet.getInt("id"),
                     name = resultSet.getString("name"),
                     price = resultSet.getDouble("price"),
-                    numberOfTrainingsAvailable = resultSet.getInt("numberOfTrainingsAvailable")
+                    numberOfTrainingsAvailable = resultSet.getInt("numberOfTrainingsAvailable"),
+                    duration = resultSet.getLong("duration"),
+                    isNoLimit = resultSet.getBoolean("isNoLimit")
                 )
                 memberships.add(membership)
             }
@@ -36,7 +38,9 @@ class MembershipDaoImpl(private val dbConnection: Connection) : MembershipDao {
                     id = resultSet.getInt("id"),
                     name = resultSet.getString("name"),
                     price = resultSet.getDouble("price"),
-                    numberOfTrainingsAvailable = resultSet.getInt("numberOfTrainingsAvailable")
+                    numberOfTrainingsAvailable = resultSet.getInt("numberOfTrainingsAvailable"),
+                    duration = resultSet.getLong("duration"),
+                    isNoLimit = resultSet.getBoolean("isNoLimit")
                 )
             }
         }
@@ -46,8 +50,8 @@ class MembershipDaoImpl(private val dbConnection: Connection) : MembershipDao {
 
     override fun insertMembership(membership: Membership) : Int {
         val query = """
-            INSERT INTO Membership (name, price, numberOfTrainingsAvailable)
-            VALUES (?, ?, ?)
+            INSERT INTO Membership (name, price, numberOfTrainingsAvailable, duration, isNoLimit)
+            VALUES (?, ?, ?, ?, ?)
             RETURNING id
         """
 
@@ -55,6 +59,8 @@ class MembershipDaoImpl(private val dbConnection: Connection) : MembershipDao {
             statement.setString(1, membership.name)
             statement.setDouble(2, membership.price)
             statement.setInt(3, membership.numberOfTrainingsAvailable)
+            statement.setLong(4, membership.duration)
+            statement.setBoolean(5, membership.isNoLimit)
 
             val resultSet = statement.executeQuery()
 
@@ -64,7 +70,7 @@ class MembershipDaoImpl(private val dbConnection: Connection) : MembershipDao {
 
     override fun updateMembership(membership: Membership) {
         val query = """
-            UPDATE Membership SET name = ?, price = ?, numberOfTrainingsAvailable = ?
+            UPDATE Membership SET name = ?, price = ?, numberOfTrainingsAvailable = ?, duration = ?, isNoLimit = ?
             WHERE id = ?
         """
 
@@ -72,7 +78,9 @@ class MembershipDaoImpl(private val dbConnection: Connection) : MembershipDao {
             statement.setString(1, membership.name)
             statement.setDouble(2, membership.price)
             statement.setInt(3, membership.numberOfTrainingsAvailable)
-            statement.setInt(4, membership.id)
+            statement.setLong(4, membership.duration)
+            statement.setBoolean(5, membership.isNoLimit)
+            statement.setInt(6, membership.id)
             statement.executeUpdate()
         }
     }
