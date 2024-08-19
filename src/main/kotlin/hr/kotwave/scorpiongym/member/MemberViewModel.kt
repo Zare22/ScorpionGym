@@ -66,6 +66,9 @@ class MemberViewModel(
         _memberRecords.add(membershipRecord)
     }
 
+    fun addFutureMembershipRecord(membershipRecord: MembershipRecord) = _memberRecords.add(membershipRecord)
+    fun removeUnconfirmedFutureMembershipRecords() = _memberRecords.removeIf { membershipRecord -> membershipRecord.id == 0 }
+
     fun addNewTrainingSessionToMember() {
         if (currentMember.membershipRecordId == null) throw Exception("Ne postoji trenutno aktivna članarina")
         val trainingSession =
@@ -139,8 +142,9 @@ class MemberViewModel(
 
     fun confirmMembershipRecordsUpdates() {
         _memberRecords.forEach { record ->
-            membershipRecordDao.updateMembershipRecord(record)
+            if (record.id == 0) membershipRecordDao.insertMembershipRecord(record) else membershipRecordDao.updateMembershipRecord(record)
         }
+        initViewModel()
     }
 
     fun confirmMemberOtherServicesUpdates() {

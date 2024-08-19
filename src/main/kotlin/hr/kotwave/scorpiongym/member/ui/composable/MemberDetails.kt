@@ -24,6 +24,7 @@ import androidx.compose.ui.window.Dialog
 import hr.kotwave.scorpiongym.di.rememberMemberViewModel
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.member.MembersListViewModel
 import hr.kotwave.scorpiongym.membership.Membership
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
 import hr.kotwave.scorpiongym.organization.Organization
@@ -31,7 +32,9 @@ import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
+import hr.kotwave.scorpiongym.ui.theme.Gold
 import hr.kotwave.scorpiongym.ui.theme.Shapes
+import hr.kotwave.scorpiongym.util.Locales
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -109,6 +112,7 @@ fun MemberDetails(
 
     // Renew dialog
     var renewMembershipDialogOpened by remember { mutableStateOf(false) }
+    var showSameMemberDialog by remember { mutableStateOf(false) }
 
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
 
@@ -141,6 +145,47 @@ fun MemberDetails(
     }
 
     when {
+        showSameMemberDialog -> {
+            AlertDialog(
+                onDismissRequest = { showSameMemberDialog = false },
+                title = { Text("Obavijest", color = Gold) },
+                text = { Text("Već postoji član s istim imenom i prezimenom. Dodajte datum rođenja ili nadimak kako bi se razlikovali") },
+                confirmButton = {
+                    HoverableButton(
+                        text = "Potvrdi",
+                        buttonBackgroundColor = Color.Green,
+                        onClick = {
+                            val updatedMember = memberViewModel.currentMember.copy(
+                                name = name.text,
+                                surname = surname.text,
+                                phoneNumber = phoneNumber.text,
+                                signedUpDate = signedUpDate,
+                                membershipRecordId = memberViewModel.currentMember.membershipRecordId,
+                                organizationId = organization.toIntOrNull()
+                                    ?: memberViewModel.currentMember.organizationId,
+                                remark = remark.text,
+                                dateOfBirth = runCatching {
+                                    LocalDate.parse(
+                                        dateOfBirth.text,
+                                        dateOfBirthFormatter
+                                    )
+                                }.getOrNull(),
+                            )
+                            memberViewModel.updateMember(updatedMember)
+                            onUpdateClick(updatedMember)
+                            showSameMemberDialog = false
+                        }
+                    )
+                },
+                dismissButton = {
+                    HoverableButton(
+                        text = "Odustani",
+                        onClick = { showSameMemberDialog = false }
+                    )
+                }
+            )
+        }
+
         renewMembershipDialogOpened -> {
             Dialog(onDismissRequest = { renewMembershipDialogOpened = false }) {
                 val selectedMembership = memberships.find { memb -> memb.id == membership.toIntOrNull() }
@@ -424,24 +469,34 @@ fun MemberDetails(
                                 } else false
                             },
                         onClick = {
-                            val updatedMember = memberViewModel.currentMember.copy(
-                                name = name.text,
-                                surname = surname.text,
-                                phoneNumber = phoneNumber.text,
-                                signedUpDate = signedUpDate,
-                                membershipRecordId = memberViewModel.currentMember.membershipRecordId,
-                                organizationId = organization.toIntOrNull()
-                                    ?: memberViewModel.currentMember.organizationId,
-                                remark = remark.text,
-                                dateOfBirth = kotlin.runCatching {
-                                    LocalDate.parse(
-                                        dateOfBirth.text,
-                                        dateOfBirthFormatter
-                                    )
-                                }.getOrNull(),
-                            )
-                            memberViewModel.updateMember(updatedMember)
-                            onUpdateClick(updatedMember)
+                            if (getKoin().get<MembersListViewModel>().members.any {
+                                    it.name.lowercase(Locales.CroatianLocale) == name.text.lowercase(
+                                        Locales.CroatianLocale
+                                    ) && it.surname.lowercase(Locales.CroatianLocale) == surname.text.lowercase(
+                                        Locales.CroatianLocale)
+                                }) {
+                                showSameMemberDialog = true
+                            }
+                            else {
+                                val updatedMember = memberViewModel.currentMember.copy(
+                                    name = name.text,
+                                    surname = surname.text,
+                                    phoneNumber = phoneNumber.text,
+                                    signedUpDate = signedUpDate,
+                                    membershipRecordId = memberViewModel.currentMember.membershipRecordId,
+                                    organizationId = organization.toIntOrNull()
+                                        ?: memberViewModel.currentMember.organizationId,
+                                    remark = remark.text,
+                                    dateOfBirth = kotlin.runCatching {
+                                        LocalDate.parse(
+                                            dateOfBirth.text,
+                                            dateOfBirthFormatter
+                                        )
+                                    }.getOrNull(),
+                                )
+                                memberViewModel.updateMember(updatedMember)
+                                onUpdateClick(updatedMember)
+                            }
                         },
                         text = if (memberViewModel.currentMember.id != 0) "Ažuriraj" else "Dodaj",
                         buttonBackgroundColor = Color.Green

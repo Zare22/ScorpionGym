@@ -5,9 +5,9 @@ import java.time.LocalDateTime
 data class MembershipRecord(
     val id: Int,
     val memberId: Int,
-    val membershipId: Int,
-    val dateStarted: LocalDateTime = LocalDateTime.now(),
-    val dateFinished: LocalDateTime,
+    var membershipId: Int,
+    var dateStarted: LocalDateTime = LocalDateTime.now(),
+    var dateFinished: LocalDateTime,
     val isActive: Boolean,
     val isPaid: Boolean,
 )

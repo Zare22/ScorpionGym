@@ -27,6 +27,7 @@ import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
+import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableCheckbox
@@ -43,10 +44,15 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
     val records by remember { derivedStateOf { memberViewModel.memberRecords.sortedBy { it.dateStarted } } }
 
     val initialIsPaidValues = remember { records.map { it.isPaid }.toMutableStateList() }
+    val initialIsActiveValues = remember { records.map { it.isActive }.toMutableStateList() }
 
     var selectedRecordToDelete by remember { mutableStateOf<MembershipRecord?>(null) }
     var nameOfMembershipType by remember { mutableStateOf("") }
     var confirmRecordDeleteDialog by remember { mutableStateOf(false) }
+
+    val expandedMembership = remember { mutableStateMapOf<Int, Boolean>() }
+
+    val memberships = getKoin().get<MembershipViewModel>().memberships
 
     when {
         confirmRecordDeleteDialog -> {
@@ -83,7 +89,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                         onClick = {
                             selectedRecordToDelete?.let {
                                 memberViewModel.removeMembershipRecord(it)
-                                memberViewModel.initViewModel()
+                                if (it.id != 0) memberViewModel.initViewModel()
                             }
                             confirmRecordDeleteDialog = false
                         }
@@ -164,7 +170,15 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             membershipViewModel.memberships.find { membership -> membership.id == record.membershipId }
 
                         val membershipTypeName = membershipType?.name?.let { TextFieldValue(it) }
-                        val recordDateStart = TextFieldValue(record.dateStarted.format(dateFormatter))
+                        var recordDateStart by remember {
+                            mutableStateOf(
+                                TextFieldValue(
+                                    record.dateStarted.format(
+                                        dateFormatter
+                                    )
+                                )
+                            )
+                        }
                         var recordDateFinished by remember {
                             mutableStateOf(
                                 TextFieldValue(
@@ -176,6 +190,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                         }
 
                         var isPaid by remember { mutableStateOf(record.isPaid) }
+                        var isActive by remember { mutableStateOf(record.isActive) }
                         var price = membershipType?.price
 
                         memberViewModel.currentMember.organizationId?.let { organizationId ->
@@ -194,30 +209,56 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             }
                         }
 
+                        val expanded = expandedMembership.getOrDefault(index, false)
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            FocusableOutlinedTextField(
-                                value = membershipTypeName ?: TextFieldValue(""),
-                                onValueChange = {},
-                                label = "",
-                                currentFocusRequester = FocusRequester(),
+                            Dropdown(
+                                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                expanded = expanded,
+                                onExpandedChange = { expandedMembership[index] = it},
+                                label = "Tip članarine",
+                                items = memberships,
+                                selectedItem = memberships.find { it.id.toString() == record.membershipId.toString() },
+                                onItemSelected = {
+                                    record.membershipId = it.id
+                                    record.dateFinished = record.dateStarted.plusMonths(memberships.find { it.id == record.membershipId }?.duration ?: 1).minusDays(1)
+
+                                    recordDateFinished = TextFieldValue(
+                                        record.dateFinished.format(
+                                            dateFormatter
+                                        )
+                                    )
+
+                                    expandedMembership[index] = false
+                                },
+                                focusRequester = FocusRequester(),
                                 nextFocusRequester = FocusRequester(),
-                                canSwitchWithTab = false,
-                                readOnly = true,
-                                modifier = Modifier.weight(1f).padding(end = 8.dp)
+                                itemLabel = { it.name },
+                                readOnly = record.id != 0
                             )
                             FocusableOutlinedTextField(
                                 value = recordDateStart,
-                                onValueChange = {},
+                                onValueChange = { newValue ->
+                                    recordDateStart = newValue
+                                    val parsedDateTime =
+                                        runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
+                                    if (parsedDateTime != null) {
+                                        memberViewModel.updateMembershipRecord(
+                                            index,
+                                            record.copy(dateStarted = parsedDateTime),
+                                        )
+                                    }
+                                },
                                 label = "",
                                 currentFocusRequester = FocusRequester(),
                                 nextFocusRequester = FocusRequester(),
                                 canSwitchWithTab = false,
-                                readOnly = true,
+                                readOnly = !record.isActive && record.dateFinished.isBefore(LocalDateTime.now()),
                                 modifier = Modifier.weight(1f).padding(end = 8.dp)
                             )
                             FocusableOutlinedTextField(
@@ -258,8 +299,16 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             Checkbox(
                                 modifier = Modifier.weight(0.5f).padding(end = 4.dp),
                                 checked = record.isActive,
-                                onCheckedChange = { },
-                                enabled = false
+                                onCheckedChange = {
+                                    isActive = !isActive
+                                    memberViewModel.updateMembershipRecord(
+                                        index,
+                                        record.copy(
+                                            isActive = isActive
+                                        )
+                                    )
+                                },
+                                enabled = !records.any { it.isActive } && record.dateFinished.isAfter(LocalDateTime.now())
                             )
                             IconButton(
                                 onClick = {
@@ -277,6 +326,30 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             }
                         }
                     }
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            HoverableButton(
+                                text = "+ Dodaj novu članarinu",
+                                onClick = {
+                                    val newRecord = MembershipRecord(
+                                        id = 0,
+                                        memberId = member.id,
+                                        membershipId = 0,
+                                        dateStarted = records.maxByOrNull { it.dateFinished }?.dateFinished?.plusDays(1) ?: LocalDateTime.now(),
+                                        dateFinished = records.maxByOrNull { it.dateFinished }?.dateFinished?.plusMonths(1)?.minusDays(1) ?: LocalDateTime.now().plusMonths(1).minusDays(1),
+                                        isActive = false,
+                                        isPaid = false
+                                    )
+                                    memberViewModel.addFutureMembershipRecord(newRecord)
+                                }
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -290,11 +363,13 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     HoverableButton(
                         text = "Povratak",
                         onClick = {
+                            memberViewModel.removeUnconfirmedFutureMembershipRecords()
                             records.forEachIndexed { index, record ->
                                 memberViewModel.updateMembershipRecord(
                                     index,
                                     record.copy(
-                                        isPaid = initialIsPaidValues[index]
+                                        isPaid = initialIsPaidValues[index],
+                                        isActive = initialIsActiveValues[index],
                                     )
                                 )
                             }

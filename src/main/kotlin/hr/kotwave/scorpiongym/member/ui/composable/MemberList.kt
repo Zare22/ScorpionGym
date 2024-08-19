@@ -319,13 +319,25 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                         }
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .width(20.dp)
-                        .height(20.dp)
-                        .background(getRibbonColor(member))
-                )
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (memberViewModel.memberOtherServices.any { !it.isPaid }) {
+                        Box(
+                            modifier = Modifier
+                                .width(20.dp)
+                                .height(20.dp)
+                                .background(Color.Red)
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .width(20.dp)
+                            .height(20.dp)
+                            .background(getRibbonColor(member))
+                    )
+                }
             }
         }
     }

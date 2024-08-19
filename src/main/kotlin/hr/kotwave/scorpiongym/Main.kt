@@ -27,6 +27,13 @@ import hr.kotwave.scorpiongym.util.PreferencesHelper
 import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
 import java.awt.Dimension
+import java.io.File
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterialApi::class)
 fun main() = application {
@@ -58,8 +65,6 @@ fun main() = application {
             CompositionLocalProvider(
                 LocalContextMenuRepresentation provides contextMenuRepresentation,
                 LocalMinimumInteractiveComponentEnforcement provides false
-//                LocalContextMenuRepresentation provides MaterialContextMenuRepresentation(),
-//                LocalTextContextMenu provides MaterialTextContextMenu
             ) {
                 Surface {
                     Box(modifier = Modifier.fillMaxSize()) {
@@ -70,6 +75,9 @@ fun main() = application {
                                     coroutineScope.launch {
                                         preferencesHelper.isDarkTheme = darkTheme
                                     }
+                                }
+                                Item("Napravi backup") {
+                                    createDatabaseBackup()
                                 }
                             }
                         }
@@ -98,4 +106,29 @@ fun main() = application {
             }
         }
     }
+}
+
+fun createDatabaseBackup() {
+    val userHome = System.getProperty("user.home")
+    val separator = FileSystems.getDefault().separator
+    val dbPath = "$userHome${separator}ScorpionGym${separator}gymdatabase.db"
+
+    val backupDirPath = "$userHome${separator}ScorpionGym${separator}Backup"
+    val backupDir = File(backupDirPath)
+
+    // Ensure the backup directory exists
+    if (!backupDir.exists()) {
+        backupDir.mkdirs()
+    }
+
+    // Define the backup file name using the current date and time
+    val currentDateTime = LocalDateTime.now()
+    val formatter = DateTimeFormatter.ofPattern("MMddyyyy_HHmmss")
+    val backupFileName = currentDateTime.format(formatter) + "_gymdatabase_backup.db"
+
+    // Define the backup file path
+    val backupFilePath = Path.of(backupDirPath, backupFileName)
+
+    // Copy the database file to the backup directory with the new name
+    Files.copy(Path.of(dbPath), backupFilePath, StandardCopyOption.REPLACE_EXISTING)
 }
