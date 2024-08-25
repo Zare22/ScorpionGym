@@ -123,7 +123,7 @@ fun OrganizationDetails(
                     }, onClick = {
                         val updatedOrganization = organization.copy(
                             name = name.text,
-                            typeOfOrganizationId = typeOfOrganization.toIntOrNull() ?: organization.typeOfOrganizationId
+                            typeOfOrganizationId = typeOfOrganization.toIntOrNull()
                         )
                         onUpdateClick(updatedOrganization)
                     }, text = if (organization.id != 0) "Ažuriraj" else "Dodaj",

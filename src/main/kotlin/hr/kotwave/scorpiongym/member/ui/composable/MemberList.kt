@@ -157,8 +157,8 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
     var showAddMemberOtherServiceDialog by remember { mutableStateOf(false) }
     var showDeleteMemberDialogAlertOpened by remember { mutableStateOf(false) }
     var showManageTrainingSessionsDialog by remember { mutableStateOf(false) }
-    var showMangeMembershipRecordsDialog by remember { mutableStateOf(false) }
-    var showMangeMemberOtherServicesDialog by remember { mutableStateOf(false) }
+    var showManageMembershipRecordsDialog by remember { mutableStateOf(false) }
+    var showManageMemberOtherServicesDialog by remember { mutableStateOf(false) }
 
     val membersListViewModel: MembersListViewModel = getKoin().get()
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
@@ -172,8 +172,8 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
             AddMemberOtherServiceDialog(member, onClose = { showAddMemberOtherServiceDialog = false })
         }
 
-        showMangeMembershipRecordsDialog -> {
-            UserMembershipRecordsDialog(member, onClose = { showMangeMembershipRecordsDialog = false })
+        showManageMembershipRecordsDialog -> {
+            UserMembershipRecordsDialog(member, onClose = { showManageMembershipRecordsDialog = false })
         }
 
         showDeleteMemberDialogAlertOpened -> {
@@ -216,8 +216,8 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
             TrainingSessionsDialog(member, onClose = { showManageTrainingSessionsDialog = false })
         }
 
-        showMangeMemberOtherServicesDialog -> {
-            OtherServicesDialog(member, onClose = { showMangeMemberOtherServicesDialog = false })
+        showManageMemberOtherServicesDialog -> {
+            OtherServicesDialog(member, onClose = { showManageMemberOtherServicesDialog = false })
         }
     }
 
@@ -240,10 +240,10 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                     })
                 }
                 if (memberViewModel.memberRecords.isNotEmpty())
-                    items.add(ContextMenuItem("Pregled svih članarina") { showMangeMembershipRecordsDialog = true })
+                    items.add(ContextMenuItem("Pregled svih članarina") { showManageMembershipRecordsDialog = true })
                 items.add(ContextMenuItem("Upiši dodatnu uslugu članu") { showAddMemberOtherServiceDialog = true })
                 if (memberViewModel.memberOtherServices.isNotEmpty())
-                    items.add(ContextMenuItem("Pregled svih ostalih usluga") { showMangeMemberOtherServicesDialog = true })
+                    items.add(ContextMenuItem("Pregled svih ostalih usluga") { showManageMemberOtherServicesDialog = true })
                 items.add(ContextMenuItem("Obriši člana") { showDeleteMemberDialogAlertOpened = true })
 
                 items

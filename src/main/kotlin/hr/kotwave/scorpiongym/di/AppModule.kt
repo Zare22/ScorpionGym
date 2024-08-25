@@ -2,6 +2,9 @@ package hr.kotwave.scorpiongym.di
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import hr.kotwave.scorpiongym.appuser.AppUserDao
+import hr.kotwave.scorpiongym.appuser.AppUserDaoImpl
+import hr.kotwave.scorpiongym.appuser.AppUserViewModel
 import hr.kotwave.scorpiongym.database.DatabaseFactory
 import hr.kotwave.scorpiongym.member.*
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherServiceDao
@@ -27,6 +30,9 @@ import hr.kotwave.scorpiongym.trainingsession.TrainingSessionDaoImpl
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationDao
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationDaoImpl
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
+import hr.kotwave.scorpiongym.unregisteredservice.UnregisteredServiceDao
+import hr.kotwave.scorpiongym.unregisteredservice.UnregisteredServiceDaoImpl
+import hr.kotwave.scorpiongym.unregisteredservice.UnregisteredServiceViewModel
 import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -45,6 +51,8 @@ val appModule = module {
     single<TrainingSessionDao> { TrainingSessionDaoImpl(get()) }
     single<OtherServiceDao> { OtherServiceDaoImpl(get()) }
     single<MemberOtherServiceDao> { MemberOtherServiceDaoImpl(get()) }
+    single<AppUserDao> { AppUserDaoImpl(get()) }
+    single<UnregisteredServiceDao> { UnregisteredServiceDaoImpl(get()) }
 
     factory { (member: Member) -> MemberViewModel(member, get(), get(), get(), get()) }
     single { MembersListViewModel(get()) }
@@ -55,6 +63,8 @@ val appModule = module {
     single { StatusViewModel(get()) }
     single { OtherServiceViewModel(get()) }
     single { MemberOtherServiceViewModel(get()) }
+    single { AppUserViewModel(get()) }
+    single { UnregisteredServiceViewModel(get()) }
 }
 
 val memberScopeModule = module {

@@ -22,7 +22,7 @@ class OrganizationViewModel(private val organizationDao: OrganizationDao) : Koin
     }
 
     fun deleteOrganization(organization: Organization) {
-        organizationDao.deleteOrganization(organization.id)
+        organizationDao.deleteOrganization(organization)
         _organizations.remove(organization)
     }
 

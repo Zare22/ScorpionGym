@@ -1,5 +1,6 @@
 package hr.kotwave.scorpiongym.member
 
+import hr.kotwave.scorpiongym.util.PreferencesHelper
 import hr.kotwave.scorpiongym.util.parseToLocalDate
 import hr.kotwave.scorpiongym.util.parseToLocalDateTime
 import java.sql.Connection
@@ -65,6 +66,7 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
             RETURNING id
         """
 
+        var insertedId: Int
         dbConnection.prepareStatement(query).use { statement ->
             statement.setString(1, member.name)
             statement.setString(2, member.surname)
@@ -80,9 +82,11 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
 
             val resultSet = statement.executeQuery()
 
-            return resultSet.takeIf { it.next() }?.getInt(1)
+            insertedId = resultSet.takeIf { it.next() }?.getInt(1)
                 ?: throw SQLException("ID člana se nije kreirao!")
         }
+        logActionOnMember("Kreiran novi član: ${member.name} ${member.surname}")
+        return insertedId
     }
 
     override fun updateMember(member: Member) {
@@ -109,14 +113,26 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
 
             statement.executeUpdate()
         }
+        logActionOnMember("Ažuriranje osobnih podataka člana: ${member.name} ${member.surname}")
 
     }
 
-    override fun deleteMember(id: Int) {
+    override fun deleteMember(member: Member) {
         val query = "DELETE FROM Member WHERE id = ?"
 
         dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, id)
+            statement.setInt(1, member.id)
+            statement.executeUpdate()
+        }
+        logActionOnMember("Pobrisan član: ${member.name} ${member.surname}")
+    }
+
+    private fun logActionOnMember(text: String) {
+        val query = "INSERT INTO UserActivityLog(appUserId, action) VALUES (?, ?)"
+
+        dbConnection.prepareStatement(query).use { statement ->
+            statement.setInt(1, PreferencesHelper().loggedInUserId!!)
+            statement.setString(2, text)
             statement.executeUpdate()
         }
     }

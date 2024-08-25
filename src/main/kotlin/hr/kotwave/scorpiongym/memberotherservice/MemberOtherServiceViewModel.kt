@@ -21,7 +21,7 @@ class MemberOtherServiceViewModel(private val memberOtherServiceDao: MemberOther
     }
 
     fun deleteMemberOtherService(memberOtherService: MemberOtherService) {
-        memberOtherServiceDao.deleteMemberOtherServiceById(memberOtherService.id)
+        memberOtherServiceDao.deleteMemberOtherServiceById(memberOtherService)
         _memberOtherService.remove(memberOtherService)
     }
 }

@@ -1,17 +1,32 @@
 package hr.kotwave.scorpiongym.appuser
 
+import hr.kotwave.scorpiongym.util.PreferencesHelper
 import java.security.MessageDigest
 
 class AppUserViewModel(private val appUserDao: AppUserDao) {
 
-    fun registerAppUser(userName: String, password: String) {
-        val newUser = createAppUser(userName, password)
-        appUserDao.registerAppUser(newUser.username, newUser.password)
+    fun loginAppUser(username: String, password: String) : Boolean {
+        val hashedPassword = hashPassword(password)
+        val user = appUserDao.loginAppUser(username, hashedPassword)
+        return run {
+            PreferencesHelper().loggedInUserId = user.id
+            PreferencesHelper().isAdmin = user.isAdmin
+            true
+        }
     }
 
-    private fun createAppUser(username: String, plainPassword: String): AppUser {
+    fun logoutAppUser() {
+        PreferencesHelper().clearUser()
+    }
+
+    fun registerAppUser(userName: String, password: String, isAdmin: Boolean = false) {
+        val newUser = createAppUser(userName, password, isAdmin)
+        appUserDao.registerAppUser(newUser.username, newUser.password, isAdmin)
+    }
+
+    private fun createAppUser(username: String, plainPassword: String, isAdmin: Boolean): AppUser {
         val hashedPassword = hashPassword(plainPassword)
-        return AppUser(username = username, password = hashedPassword)
+        return AppUser(username = username, password = hashedPassword, isAdmin = isAdmin)
     }
 
     private fun hashPassword(password: String): String {

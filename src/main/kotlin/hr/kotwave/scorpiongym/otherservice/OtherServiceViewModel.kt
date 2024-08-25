@@ -30,7 +30,7 @@ class OtherServiceViewModel(private val otherServiceDao: OtherServiceDao) : Koin
     }
 
     fun deleteOtherService(otherService: OtherService) {
-        otherServiceDao.deleteOtherServiceById(otherService.id)
+        otherServiceDao.deleteOtherServiceById(otherService)
         _otherServices.remove(otherService)
     }
 }

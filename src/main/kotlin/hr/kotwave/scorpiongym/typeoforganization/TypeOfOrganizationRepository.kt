@@ -5,5 +5,5 @@ interface TypeOfOrganizationRepository {
     fun getTypeOfOrganizationById(id: Int): TypeOfOrganization?
     fun insertTypeOfOrganization(typeOfOrganization: TypeOfOrganization): Int
     fun updateTypeOfOrganization(typeOfOrganization: TypeOfOrganization)
-    fun deleteTypeOfOrganization(id: Int)
+    fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization)
 }

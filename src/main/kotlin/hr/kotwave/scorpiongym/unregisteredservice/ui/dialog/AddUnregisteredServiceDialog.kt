@@ -1,4 +1,4 @@
-package hr.kotwave.scorpiongym.memberotherservice.ui.dialog
+package hr.kotwave.scorpiongym.unregisteredservice.ui.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Card
@@ -15,27 +15,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import hr.kotwave.scorpiongym.di.rememberMemberViewModel
-import hr.kotwave.scorpiongym.member.Member
-import hr.kotwave.scorpiongym.member.MemberViewModel
-import hr.kotwave.scorpiongym.memberotherservice.MemberOtherService
+import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
+import hr.kotwave.scorpiongym.unregisteredservice.UnregisteredService
+import hr.kotwave.scorpiongym.unregisteredservice.UnregisteredServiceViewModel
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
+fun AddUnregisteredServiceDialog(onClose: () -> Unit) {
+    val unregisteredServiceViewModel: UnregisteredServiceViewModel = getKoin().get()
 
-    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
     val otherServiceViewModel: OtherServiceViewModel = getKoin().get()
+    val membershipViewModel: MembershipViewModel = getKoin().get()
 
-    var selectedServiceId by remember { mutableStateOf("") }
+    val filteredMemberships = membershipViewModel.memberships.filter { it.numberOfTrainingsAvailable == 1 }
+
+    val combinedList: List<ServiceItem> = otherServiceViewModel.otherServices.map {
+        ServiceItem.OtherServiceItem(id = it.id, name = it.name, price = it.price)
+    } + filteredMemberships.map {
+        ServiceItem.MembershipItem(id = it.id, name = it.name, price = it.price)
+    }
+
+    var selectedId by remember { mutableStateOf("") }
+    var selectedPrice by remember { mutableStateOf(0.0) }
     var servicesExpanded by remember { mutableStateOf(false) }
 
+    var otherServiceId: Int? by remember { mutableStateOf(null) }
+    var membershipId: Int? by remember { mutableStateOf(null) }
     var isPaid by remember { mutableStateOf(false) }
 
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -58,25 +69,44 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                 Dropdown(
                     expanded = servicesExpanded,
                     onExpandedChange = { servicesExpanded = it },
-                    label = "Ostale usluge",
-                    items = otherServiceViewModel.otherServices,
-                    selectedItem = otherServiceViewModel.otherServices.find { it.id.toString() == selectedServiceId },
-                    onItemSelected = { selectedServiceId = it.id.toString() },
+                    label = "Usluga ili trening",
+                    items = combinedList,
+                    selectedItem = combinedList.find {
+                        when (it) {
+                            is ServiceItem.OtherServiceItem -> it.id.toString() == selectedId
+                            is ServiceItem.MembershipItem -> it.id.toString() == selectedId
+                        }
+                    },
+                    onItemSelected = { selectedItem ->
+                        selectedId = when (selectedItem) {
+                            is ServiceItem.OtherServiceItem -> {
+                                otherServiceId = selectedItem.id
+                                membershipId = null
+                                selectedPrice = selectedItem.price
+                                selectedItem.id.toString()
+                            }
+                            is ServiceItem.MembershipItem -> {
+                                membershipId = selectedItem.id
+                                otherServiceId = null
+                                selectedPrice = selectedItem.price
+                                selectedItem.id.toString()
+                            }
+                        }
+                    },
                     focusRequester = FocusRequester(),
                     nextFocusRequester = FocusRequester(),
                     canSwitchWithTab = false,
-                    itemLabel = { it.name }
+                    itemLabel = { item ->
+                        when (item) {
+                            is ServiceItem.OtherServiceItem -> "Usluga: ${item.name}"
+                            is ServiceItem.MembershipItem -> "Trening: ${item.name}"
+                        }
+                    }
                 )
                 Text(
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                     text = buildAnnotatedString {
-                        append("Upisat ćete odabranu uslugu za člana ")
-
-                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                            append("${member.surname} ${member.name}")
-                        }
-
-                        append(" na datum: ")
+                        append("Upisat ćete odabranu uslugu za člana na datum: ")
 
                         withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                             append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy. HH:mm")))
@@ -84,14 +114,14 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                     }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                if (selectedServiceId.isNotEmpty()) {
+                if (selectedId.isNotEmpty()) {
                     Text(
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         text = buildAnnotatedString {
                             append("Cijena usluge je: ")
 
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append("${otherServiceViewModel.otherServices.find { otherService -> otherService.id == selectedServiceId.toIntOrNull() }?.price} €")
+                                append("$selectedPrice €")
                             }
                         }
                     )
@@ -109,6 +139,7 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Plaćeno")
                     }
+
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
@@ -121,17 +152,17 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                     )
                     HoverableButton(
                         onClick = {
-                            selectedServiceId.toIntOrNull()?.let {
-                                val memberOtherService = MemberOtherService(
+                            selectedId.toIntOrNull()?.let {
+                                val unregisteredService = UnregisteredService(
                                     dateOfService = LocalDateTime.now(),
-                                    memberId = memberViewModel.currentMember.id,
+                                    membershipId = membershipId,
+                                    otherServiceId = otherServiceId,
                                     isPaid = isPaid,
-                                    otherServiceId = selectedServiceId.toInt()
                                 )
                                 try {
-                                    memberViewModel.addNewMemberOtherService(memberOtherService)
+                                    unregisteredServiceViewModel.addUnregisteredService(unregisteredService)
                                 } catch (e: Exception) {
-                                    infoMessage = "Greška pri dodavanju ostale usluge"
+                                    infoMessage = "Greška pri dodavanju usluge"
                                     showInfoDialog = true
                                 }
                             }
@@ -144,4 +175,10 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
             }
         }
     }
+}
+
+
+sealed class ServiceItem {
+    data class OtherServiceItem(val id: Int, val name: String, val price: Double) : ServiceItem()
+    data class MembershipItem(val id: Int, val name: String, val price: Double) : ServiceItem()
 }

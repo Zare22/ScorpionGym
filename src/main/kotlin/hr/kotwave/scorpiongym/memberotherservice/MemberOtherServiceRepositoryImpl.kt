@@ -5,6 +5,6 @@ class MemberOtherServiceRepositoryImpl(private val memberOtherServiceDao: Member
     override fun getMemberOtherServiceById(id: Int): MemberOtherService? = memberOtherServiceDao.getMemberOtherServiceById(id)
     override fun insertMemberOtherService(memberOtherService: MemberOtherService): Int = memberOtherServiceDao.insertMemberOtherService(memberOtherService)
     override fun updateMemberOtherService(memberOtherService: MemberOtherService) = memberOtherServiceDao.updateMemberOtherService(memberOtherService)
-    override fun deleteMemberOtherServiceById(id: Int) = memberOtherServiceDao.deleteMemberOtherServiceById(id)
+    override fun deleteMemberOtherServiceById(memberOtherService: MemberOtherService) = memberOtherServiceDao.deleteMemberOtherServiceById(memberOtherService)
     override fun getMembersOtherServices(memberId: Int): List<MemberOtherService> = memberOtherServiceDao.getMembersOtherServices(memberId)
 }

@@ -14,5 +14,6 @@ class TypeOfOrganizationRepositoryImpl(private val typeOfOrganizationDao: TypeOf
     override fun updateTypeOfOrganization(typeOfOrganization: TypeOfOrganization) =
         typeOfOrganizationDao.updateTypeOfOrganization(typeOfOrganization)
 
-    override fun deleteTypeOfOrganization(id: Int) = typeOfOrganizationDao.deleteTypeOfOrganization(id)
+    override fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization) =
+        typeOfOrganizationDao.deleteTypeOfOrganization(typeOfOrganization)
 }

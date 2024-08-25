@@ -37,7 +37,8 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
     val membershipViewModel: MembershipViewModel = getKoin().get()
     val membership = membershipViewModel.memberships.find { membership ->
-        membership.id == (memberViewModel.activeMembershipRecord?.membershipId) }
+        membership.id == (memberViewModel.activeMembershipRecord?.membershipId)
+    }
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
     val listState = rememberLazyListState()
     val trainingSessions by remember { derivedStateOf { memberViewModel.trainingSessionsInActiveMembership.sortedBy { it.sessionDateTime } } }
@@ -47,7 +48,15 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
     var selectedSessionToDelete by remember { mutableStateOf<TrainingSession?>(null) }
     var confirmSessionDeleteDialog by remember { mutableStateOf(false) }
 
+    var showInfoDialog by remember { mutableStateOf(false) }
+    var infoMessage by remember { mutableStateOf("") }
+
     when {
+
+        showInfoDialog -> {
+            InformativeDialog(infoMessage) { showInfoDialog = false }
+        }
+
         confirmSessionDeleteDialog -> {
             AlertDialog(
                 onDismissRequest = { confirmSessionDeleteDialog = false },
@@ -125,6 +134,44 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                         }
                     )
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        modifier = Modifier.padding(8.dp),
+                        text = buildAnnotatedString {
+                            append("Istek članarine: ")
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append(
+                                    memberViewModel.activeMembershipRecord?.dateFinished?.format(
+                                        DateTimeFormatter.ofPattern("dd.MM.yyyy")
+                                    )
+                                )
+                            }
+                        }
+                    )
+                    Text(
+                        modifier = Modifier.padding(8.dp),
+                        text = buildAnnotatedString {
+                            membership?.takeIf { it.isNoLimit }?.run {
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    append("No limit")
+                                }
+                            } ?: run {
+                                append("Preostalo treninga u članarini: ")
+
+                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    val remainingTrainings =
+                                        memberViewModel.numberOfTrainingsAvailable - memberViewModel.trainingSessionsInActiveMembership.size
+                                    append("$remainingTrainings")
+                                }
+                            }
+                        }
+                    )
+                }
+
                 Divider(modifier = Modifier.height(2.dp))
                 LazyColumn(
                     state = listState,
@@ -231,7 +278,12 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                     HoverableButton(
                         text = "Potvrdi promjene",
                         onClick = {
-                            memberViewModel.confirmTrainingSessionUpdates()
+                            try {
+                                memberViewModel.confirmTrainingSessionUpdates()
+                            } catch (e: Exception) {
+                                infoMessage = "Greška pri dodavanju treninga"
+                                showInfoDialog = true
+                            }
                             if (memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
                                 memberViewModel.initViewModel()
                                 expiredMembershipDialogOpened = true

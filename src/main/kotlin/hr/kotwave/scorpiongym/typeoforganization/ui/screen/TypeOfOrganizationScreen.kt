@@ -16,6 +16,7 @@ import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganization
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.typeoforganization.ui.composable.TypeOfOrganizationDetails
 import hr.kotwave.scorpiongym.typeoforganization.ui.composable.TypeOfOrganizationList
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.CustomBackIcon
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import kotlinx.coroutines.delay
@@ -35,6 +36,15 @@ class TypeOfOrganizationScreen : Screen {
         val typeOfOrganizationViewModel: TypeOfOrganizationViewModel = getKoin().get()
 
         val coroutineScope = rememberCoroutineScope()
+
+        var showInfoDialog by remember { mutableStateOf(false) }
+        var infoMessage by remember { mutableStateOf("") }
+
+        when {
+            showInfoDialog -> {
+                InformativeDialog(infoMessage) { showInfoDialog = false }
+            }
+        }
 
         Row(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.weight(1f)) {
@@ -89,10 +99,20 @@ class TypeOfOrganizationScreen : Screen {
                         },
                         onUpdateClick = { updatedTypeOfOrganization ->
                             if (isCreatingNewOrganizationType) {
-                                typeOfOrganizationViewModel.addTypeOfOrganization(updatedTypeOfOrganization)
+                                try {
+                                    typeOfOrganizationViewModel.addTypeOfOrganization(updatedTypeOfOrganization)
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri kreiranju tipa organizacije"
+                                    showInfoDialog = true
+                                }
                                 isCreatingNewOrganizationType = false
                             } else {
-                                typeOfOrganizationViewModel.updateTypeOfOrganization(updatedTypeOfOrganization)
+                                try {
+                                    typeOfOrganizationViewModel.updateTypeOfOrganization(updatedTypeOfOrganization)
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri ažuriranju tipa organizacije"
+                                    showInfoDialog = true
+                                }
                             }
                             selectedOrganizationType = updatedTypeOfOrganization
                         }

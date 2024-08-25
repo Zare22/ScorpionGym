@@ -5,6 +5,6 @@ interface TrainingSessionDao {
     fun getSessionById(id:Int): TrainingSession?
     fun insertTrainingSession(trainingSession: TrainingSession): Int
     fun updateTrainingSession(trainingSession: TrainingSession)
-    fun deleteSessionById(id: Int)
+    fun deleteSessionById(trainingSession: TrainingSession)
     fun getAllTrainingSessionsForMembershipRecord(membershipRecordId: Int): List<TrainingSession>
 }

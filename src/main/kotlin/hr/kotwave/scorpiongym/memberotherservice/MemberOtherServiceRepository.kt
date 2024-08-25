@@ -5,6 +5,6 @@ interface MemberOtherServiceRepository {
     fun getMemberOtherServiceById(id:Int): MemberOtherService?
     fun insertMemberOtherService(memberOtherService: MemberOtherService): Int
     fun updateMemberOtherService(memberOtherService: MemberOtherService)
-    fun deleteMemberOtherServiceById(id: Int)
+    fun deleteMemberOtherServiceById(memberOtherService: MemberOtherService)
     fun getMembersOtherServices(memberId: Int): List<MemberOtherService>
 }

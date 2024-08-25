@@ -1,4 +1,4 @@
-package hr.kotwave.scorpiongym.memberotherservice.ui.dialog
+package hr.kotwave.scorpiongym.unregisteredservice.ui.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,7 +26,6 @@ import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherService
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
-import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableCheckbox
@@ -35,7 +34,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
+fun UnregisteredServiceDialog(member: Member, onClose: () -> Unit) {
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
     val otherServiceViewModel: OtherServiceViewModel = getKoin().get()
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
@@ -47,16 +46,8 @@ fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
     var nameOfOtherService by remember { mutableStateOf("") }
     var confirmOtherServiceDeleteDialog by remember { mutableStateOf(false) }
 
-    var showInfoDialog by remember { mutableStateOf(false) }
-    var infoMessage by remember { mutableStateOf("") }
-
 
     when {
-
-        showInfoDialog -> {
-            InformativeDialog(infoMessage) { showInfoDialog = false }
-        }
-
         confirmOtherServiceDeleteDialog -> {
             AlertDialog(
                 onDismissRequest = { confirmOtherServiceDeleteDialog = false },
@@ -83,12 +74,7 @@ fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
                         text = "Potvrdi",
                         buttonBackgroundColor = Color.Red,
                         onClick = {
-                            try {
-                                selectedMemberOtherServiceToDelete?.let { memberViewModel.removeMemberOtherService(it) }
-                            } catch (e: Exception) {
-                                infoMessage = "Greška pri brisanju usluge"
-                                showInfoDialog = true
-                            }
+                            selectedMemberOtherServiceToDelete?.let { memberViewModel.removeMemberOtherService(it) }
                             confirmOtherServiceDeleteDialog = false
                         }
                     )
@@ -167,23 +153,6 @@ fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
 
                         var isPaid by remember { mutableStateOf(memberOtherService.isPaid) }
                         val price = otherServiceType?.price
-
-                        //Leave if we want to introduce discount on other services
-//                        memberViewModel.currentMember.organizationId?.let { organizationId ->
-//                            if (organizationId != 0) {
-//                                val typeOfOrganizationViewModel: TypeOfOrganizationViewModel = getKoin().get()
-//                                val typeOfOrganization =
-//                                    typeOfOrganizationViewModel.organizationTypes.find { typeOfOrg ->
-//                                        typeOfOrg.id == organizationId
-//                                    }
-//                                if (typeOfOrganization != null) {
-//                                    val discountRate = typeOfOrganization.discountRate / 100.0
-//                                    price?.let { originalPrice ->
-//                                        price = originalPrice * (1 - discountRate)
-//                                    }
-//                                }
-//                            }
-//                        }
 
                         Row(
                             modifier = Modifier
@@ -279,12 +248,7 @@ fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
                     HoverableButton(
                         text = "Potvrdi promjene",
                         onClick = {
-                            try {
-                                memberViewModel.confirmMemberOtherServicesUpdates()
-                            } catch (e: Exception) {
-                                infoMessage = "Greška pri ažuriranju člana"
-                                showInfoDialog = true
-                            }
+                            memberViewModel.confirmMemberOtherServicesUpdates()
                             onClose()
                         },
                         buttonBackgroundColor = Color.Green

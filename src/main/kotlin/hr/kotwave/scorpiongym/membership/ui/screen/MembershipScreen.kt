@@ -16,6 +16,7 @@ import hr.kotwave.scorpiongym.membership.Membership
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.membership.ui.composable.MembershipDetails
 import hr.kotwave.scorpiongym.membership.ui.composable.MembershipList
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.CustomBackIcon
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import kotlinx.coroutines.delay
@@ -35,6 +36,15 @@ class MembershipScreen : Screen {
         val membershipViewModel: MembershipViewModel = getKoin().get()
 
         val coroutineScope = rememberCoroutineScope()
+
+        var showInfoDialog by remember { mutableStateOf(false) }
+        var infoMessage by remember { mutableStateOf("") }
+
+        when {
+            showInfoDialog -> {
+                InformativeDialog(infoMessage) { showInfoDialog = false }
+            }
+        }
 
         Row(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.weight(1f)) {
@@ -87,10 +97,20 @@ class MembershipScreen : Screen {
                         },
                         onUpdateClick = { updatedMembership ->
                             if (isCreatingNewMembership) {
-                                membershipViewModel.addMembership(updatedMembership)
+                                try {
+                                    membershipViewModel.addMembership(updatedMembership)
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri kreiranju organizacije"
+                                    showInfoDialog = true
+                                }
                                 isCreatingNewMembership = false
                             } else {
-                                membershipViewModel.updateMembership(updatedMembership)
+                                try {
+                                    membershipViewModel.updateMembership(updatedMembership)
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri ažuriranju organizacije"
+                                    showInfoDialog = true
+                                }
                             }
                             selectedMemberShip = updatedMembership
                         }

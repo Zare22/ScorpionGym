@@ -1,5 +1,6 @@
 package hr.kotwave.scorpiongym.organization
 
+import hr.kotwave.scorpiongym.util.PreferencesHelper
 import java.sql.Connection
 import java.sql.SQLException
 
@@ -49,14 +50,21 @@ class OrganizationDaoImpl(private val dbConnection: Connection) : OrganizationDa
             RETURNING id
         """
 
+        var insertedId: Int
         dbConnection.prepareStatement(query).use { statement ->
             statement.setString(1, organization.name)
-            statement.setInt(2, organization.typeOfOrganizationId)
+            organization.typeOfOrganizationId?.let {
+                statement.setInt(2, it)
+            } ?: run {
+                statement.setNull(2, java.sql.Types.INTEGER)
+            }
 
             val resultSet = statement.executeQuery()
 
-            return resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID organizacije nije kreiran!")
+            insertedId = resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID organizacije nije kreiran!")
         }
+        logActionOnOrganization("Kreirana nova organizacija ${organization.name}")
+        return insertedId
     }
 
     override fun updateOrganization(organization: Organization) {
@@ -67,17 +75,29 @@ class OrganizationDaoImpl(private val dbConnection: Connection) : OrganizationDa
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setString(1, organization.name)
-            statement.setInt(2, organization.typeOfOrganizationId)
+            organization.typeOfOrganizationId?.let { statement.setInt(2, it) }
             statement.setInt(3, organization.id)
             statement.executeUpdate()
         }
+        logActionOnOrganization("Ažurirani podatci organizacije ${organization.name}")
     }
 
-    override fun deleteOrganization(id: Int) {
+    override fun deleteOrganization(organization: Organization) {
         val query = "DELETE FROM Organization WHERE id = ?"
 
         dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, id)
+            statement.setInt(1, organization.id)
+            statement.executeUpdate()
+        }
+        logActionOnOrganization("Pobrisana članarina ${organization.name}")
+    }
+
+    private fun logActionOnOrganization(text: String) {
+        val query = "INSERT INTO UserActivityLog(appUserId, action) VALUES (?, ?)"
+
+        dbConnection.prepareStatement(query).use { statement ->
+            statement.setInt(1, PreferencesHelper().loggedInUserId!!)
+            statement.setString(2, text)
             statement.executeUpdate()
         }
     }

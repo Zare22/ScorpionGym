@@ -5,5 +5,5 @@ interface OtherServiceRepository {
     fun getOtherServiceById(id:Int): OtherService?
     fun insertOtherService(otherService: OtherService): Int
     fun updateOtherService(otherService: OtherService)
-    fun deleteOtherServiceById(id: Int)
+    fun deleteOtherServiceById(otherService: OtherService)
 }

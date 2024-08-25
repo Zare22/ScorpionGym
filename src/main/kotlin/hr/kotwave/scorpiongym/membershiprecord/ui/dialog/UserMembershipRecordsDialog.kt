@@ -27,19 +27,20 @@ import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableCheckbox
 import org.koin.java.KoinJavaComponent.getKoin
-import java.time.LocalDateTime
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
 fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
     val membershipViewModel: MembershipViewModel = getKoin().get()
-    val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
+    val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
     val listState = rememberLazyListState()
     val records by remember { derivedStateOf { memberViewModel.memberRecords.sortedBy { it.dateStarted } } }
 
@@ -54,7 +55,15 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
 
     val memberships = getKoin().get<MembershipViewModel>().memberships
 
+    var showInfoDialog by remember { mutableStateOf(false) }
+    var infoMessage by remember { mutableStateOf("") }
+
     when {
+
+        showInfoDialog -> {
+            InformativeDialog(infoMessage) { showInfoDialog = false }
+        }
+
         confirmRecordDeleteDialog -> {
             AlertDialog(
                 onDismissRequest = { confirmRecordDeleteDialog = false },
@@ -88,7 +97,12 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                         buttonBackgroundColor = Color.Red,
                         onClick = {
                             selectedRecordToDelete?.let {
-                                memberViewModel.removeMembershipRecord(it)
+                                try {
+                                    memberViewModel.removeMembershipRecord(it)
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri brisanju članarine"
+                                    showInfoDialog = true
+                                }
                                 if (it.id != 0) memberViewModel.initViewModel()
                             }
                             confirmRecordDeleteDialog = false
@@ -220,13 +234,16 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             Dropdown(
                                 modifier = Modifier.weight(1f).padding(end = 8.dp),
                                 expanded = expanded,
-                                onExpandedChange = { expandedMembership[index] = it},
+                                onExpandedChange = { expandedMembership[index] = it },
                                 label = "Tip članarine",
                                 items = memberships,
                                 selectedItem = memberships.find { it.id.toString() == record.membershipId.toString() },
                                 onItemSelected = {
                                     record.membershipId = it.id
-                                    record.dateFinished = record.dateStarted.plusMonths(memberships.find { it.id == record.membershipId }?.duration ?: 1).minusDays(1)
+                                    record.dateFinished =
+                                        record.dateStarted.plusMonths(memberships.find { it.id == record.membershipId }?.duration
+                                            ?: 1
+                                        ).minusDays(1)
 
                                     recordDateFinished = TextFieldValue(
                                         record.dateFinished.format(
@@ -246,7 +263,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 onValueChange = { newValue ->
                                     recordDateStart = newValue
                                     val parsedDateTime =
-                                        runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
+                                        runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
                                     if (parsedDateTime != null) {
                                         memberViewModel.updateMembershipRecord(
                                             index,
@@ -258,7 +275,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 currentFocusRequester = FocusRequester(),
                                 nextFocusRequester = FocusRequester(),
                                 canSwitchWithTab = false,
-                                readOnly = !record.isActive && record.dateFinished.isBefore(LocalDateTime.now()),
+                                readOnly = !record.isActive && record.dateFinished.isBefore(LocalDate.now()),
                                 modifier = Modifier.weight(1f).padding(end = 8.dp)
                             )
                             FocusableOutlinedTextField(
@@ -266,7 +283,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 onValueChange = { newValue ->
                                     recordDateFinished = newValue
                                     val parsedDateTime =
-                                        runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
+                                        runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
                                     if (parsedDateTime != null) {
                                         memberViewModel.updateMembershipRecord(
                                             index,
@@ -308,7 +325,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                         )
                                     )
                                 },
-                                enabled = !records.any { it.isActive } && record.dateFinished.isAfter(LocalDateTime.now())
+                                enabled = !records.any { it.isActive } && record.dateFinished.isAfter(LocalDate.now())
                             )
                             IconButton(
                                 onClick = {
@@ -340,8 +357,10 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                         id = 0,
                                         memberId = member.id,
                                         membershipId = 0,
-                                        dateStarted = records.maxByOrNull { it.dateFinished }?.dateFinished?.plusDays(1) ?: LocalDateTime.now(),
-                                        dateFinished = records.maxByOrNull { it.dateFinished }?.dateFinished?.plusMonths(1)?.minusDays(1) ?: LocalDateTime.now().plusMonths(1).minusDays(1),
+                                        dateStarted = records.maxByOrNull { it.dateFinished }?.dateFinished?.plusDays(1)
+                                            ?: LocalDate.now(),
+                                        dateFinished = records.maxByOrNull { it.dateStarted }?.dateStarted?.plusMonths(1)
+                                            ?.minusDays(1) ?: LocalDate.now().plusMonths(1).minusDays(1),
                                         isActive = false,
                                         isPaid = false
                                     )
@@ -379,7 +398,12 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     HoverableButton(
                         text = "Potvrdi promjene",
                         onClick = {
-                            memberViewModel.confirmMembershipRecordsUpdates()
+                            try {
+                                memberViewModel.confirmMembershipRecordsUpdates()
+                            } catch (e: Exception) {
+                                infoMessage = "Greška pri ažuriranju članarina"
+                                showInfoDialog = true
+                            }
                             onClose()
                         },
                         buttonBackgroundColor = Color.Green

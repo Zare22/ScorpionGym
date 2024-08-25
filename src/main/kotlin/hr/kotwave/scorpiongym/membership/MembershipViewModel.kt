@@ -23,7 +23,7 @@ class MembershipViewModel(private val membershipDao: MembershipDao) : KoinCompon
     }
 
     fun removeMembership(membership: Membership) {
-        membershipDao.deleteMembership(membership.id)
+        membershipDao.deleteMembership(membership)
         _memberships.remove(membership)
     }
 

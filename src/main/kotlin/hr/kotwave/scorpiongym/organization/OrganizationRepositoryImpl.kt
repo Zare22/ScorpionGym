@@ -5,5 +5,5 @@ class OrganizationRepositoryImpl(private val organizationDao: OrganizationDao) :
     override fun getOrganizationById(id: Int): Organization? = organizationDao.getOrganizationById(id)
     override fun insertOrganization(organization: Organization): Int = organizationDao.insertOrganization(organization)
     override fun updateOrganization(organization: Organization) = organizationDao.updateOrganization(organization)
-    override fun deleteOrganization(id: Int) = organizationDao.deleteOrganization(id)
+    override fun deleteOrganization(organization: Organization) = organizationDao.deleteOrganization(organization)
 }

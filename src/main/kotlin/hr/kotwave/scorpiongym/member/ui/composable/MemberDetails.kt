@@ -29,6 +29,7 @@ import hr.kotwave.scorpiongym.membership.Membership
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
 import hr.kotwave.scorpiongym.organization.Organization
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
@@ -54,6 +55,9 @@ fun MemberDetails(
     //Elements that can gain focus
     val focusRequesters = List(9) { FocusRequester() }
     val verticalScrollState = rememberScrollState(0)
+
+    var showInfoDialog by remember { mutableStateOf(false) }
+    var infoMessage by remember { mutableStateOf("") }
 
     // Member properties
     var name by remember(memberViewModel.currentMember) {
@@ -104,7 +108,8 @@ fun MemberDetails(
     var membership by remember(memberViewModel.currentMember) {
         mutableStateOf(memberViewModel.activeMembershipRecord?.membershipId.toString())
     }
-    var currentRecordFinishDate by remember { mutableStateOf(memberViewModel.activeMembershipRecord?.dateFinished) }
+
+    var currentRecordFinishDate by remember(memberViewModel.currentMember) { mutableStateOf(memberViewModel.activeMembershipRecord?.dateFinished) }
 
     // Dropdown states
     var expandedMembership by remember { mutableStateOf(false) }
@@ -114,7 +119,13 @@ fun MemberDetails(
     var renewMembershipDialogOpened by remember { mutableStateOf(false) }
     var showSameMemberDialog by remember { mutableStateOf(false) }
 
-    val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
+    val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+
+    var dateFinished by remember(memberViewModel.currentMember) {
+        mutableStateOf(
+            currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
+        )
+    }
 
     LaunchedEffect(memberViewModel.currentMember) {
         name = TextFieldValue(
@@ -136,8 +147,8 @@ fun MemberDetails(
             selection = TextRange(memberViewModel.currentMember.remark?.length ?: 0)
         )
         signedUpDate = memberViewModel.currentMember.signedUpDate
-        currentRecordFinishDate =
-            memberViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateFinished
+        currentRecordFinishDate = memberViewModel.activeMembershipRecord?.dateFinished
+        dateFinished = currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
 
         dateOfBirth = TextFieldValue(
             memberViewModel.currentMember.dateOfBirth?.format(dateOfBirthFormatter) ?: ""
@@ -145,6 +156,11 @@ fun MemberDetails(
     }
 
     when {
+
+        showInfoDialog -> {
+            InformativeDialog(infoMessage) { showInfoDialog = false }
+        }
+
         showSameMemberDialog -> {
             AlertDialog(
                 onDismissRequest = { showSameMemberDialog = false },
@@ -171,7 +187,12 @@ fun MemberDetails(
                                     )
                                 }.getOrNull(),
                             )
-                            memberViewModel.updateMember(updatedMember)
+                            try {
+                                memberViewModel.updateMember(updatedMember)
+                            } catch (e: Exception) {
+                                infoMessage = "Greška pri ažuriranju člana"
+                                showInfoDialog = true
+                            }
                             onUpdateClick(updatedMember)
                             showSameMemberDialog = false
                         }
@@ -231,7 +252,7 @@ fun MemberDetails(
 
                                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                         append(
-                                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy. HH:mm"))
+                                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy."))
                                         )
                                     }
                                 }
@@ -270,18 +291,23 @@ fun MemberDetails(
                                 HoverableButton(
                                     modifier = Modifier.wrapContentWidth(),
                                     onClick = {
-                                        memberViewModel.addNewMembershipRecord(
-                                            MembershipRecord(
-                                                id = 0,
-                                                memberId = memberViewModel.currentMember.id,
-                                                membershipId = membership.toInt(),
-                                                isActive = true,
-                                                isPaid = isPaid,
-                                                dateFinished = selectedMembership?.let {
-                                                    LocalDateTime.now().plusMonths(it.duration).minusDays(1)
-                                                } ?: LocalDateTime.now().plusMonths(1).minusDays(1)
+                                        try {
+                                            memberViewModel.addNewMembershipRecord(
+                                                MembershipRecord(
+                                                    id = 0,
+                                                    memberId = memberViewModel.currentMember.id,
+                                                    membershipId = membership.toInt(),
+                                                    isActive = true,
+                                                    isPaid = isPaid,
+                                                    dateFinished = selectedMembership?.let {
+                                                        LocalDate.now().plusMonths(it.duration).minusDays(1)
+                                                    } ?: LocalDate.now().plusMonths(1).minusDays(1)
+                                                )
                                             )
-                                        )
+                                        } catch (e: Exception) {
+                                            infoMessage = "Greška pri produživanju članarine"
+                                            showInfoDialog = true
+                                        }
                                         val updatedMember = memberViewModel.currentMember.copy(
                                             name = name.text,
                                             surname = surname.text,
@@ -292,10 +318,17 @@ fun MemberDetails(
                                                 ?: memberViewModel.currentMember.organizationId,
                                             remark = remark.text
                                         )
-                                        onUpdateClick(updatedMember)
+                                        try {
+                                            onUpdateClick(updatedMember)
+                                        } catch (e: Exception) {
+                                            infoMessage = "Greška pri ažuriranju člana"
+                                            showInfoDialog = true
+                                        }
                                         memberViewModel.initViewModel()
                                         currentRecordFinishDate =
                                             memberViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateFinished
+                                        dateFinished = currentRecordFinishDate?.format(dateFormatter)
+                                            ?: "Nema trenutno aktivne članarine"
                                         renewMembershipDialogOpened = false
                                     },
                                     text = "Obnovi",
@@ -375,15 +408,25 @@ fun MemberDetails(
                     readOnly = true
                 )
 
+
+
                 memberViewModel.currentMember.id.takeIf { it != 0 }?.let {
+
                     OutlinedTextField(
-                        value = currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine",
-                        onValueChange = {},
+                        value = dateFinished,
+                        onValueChange = { newValue ->
+                            dateFinished = newValue
+                            val parsedDateTime = runCatching {
+                                LocalDate.parse(newValue, dateFormatter)
+                            }.getOrNull()
+
+                            currentRecordFinishDate = parsedDateTime
+                        },
                         label = { Text("Datum isteka trenutne članarine") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
-                        readOnly = true
+                        readOnly = memberViewModel.activeMembershipRecord == null
                     )
 
                     Row(
@@ -470,14 +513,15 @@ fun MemberDetails(
                             },
                         onClick = {
                             if (getKoin().get<MembersListViewModel>().members.any {
-                                    it.name.lowercase(Locales.CroatianLocale) == name.text.lowercase(
+                                    it.id != memberViewModel.currentMember.id &&
+                                            it.name.lowercase(Locales.CroatianLocale) == name.text.lowercase(
                                         Locales.CroatianLocale
                                     ) && it.surname.lowercase(Locales.CroatianLocale) == surname.text.lowercase(
-                                        Locales.CroatianLocale)
+                                        Locales.CroatianLocale
+                                    )
                                 }) {
                                 showSameMemberDialog = true
-                            }
-                            else {
+                            } else {
                                 val updatedMember = memberViewModel.currentMember.copy(
                                     name = name.text,
                                     surname = surname.text,
@@ -494,7 +538,21 @@ fun MemberDetails(
                                         )
                                     }.getOrNull(),
                                 )
-                                memberViewModel.updateMember(updatedMember)
+                                if (memberViewModel.activeMembershipRecord != null) {
+                                    val id = memberViewModel.activeMembershipRecord?.id
+                                    val index = memberViewModel.memberRecords.indexOfFirst { it.id == id }
+                                    memberViewModel.updateMembershipRecord(
+                                        index,
+                                        memberViewModel.activeMembershipRecord!!.copy(dateFinished = currentRecordFinishDate!!)
+                                    )
+                                    memberViewModel.confirmMembershipRecordsUpdates()
+                                }
+                                try {
+                                    memberViewModel.updateMember(updatedMember)
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri ažuriranju člana"
+                                    showInfoDialog = true
+                                }
                                 onUpdateClick(updatedMember)
                             }
                         },

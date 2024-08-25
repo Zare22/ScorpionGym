@@ -16,6 +16,7 @@ import hr.kotwave.scorpiongym.otherservice.OtherService
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
 import hr.kotwave.scorpiongym.otherservice.ui.composable.OtherServiceDetails
 import hr.kotwave.scorpiongym.otherservice.ui.composable.OtherServiceList
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.CustomBackIcon
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import kotlinx.coroutines.delay
@@ -35,6 +36,15 @@ class OtherServiceScreen : Screen {
         val otherServiceViewModel: OtherServiceViewModel = getKoin().get()
 
         val coroutineScope = rememberCoroutineScope()
+
+        var showInfoDialog by remember { mutableStateOf(false) }
+        var infoMessage by remember { mutableStateOf("") }
+
+        when {
+            showInfoDialog -> {
+                InformativeDialog(infoMessage) { showInfoDialog = false }
+            }
+        }
 
         Row(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.weight(1f)) {
@@ -89,10 +99,20 @@ class OtherServiceScreen : Screen {
                         },
                         onUpdateClick = { updatedOtherService ->
                             if (isCreatingNewService) {
-                                otherServiceViewModel.addOtherService(updatedOtherService)
+                                try {
+                                    otherServiceViewModel.addOtherService(updatedOtherService)
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri kreiranju usluge"
+                                    showInfoDialog = true
+                                }
                                 isCreatingNewService = false
                             } else {
-                                otherServiceViewModel.updateOtherService(updatedOtherService)
+                                try {
+                                    otherServiceViewModel.updateOtherService(updatedOtherService)
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri ažuriranju usluge"
+                                    showInfoDialog = true
+                                }
                             }
                             selectedService = updatedOtherService
                         }

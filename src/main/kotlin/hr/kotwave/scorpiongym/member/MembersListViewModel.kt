@@ -32,7 +32,7 @@ class MembersListViewModel(private val memberDao: MemberDao) : KoinComponent {
     }
 
     fun deleteMember(member: Member) {
-        memberDao.deleteMember(member.id)
+        memberDao.deleteMember(member)
         _members.removeAll { it.id == member.id }
     }
 }

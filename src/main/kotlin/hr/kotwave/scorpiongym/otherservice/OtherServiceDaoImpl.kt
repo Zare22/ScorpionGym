@@ -1,5 +1,6 @@
 package hr.kotwave.scorpiongym.otherservice
 
+import hr.kotwave.scorpiongym.util.PreferencesHelper
 import java.sql.Connection
 import java.sql.SQLException
 
@@ -49,14 +50,18 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
             RETURNING id
         """
 
+        var insertedId: Int
         dbConnection.prepareStatement(query).use { statement ->
             statement.setString(1, otherService.name)
             statement.setDouble(2, otherService.price)
 
             val resultSet = statement.executeQuery()
 
-            return resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID ostale usluge nije kreiran!")
+            insertedId =
+                resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID ostale usluge nije kreiran!")
         }
+        logActionOnOtherService("Kreirana nova usluga ${otherService.name}")
+        return insertedId
     }
 
     override fun updateOtherService(otherService: OtherService) {
@@ -71,13 +76,25 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
             statement.setInt(3, otherService.id)
             statement.executeUpdate()
         }
+        logActionOnOtherService("Ažurirani podatci usluge ${otherService.name}")
     }
 
-    override fun deleteOtherServiceById(id: Int) {
+    override fun deleteOtherServiceById(otherService: OtherService) {
         val query = "DELETE FROM OtherService WHERE id = ?"
 
         dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, id)
+            statement.setInt(1, otherService.id)
+            statement.executeUpdate()
+        }
+        logActionOnOtherService("Pobrisana usluga ${otherService.name}")
+    }
+
+    private fun logActionOnOtherService(text: String) {
+        val query = "INSERT INTO UserActivityLog(appUserId, action) VALUES (?, ?)"
+
+        dbConnection.prepareStatement(query).use { statement ->
+            statement.setInt(1, PreferencesHelper().loggedInUserId!!)
+            statement.setString(2, text)
             statement.executeUpdate()
         }
     }

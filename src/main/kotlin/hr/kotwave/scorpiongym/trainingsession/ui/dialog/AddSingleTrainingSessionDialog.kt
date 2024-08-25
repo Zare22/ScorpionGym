@@ -26,7 +26,17 @@ fun AddSingleTrainingSessionDialog(member: Member, onClose: () -> Unit) {
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
     var expiredMembershipDialogOpened by remember { mutableStateOf(false) }
 
+    var showInfoDialog by remember { mutableStateOf(false) }
+    var infoMessage by remember { mutableStateOf("") }
+
     Dialog(onDismissRequest = { onClose() }) {
+
+        when {
+            showInfoDialog -> {
+                InformativeDialog(infoMessage) { showInfoDialog = false }
+            }
+        }
+
         Card(modifier = Modifier.height(IntrinsicSize.Min)) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Column(
@@ -61,7 +71,12 @@ fun AddSingleTrainingSessionDialog(member: Member, onClose: () -> Unit) {
                         )
                         HoverableButton(
                             onClick = {
-                                memberViewModel.addNewTrainingSessionToMember()
+                                try {
+                                    memberViewModel.addNewTrainingSessionToMember()
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri dodavanju treninga"
+                                    showInfoDialog = true
+                                }
                                 if (memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
                                     memberViewModel.initViewModel()
                                     expiredMembershipDialogOpened = true

@@ -5,5 +5,5 @@ class MembershipRepositoryImpl(private val membershipDao: MembershipDao)  : Memb
     override fun getMembershipById(id: Int): Membership? = membershipDao.getMembershipById(id)
     override fun insertMembership(membership: Membership): Int = membershipDao.insertMembership(membership)
     override fun updateMembership(membership: Membership) = membershipDao.updateMembership(membership)
-    override fun deleteMembership(id: Int) = membershipDao.deleteMembership(id)
+    override fun deleteMembership(membership: Membership) = membershipDao.deleteMembership(membership)
 }

@@ -22,7 +22,7 @@ class TypeOfOrganizationViewModel(private val typeOfOrganizationDao: TypeOfOrgan
     }
 
     fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
-        typeOfOrganizationDao.deleteTypeOfOrganization(typeOfOrganization.id)
+        typeOfOrganizationDao.deleteTypeOfOrganization(typeOfOrganization)
         _organizationTypes.remove(typeOfOrganization)
     }
 

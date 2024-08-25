@@ -5,6 +5,7 @@ class MembershipRecordRepositoryImpl(private val membershipRecordDao: Membership
     override fun getMembershipRecordById(id: Int): MembershipRecord? = membershipRecordDao.getMembershipRecordById(id)
     override fun insertMembershipRecord(record: MembershipRecord): Int = membershipRecordDao.insertMembershipRecord(record)
     override fun updateMembershipRecord(record: MembershipRecord) = membershipRecordDao.updateMembershipRecord(record)
-    override fun deleteMembershipRecord(id: Int) = membershipRecordDao.deleteMembershipRecord(id)
+    override fun deleteMembershipRecord(membershipRecord: MembershipRecord) = membershipRecordDao.deleteMembershipRecord(membershipRecord)
     override fun getMembersMembershipRecords(id: Int): List<MembershipRecord> = membershipRecordDao.getMembersMembershipRecords(id)
+    override fun validateMemberships() = membershipRecordDao.validateMemberships()
 }

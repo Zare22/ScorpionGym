@@ -16,6 +16,7 @@ import hr.kotwave.scorpiongym.organization.Organization
 import hr.kotwave.scorpiongym.organization.OrganizationViewModel
 import hr.kotwave.scorpiongym.organization.ui.composable.OrganizationDetails
 import hr.kotwave.scorpiongym.organization.ui.composable.OrganizationList
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.CustomBackIcon
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import kotlinx.coroutines.delay
@@ -36,6 +37,15 @@ class OrganizationScreen : Screen {
 
         val coroutineScope = rememberCoroutineScope()
 
+        var showInfoDialog by remember { mutableStateOf(false) }
+        var infoMessage by remember { mutableStateOf("") }
+
+        when {
+            showInfoDialog -> {
+                InformativeDialog(infoMessage) { showInfoDialog = false }
+            }
+        }
+
         Row(modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.weight(1f)) {
                 Column {
@@ -47,11 +57,7 @@ class OrganizationScreen : Screen {
 
                         HoverableButton(
                             onClick = {
-                                selectedOrganization = Organization(
-                                    id = 0,
-                                    name = "",
-                                    typeOfOrganizationId = 0
-                                )
+                                selectedOrganization = Organization()
                                 isCreatingNewOrganization = true
                                 detailsVisible = true
                             },
@@ -90,10 +96,20 @@ class OrganizationScreen : Screen {
                         },
                         onUpdateClick = { updatedOrganization ->
                             if (isCreatingNewOrganization) {
-                                organizationViewModel.addOrganization(updatedOrganization)
+                                try {
+                                    organizationViewModel.addOrganization(updatedOrganization)
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri kreiranju organizacije"
+                                    showInfoDialog = true
+                                }
                                 isCreatingNewOrganization = false
                             } else {
-                                organizationViewModel.updateOrganization(updatedOrganization)
+                                try {
+                                    organizationViewModel.updateOrganization(updatedOrganization)
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri ažuriranju organizacije"
+                                    showInfoDialog = true
+                                }
                             }
                             selectedOrganization = updatedOrganization
                         }

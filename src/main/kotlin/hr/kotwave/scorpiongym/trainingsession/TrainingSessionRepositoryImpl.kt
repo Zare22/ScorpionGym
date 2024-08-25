@@ -5,5 +5,5 @@ class TrainingSessionRepositoryImpl(private val trainingSessionDao: TrainingSess
     override fun getSessionById(id: Int): TrainingSession? = trainingSessionDao.getSessionById(id)
     override fun insertTrainingSession(trainingSession: TrainingSession): Int = trainingSessionDao.insertTrainingSession(trainingSession)
     override fun updateTrainingSession(trainingSession: TrainingSession) = trainingSessionDao.updateTrainingSession(trainingSession)
-    override fun deleteSessionById(id: Int) = trainingSessionDao.deleteSessionById(id)
+    override fun deleteSessionById(trainingSession: TrainingSession) = trainingSessionDao.deleteSessionById(trainingSession)
 }

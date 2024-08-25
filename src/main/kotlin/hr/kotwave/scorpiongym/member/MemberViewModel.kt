@@ -113,7 +113,7 @@ class MemberViewModel(
     fun removeTrainingSession(trainingSession: TrainingSession) {
         _trainingSessionsInActiveMembership.remove(trainingSession)
         if (trainingSession.id != 0)
-            trainingSessionDao.deleteSessionById(trainingSession.id)
+            trainingSessionDao.deleteSessionById(trainingSession)
     }
 
     fun removeTrainingSessionsWithoutId() {
@@ -122,12 +122,12 @@ class MemberViewModel(
 
     fun removeMembershipRecord(record: MembershipRecord) {
         _memberRecords.remove(record)
-        membershipRecordDao.deleteMembershipRecord(record.id)
+        membershipRecordDao.deleteMembershipRecord(record)
     }
 
     fun removeMemberOtherService(memberOtherService: MemberOtherService) {
         _memberOtherServices.remove(memberOtherService)
-        memberOtherServiceDao.deleteMemberOtherServiceById(memberOtherService.id)
+        memberOtherServiceDao.deleteMemberOtherServiceById(memberOtherService)
     }
 
     fun confirmTrainingSessionUpdates() {

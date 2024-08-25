@@ -5,6 +5,7 @@ interface MembershipRecordRepository {
     fun getMembershipRecordById(id: Int): MembershipRecord?
     fun insertMembershipRecord(record: MembershipRecord): Int
     fun updateMembershipRecord(record: MembershipRecord)
-    fun deleteMembershipRecord(id: Int)
+    fun deleteMembershipRecord(membershipRecord: MembershipRecord)
     fun getMembersMembershipRecords(id: Int): List<MembershipRecord>
+    fun validateMemberships()
 }
