@@ -3,6 +3,8 @@ package hr.kotwave.scorpiongym.otherservice
 import hr.kotwave.scorpiongym.util.PreferencesHelper
 import java.sql.Connection
 import java.sql.SQLException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDao {
     override fun getAllOtherServices(): List<OtherService> {
@@ -90,11 +92,12 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
     }
 
     private fun logActionOnOtherService(text: String) {
-        val query = "INSERT INTO UserActivityLog(appUserId, action) VALUES (?, ?)"
+        val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, PreferencesHelper().loggedInUserId!!)
             statement.setString(2, text)
+            statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
             statement.executeUpdate()
         }
     }

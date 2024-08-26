@@ -3,6 +3,8 @@ package hr.kotwave.scorpiongym.typeoforganization
 import hr.kotwave.scorpiongym.util.PreferencesHelper
 import java.sql.Connection
 import java.sql.SQLException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOrganizationDao {
     override fun getAllTypesOfOrganizations(): List<TypeOfOrganization> {
@@ -90,11 +92,12 @@ class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOr
     }
 
     private fun logActionOnTypeOfOrganization(text: String) {
-        val query = "INSERT INTO UserActivityLog(appUserId, action) VALUES (?, ?)"
+        val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, PreferencesHelper().loggedInUserId!!)
             statement.setString(2, text)
+            statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
             statement.executeQuery()
         }
     }

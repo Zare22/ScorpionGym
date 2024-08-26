@@ -4,6 +4,7 @@ import hr.kotwave.scorpiongym.util.PreferencesHelper
 import java.sql.Connection
 import java.sql.SQLException
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class MembershipRecordDaoImpl(private val dbConnection: Connection) : MembershipRecordDao {
@@ -189,11 +190,12 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         val (memberName, memberSurname, membershipName) = fetchMemberAndMembershipDetails(memberId, membershipId)
         val logText = "$actionDescription $membershipName za člana $memberName $memberSurname"
 
-        val query = "INSERT INTO UserActivityLog(appUserId, action) VALUES (?, ?)"
+        val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, PreferencesHelper().loggedInUserId!!)
             statement.setString(2, logText)
+            statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
             statement.executeUpdate()
         }
     }
