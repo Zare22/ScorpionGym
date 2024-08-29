@@ -83,11 +83,11 @@ class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOr
     override fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
         val query = "DELETE FROM TypeOfOrganization WHERE id = ?"
 
+        logActionOnTypeOfOrganization("Pobrisan tip organizacije ${typeOfOrganization.name}")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, typeOfOrganization.id)
             statement.executeUpdate()
 
-            logActionOnTypeOfOrganization("Pobrisan tip organizacije ${typeOfOrganization.name}")
         }
     }
 

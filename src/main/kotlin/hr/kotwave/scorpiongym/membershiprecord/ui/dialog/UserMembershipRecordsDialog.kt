@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +27,7 @@ import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
+import hr.kotwave.scorpiongym.trainingsession.ui.dialog.TrainingSessionsDialog
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
@@ -50,6 +52,8 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
     var selectedRecordToDelete by remember { mutableStateOf<MembershipRecord?>(null) }
     var nameOfMembershipType by remember { mutableStateOf("") }
     var confirmRecordDeleteDialog by remember { mutableStateOf(false) }
+    var showTrainingSessionsDialog by remember { mutableStateOf(false) }
+    var selectedRecordId by remember { mutableStateOf(0) }
 
     val expandedMembership = remember { mutableStateMapOf<Int, Boolean>() }
 
@@ -59,6 +63,10 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
     var infoMessage by remember { mutableStateOf("") }
 
     when {
+
+        showTrainingSessionsDialog -> {
+            TrainingSessionsDialog(member, onClose = { showTrainingSessionsDialog = false }, selectedRecordId)
+        }
 
         showInfoDialog -> {
             InformativeDialog(infoMessage) { showInfoDialog = false }
@@ -162,6 +170,12 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     )
                     Text(
                         text = "Aktivno",
+                        modifier = Modifier.weight(0.5f).padding(end = 4.dp),
+                        style = MaterialTheme.typography.h6,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "Treninzi",
                         modifier = Modifier.weight(0.5f).padding(end = 4.dp),
                         style = MaterialTheme.typography.h6,
                         textAlign = TextAlign.Center
@@ -327,6 +341,19 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 },
                                 enabled = !records.any { it.isActive } && record.dateFinished.isAfter(LocalDate.now())
                             )
+                            IconButton(
+                                onClick = {
+                                    selectedRecordId = record.id
+                                    showTrainingSessionsDialog = true
+                                },
+                                modifier = Modifier.weight(0.5f).padding(end = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Pokaži treninge",
+                                    tint = Color.Green
+                                )
+                            }
                             IconButton(
                                 onClick = {
                                     selectedRecordToDelete = record

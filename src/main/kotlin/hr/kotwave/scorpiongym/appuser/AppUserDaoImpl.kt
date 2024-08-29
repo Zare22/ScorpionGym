@@ -3,8 +3,25 @@ package hr.kotwave.scorpiongym.appuser
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
+import java.text.SimpleDateFormat
 
 class AppUserDaoImpl(private val connection: Connection) : AppUserDao {
+
+    override fun getAllUsers(): ArrayList<AppUser> {
+        val users = ArrayList<AppUser>()
+        val query = "SELECT * FROM AppUser"
+
+        connection.prepareStatement(query).use { statement ->
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
+                val user = mapResultSetToAppUser(resultSet)
+                users.add(user)
+            }
+        }
+
+        return users
+    }
+
 
     override fun loginAppUser(username: String, password: String): AppUser {
         val query = "SELECT * FROM AppUser WHERE username = ? AND password = ?"
@@ -44,6 +61,29 @@ class AppUserDaoImpl(private val connection: Connection) : AppUserDao {
                 throw SQLException("Greška pri registraciji")
             }
         }
+    }
+
+    override fun getUserActivityLogs(appUserId: Int): List<Pair<String, String>> {
+        val activityLogs = mutableListOf<Pair<String, String>>()
+        val query = "SELECT action, dateOfAction FROM UserActivityLog WHERE appUserId = ?"
+
+        connection.prepareStatement(query).use { statement ->
+            statement.setInt(1, appUserId)
+            val resultSet = statement.executeQuery()
+
+            val inputDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss") // Input format from SQLite
+            val outputDateFormat = SimpleDateFormat("MM.dd.yyyy HH:mm")
+
+            while (resultSet.next()) {
+                val action = resultSet.getString("action")
+                val dateOfActionString = resultSet.getString("dateOfAction")
+                val formattedDate = outputDateFormat.format(inputDateFormat.parse(dateOfActionString) ?: "")
+
+                activityLogs.add(Pair(action, formattedDate))
+            }
+        }
+
+        return activityLogs
     }
 }
 

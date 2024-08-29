@@ -95,11 +95,11 @@ class UnregisteredServiceDaoImpl(private val dbConnection: Connection) : Unregis
     override fun deleteUnregisteredService(unregisteredService: UnregisteredService) {
         val query = "DELETE FROM UnregisteredService WHERE id = ?"
 
+        logAction(unregisteredService.id, "Obrisana je usluga")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, unregisteredService.id)
             statement.executeUpdate()
         }
-        logAction(unregisteredService.id, "Obrisana je usluga")
     }
 
     private fun fetchMembershipAndServiceDetails(serviceId: Int): Pair<String?, String?> {

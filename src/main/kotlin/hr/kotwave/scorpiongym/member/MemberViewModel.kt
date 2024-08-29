@@ -70,9 +70,9 @@ class MemberViewModel(
     fun removeUnconfirmedFutureMembershipRecords() = _memberRecords.removeIf { membershipRecord -> membershipRecord.id == 0 }
 
     fun addNewTrainingSessionToMember() {
-        if (currentMember.membershipRecordId == null) throw Exception("Ne postoji trenutno aktivna članarina")
+        if (activeMembershipRecord == null) throw Exception("Ne postoji trenutno aktivna članarina")
         val trainingSession =
-            TrainingSession(membershipRecordId = currentMember.membershipRecordId!!, sessionDateTime = LocalDateTime.now())
+            TrainingSession(membershipRecordId = activeMembershipRecord!!.id, sessionDateTime = LocalDateTime.now())
         trainingSession.id = trainingSessionDao.insertTrainingSession(trainingSession)
         _trainingSessionsInActiveMembership.add(trainingSession)
     }
@@ -152,4 +152,20 @@ class MemberViewModel(
             memberOtherServiceDao.updateMemberOtherService(memberOtherService)
         }
     }
+
+    fun assignActiveMembershipRecord(membershipRecord: MembershipRecord) {
+        activeMembershipRecord = membershipRecord
+        _trainingSessionsInActiveMembership.clear()
+        numberOfTrainingsAvailable = 0
+
+        if (activeMembershipRecord != null) {
+            val membership = membershipDao.getMembershipById(activeMembershipRecord!!.membershipId)
+            numberOfTrainingsAvailable = membership?.numberOfTrainingsAvailable ?: 0
+
+            _trainingSessionsInActiveMembership.addAll(
+                trainingSessionDao.getAllTrainingSessionsForMembershipRecord(activeMembershipRecord!!.id)
+            )
+        }
+    }
+
 }

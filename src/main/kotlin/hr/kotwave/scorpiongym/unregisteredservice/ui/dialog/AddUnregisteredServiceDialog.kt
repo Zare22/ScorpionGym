@@ -52,14 +52,13 @@ fun AddUnregisteredServiceDialog(onClose: () -> Unit) {
     var showInfoDialog by remember { mutableStateOf(false) }
     var infoMessage by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = { onClose() }) {
-
-        when {
-            showInfoDialog -> {
-                InformativeDialog(infoMessage) { showInfoDialog = false }
-            }
+    when {
+        showInfoDialog -> {
+            InformativeDialog(infoMessage) { showInfoDialog = false }
         }
+    }
 
+    Dialog(onDismissRequest = { onClose() }) {
         Card(modifier = Modifier.height(IntrinsicSize.Min)) {
             Column(
                 modifier = Modifier

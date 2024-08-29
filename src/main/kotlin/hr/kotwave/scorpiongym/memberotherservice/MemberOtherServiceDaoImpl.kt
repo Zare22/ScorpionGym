@@ -94,11 +94,11 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
     override fun deleteMemberOtherServiceById(memberOtherService: MemberOtherService) {
         val query = "DELETE FROM MemberOtherService WHERE id = ?"
 
+        logAction(memberOtherService.id, "Obrisana je usluga")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, memberOtherService.id)
             statement.executeUpdate()
         }
-        logAction(memberOtherService.id, "Obrisana je usluga")
     }
 
     override fun getMembersOtherServices(memberId: Int): List<MemberOtherService> {

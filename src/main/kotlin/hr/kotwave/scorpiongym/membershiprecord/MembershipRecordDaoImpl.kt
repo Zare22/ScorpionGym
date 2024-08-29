@@ -102,11 +102,11 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
     override fun deleteMembershipRecord(membershipRecord: MembershipRecord) {
         val query = "DELETE FROM MembershipRecord WHERE id = ?"
 
+        logActionOnMembershipRecord(membershipRecord.memberId, membershipRecord.membershipId, "Obrisana je članarina")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, membershipRecord.id)
             statement.executeUpdate()
         }
-        logActionOnMembershipRecord(membershipRecord.memberId, membershipRecord.membershipId, "Obrisana je članarina")
     }
 
     override fun getMembersMembershipRecords(id: Int): List<MembershipRecord> {

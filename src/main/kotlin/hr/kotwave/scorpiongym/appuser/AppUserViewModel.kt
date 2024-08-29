@@ -5,6 +5,10 @@ import java.security.MessageDigest
 
 class AppUserViewModel(private val appUserDao: AppUserDao) {
 
+    val allUsers: List<AppUser> by lazy {
+        appUserDao.getAllUsers()
+    }
+
     fun loginAppUser(username: String, password: String) : Boolean {
         val hashedPassword = hashPassword(password)
         val user = appUserDao.loginAppUser(username, hashedPassword)
@@ -15,8 +19,9 @@ class AppUserViewModel(private val appUserDao: AppUserDao) {
         }
     }
 
-    fun logoutAppUser() {
-        PreferencesHelper().clearUser()
+
+    fun getUserActivityLogs(appUserId: Int): List<Pair<String, String>> {
+        return appUserDao.getUserActivityLogs(appUserId)
     }
 
     fun registerAppUser(userName: String, password: String, isAdmin: Boolean = false) {

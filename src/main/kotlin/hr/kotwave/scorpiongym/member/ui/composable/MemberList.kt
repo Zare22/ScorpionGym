@@ -28,9 +28,11 @@ import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.membershiprecord.ui.dialog.UserMembershipRecordsDialog
 import hr.kotwave.scorpiongym.trainingsession.ui.dialog.AddSingleTrainingSessionDialog
 import hr.kotwave.scorpiongym.trainingsession.ui.dialog.TrainingSessionsDialog
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.theme.Gold
 import hr.kotwave.scorpiongym.util.Locales
+import hr.kotwave.scorpiongym.util.PreferencesHelper
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.format.DateTimeFormatter
 
@@ -163,7 +165,15 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
     val membersListViewModel: MembersListViewModel = getKoin().get()
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
 
+    var showInfoDialog by remember { mutableStateOf(false) }
+    var infoMessage by remember { mutableStateOf("") }
+
     when {
+
+        showInfoDialog -> {
+            InformativeDialog(infoMessage) { showInfoDialog = false }
+        }
+
         showAddSingleTrainingSessionDialog -> {
             AddSingleTrainingSessionDialog(member, onClose = { showAddSingleTrainingSessionDialog = false })
         }
@@ -198,7 +208,12 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                         text = "Potvrdi",
                         buttonBackgroundColor = Color.Red,
                         onClick = {
-                            membersListViewModel.deleteMember(member)
+                            try {
+                                membersListViewModel.deleteMember(member)
+                            } catch (e: Exception) {
+                                infoMessage = "Greška kod brisanja člana"
+                                showInfoDialog = true
+                            }
                             showDeleteMemberDialogAlertOpened = false
                         }
                     )
@@ -244,7 +259,8 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                 items.add(ContextMenuItem("Upiši dodatnu uslugu članu") { showAddMemberOtherServiceDialog = true })
                 if (memberViewModel.memberOtherServices.isNotEmpty())
                     items.add(ContextMenuItem("Pregled svih ostalih usluga") { showManageMemberOtherServicesDialog = true })
-                items.add(ContextMenuItem("Obriši člana") { showDeleteMemberDialogAlertOpened = true })
+                if (PreferencesHelper().isAdmin)
+                    items.add(ContextMenuItem("Obriši člana") { showDeleteMemberDialogAlertOpened = true })
 
                 items
             }

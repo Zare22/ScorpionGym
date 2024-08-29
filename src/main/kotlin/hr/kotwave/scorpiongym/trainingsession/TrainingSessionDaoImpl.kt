@@ -85,11 +85,11 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
     override fun deleteSessionById(trainingSession: TrainingSession) {
         val query = "DELETE FROM TrainingSession WHERE id = ?"
 
+        logActionOnTrainingSession(trainingSession.id, "Pobrisan je trening")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, trainingSession.id)
             statement.executeUpdate()
         }
-        logActionOnTrainingSession(trainingSession.id, "Pobrisan je trening")
     }
 
     override fun getAllTrainingSessionsForMembershipRecord(membershipRecordId: Int): List<TrainingSession> {

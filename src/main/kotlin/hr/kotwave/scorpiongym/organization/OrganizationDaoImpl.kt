@@ -87,11 +87,11 @@ class OrganizationDaoImpl(private val dbConnection: Connection) : OrganizationDa
     override fun deleteOrganization(organization: Organization) {
         val query = "DELETE FROM Organization WHERE id = ?"
 
+        logActionOnOrganization("Pobrisana članarina ${organization.name}")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, organization.id)
             statement.executeUpdate()
         }
-        logActionOnOrganization("Pobrisana članarina ${organization.name}")
     }
 
     private fun logActionOnOrganization(text: String) {

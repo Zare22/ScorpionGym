@@ -33,8 +33,13 @@ import java.time.format.DateTimeFormatter
 
 
 @Composable
-fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
+fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecordId: Int = 0) {
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    if (membershipRecordId > 0) {
+        memberViewModel.memberRecords.first { it.id == membershipRecordId }.let {
+            memberViewModel.assignActiveMembershipRecord(it)
+        }
+    }
     val membershipViewModel: MembershipViewModel = getKoin().get()
     val membership = membershipViewModel.memberships.find { membership ->
         membership.id == (memberViewModel.activeMembershipRecord?.membershipId)
@@ -272,6 +277,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit) {
                         text = "Povratak",
                         onClick = {
                             memberViewModel.removeTrainingSessionsWithoutId()
+                            memberViewModel.initViewModel()
                             onClose()
                         }
                     )

@@ -18,10 +18,13 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.SlideTransition
+import hr.kotwave.scorpiongym.appuser.AppUserViewModel
+import hr.kotwave.scorpiongym.appuser.ui.UserActionsDialog
 import hr.kotwave.scorpiongym.database.DatabaseFactory
 import hr.kotwave.scorpiongym.di.appModule
 import hr.kotwave.scorpiongym.di.memberScopeModule
 import hr.kotwave.scorpiongym.member.ui.screen.MainScreen
+import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.menu.CustomMenu
 import hr.kotwave.scorpiongym.ui.theme.ScorpionGymTheme
@@ -29,6 +32,7 @@ import hr.kotwave.scorpiongym.unregisteredservice.ui.dialog.AddUnregisteredServi
 import hr.kotwave.scorpiongym.util.PreferencesHelper
 import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
+import org.koin.java.KoinJavaComponent.getKoin
 import java.awt.Dimension
 import java.io.File
 import java.nio.file.FileSystems
@@ -50,6 +54,10 @@ fun ScorpionGymApp() {
 
     var infoMessage by remember { mutableStateOf("") }
     var showInfoDialog by remember { mutableStateOf(false) }
+    var showUserActionsDialog by remember { mutableStateOf(false) }
+    var activityLogs by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
+
+    val appUserViewModel: AppUserViewModel = getKoin().get()
 
     ScorpionGymTheme(darkTheme = darkTheme) {
         Surface {
@@ -59,6 +67,9 @@ fun ScorpionGymApp() {
                 }
                 showInfoDialog -> {
                     InformativeDialog(infoMessage) { showInfoDialog = false }
+                }
+                showUserActionsDialog -> {
+                    UserActionsDialog(logs = activityLogs, onClose = { showUserActionsDialog = false })
                 }
             }
             Column(modifier = Modifier.fillMaxSize()) {
@@ -82,6 +93,15 @@ fun ScorpionGymApp() {
                         },
                         onAddUnregisteredService = {
                             showUnregisteredServicesDialog = true
+                        },
+                        onLogout = {
+                            isLoggedIn = false
+                            PreferencesHelper().clearUser()
+                        },
+                        users = appUserViewModel.allUsers,
+                        onUserSelected = { userId ->
+                            activityLogs = appUserViewModel.getUserActivityLogs(userId)
+                            showUserActionsDialog = true
                         },
                         modifier = Modifier.align(Alignment.Start)
                     )
@@ -130,6 +150,8 @@ fun main() = application {
     DatabaseFactory.initDB()
 
     val windowState = rememberWindowState(placement = WindowPlacement.Maximized)
+    val membershipRecordDao: MembershipRecordDao = getKoin().get()
+    membershipRecordDao.validateMemberships()
 
     Window(
         onCloseRequest = ::exitApplication,
