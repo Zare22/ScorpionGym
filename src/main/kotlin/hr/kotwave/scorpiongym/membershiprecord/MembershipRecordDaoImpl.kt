@@ -57,7 +57,7 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         return record
     }
 
-    override fun insertMembershipRecord(record: MembershipRecord) : Int {
+    override fun insertMembershipRecord(record: MembershipRecord): Int {
         val query = """
             INSERT INTO MembershipRecord (memberId, membershipId, dateStarted, dateFinished, isActive, isPaid)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -135,30 +135,15 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
 
     override fun validateMemberships() {
         val today = LocalDate.now()
-        val querySelect = """
-            SELECT id FROM MembershipRecord
-            WHERE dateFinished < ? AND isActive = 1
-        """
-        val queryUpdate = """
-            UPDATE MembershipRecord SET isActive = 0 WHERE id = ?
-        """
 
-        try {
-            dbConnection.prepareStatement(querySelect).use { selectStatement ->
-                selectStatement.setString(1, today.toString())
-                val resultSet = selectStatement.executeQuery()
+        val querySelectInactive = "SELECT id FROM MembershipRecord WHERE dateFinished < ? AND isActive = 1"
+        val queryUpdateInactive = "UPDATE MembershipRecord SET isActive = 0 WHERE id = ?"
 
-                dbConnection.prepareStatement(queryUpdate).use { updateStatement ->
-                    while (resultSet.next()) {
-                        val membershipId = resultSet.getInt("id")
-                        updateStatement.setInt(1, membershipId)
-                        updateStatement.executeUpdate()
-                    }
-                }
-            }
-        } catch (e: SQLException) {
-            e.printStackTrace()  // Handle exceptions as needed
-        }
+        val querySelectActivate = "SELECT MIN(id) as id FROM MembershipRecord WHERE dateStarted = ? AND isActive = 0 GROUP BY memberId"
+        val queryUpdateActivate = "UPDATE MembershipRecord SET isActive = 1 WHERE id = ?"
+
+        updateMemberships(querySelectInactive, queryUpdateInactive, today)
+        updateMemberships(querySelectActivate, queryUpdateActivate, today)
     }
 
     private fun fetchMemberAndMembershipDetails(memberId: Int, membershipId: Int): Triple<String, String, String> {
@@ -197,6 +182,23 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
             statement.setString(2, logText)
             statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
             statement.executeUpdate()
+        }
+    }
+
+    private
+
+    fun updateMemberships(selectQuery: String, updateQuery: String, date: LocalDate) {
+        dbConnection.prepareStatement(selectQuery).use { selectStatement ->
+            selectStatement.setString(1, date.toString())
+            val resultSet = selectStatement.executeQuery()
+
+            dbConnection.prepareStatement(updateQuery).use { updateStatement ->
+                while (resultSet.next()) {
+                    val membershipId = resultSet.getInt("id")
+                    updateStatement.setInt(1, membershipId)
+                    updateStatement.executeUpdate()
+                }
+            }
         }
     }
 }

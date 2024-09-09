@@ -42,6 +42,28 @@ import java.nio.file.StandardCopyOption
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+
+fun main() = application {
+    startKoin {
+        modules(appModule, memberScopeModule)
+    }
+
+    DatabaseFactory.initDB()
+
+    val windowState = rememberWindowState(placement = WindowPlacement.Maximized)
+
+
+    Window(
+        onCloseRequest = ::exitApplication,
+        title = "Scorpion Gym",
+        state = windowState,
+        icon = painterResource("ScorpionWindowIcon.png")
+    ) {
+        window.minimumSize = Dimension(1000, 800)
+        ScorpionGymApp()
+    }
+}
+
 @Composable
 fun ScorpionGymApp() {
     val preferencesHelper = remember { PreferencesHelper() }
@@ -58,6 +80,14 @@ fun ScorpionGymApp() {
     var activityLogs by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
 
     val appUserViewModel: AppUserViewModel = getKoin().get()
+    val membershipRecordDao: MembershipRecordDao = getKoin().get()
+
+    try {
+        membershipRecordDao.validateMemberships()
+    } catch (e: Exception) {
+        infoMessage = "Greška pri ažuriranju aktivnosti članarina"
+        showInfoDialog = true
+    }
 
     ScorpionGymTheme(darkTheme = darkTheme) {
         Surface {
@@ -139,28 +169,6 @@ fun ScorpionGymApp() {
                 }
             }
         }
-    }
-}
-
-fun main() = application {
-    startKoin {
-        modules(appModule, memberScopeModule)
-    }
-
-    DatabaseFactory.initDB()
-
-    val windowState = rememberWindowState(placement = WindowPlacement.Maximized)
-    val membershipRecordDao: MembershipRecordDao = getKoin().get()
-    membershipRecordDao.validateMemberships()
-
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "Scorpion Gym",
-        state = windowState,
-        icon = painterResource("ScorpionWindowIcon.png")
-    ) {
-        window.minimumSize = Dimension(1000, 800)
-        ScorpionGymApp()
     }
 }
 

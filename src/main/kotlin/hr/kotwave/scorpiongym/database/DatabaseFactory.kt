@@ -40,139 +40,34 @@ object DatabaseFactory {
             con.autoCommit = false
             try {
                 con.createStatement().use { statement ->
+                    statement.execute("DROP TRIGGER IF EXISTS UpdateMembershipStatus;")
                     statement.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS Member (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name TEXT NOT NULL,
-                            surname TEXT NOT NULL,
-                            phoneNumber TEXT NULL,
-                            signedUpDate DATE NOT NULL,
-                            dateOfBirth DATE NULL,
-                            membershipRecordId INTEGER,
-                            organizationId INTEGER,
-                            statusId INTEGER,
-                            remark TEXT,
-                            FOREIGN KEY (membershipRecordId) REFERENCES MembershipRecord(id) ON DELETE SET NULL,
-                            FOREIGN KEY (organizationId) REFERENCES Organization(id) ON DELETE RESTRICT,
-                            FOREIGN KEY (statusId) REFERENCES Status(id) ON DELETE RESTRICT
-                        )
                     """
-                    )
-                    statement.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS MembershipRecord (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            memberId INTEGER NOT NULL,
-                            membershipId INTEGER NOT NULL,
-                            dateStarted DATE NOT NULL,
-                            dateFinished DATE,
-                            isActive BOOLEAN NOT NULL DEFAULT TRUE,
-                            FOREIGN KEY (memberId) REFERENCES Member(id) ON DELETE CASCADE,
-                            FOREIGN KEY (membershipId) REFERENCES Membership(id) ON DELETE RESTRICT
-                        )
-                    """
-                    )
-                    statement.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS Membership (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name TEXT NOT NULL,
-                            price DECIMAL(10, 2) NOT NULL,
-                            numberOfTrainingsAvailable INTEGER NOT NULL
-                        )
-                    """
-                    )
-                    statement.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS Organization (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name TEXT NOT NULL,
-                            typeOfOrganizationId INTEGER NOT NULL,
-                            FOREIGN KEY (typeOfOrganizationId) REFERENCES TypeOfOrganization(id) ON DELETE RESTRICT
-                        )
-                    """
-                    )
-                    statement.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS TypeOfOrganization (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name TEXT NOT NULL,
-                            discountRate DECIMAL(3, 2) DEFAULT 0.00
-                        )
-                    """
-                    )
-                    statement.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS Status (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            description TEXT NOT NULL
-                        )
-                    """
-                    )
-                    statement.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS TrainingSession (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            membershipRecordId INTEGER NOT NULL,
-                            sessionDateTime DATETIME NOT NULL,
-                            FOREIGN KEY (membershipRecordId) REFERENCES MembershipRecord(id) ON DELETE RESTRICT
-                        )
-                    """
-                    )
-                    statement.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS OtherService (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name TEXT NOT NULL,
-                            price DECIMAL(10, 2) NOT NULL
-                        )
-                    """
-                    )
-                    statement.execute(
-                        """
-                        CREATE TABLE IF NOT EXISTS MemberOtherService (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            dateOfService DATETIME NOT NULL,
-                            memberId INTEGER NOT NULL,
-                            otherServiceId INTEGER NOT NULL,
-                            FOREIGN KEY (memberId) REFERENCES Member(id) ON DELETE CASCADE,
-                            FOREIGN KEY (otherServiceId) REFERENCES OtherService(id) ON DELETE RESTRICT
-                        )
-                    """
-                    )
-                    statement.execute(
-                        """
-                        CREATE TRIGGER IF NOT EXISTS UpdateMembershipStatus AFTER INSERT ON TrainingSession
+                            CREATE TRIGGER UpdateMembershipStatus AFTER INSERT ON TrainingSession
                             FOR EACH ROW
                             BEGIN
                                 UPDATE MembershipRecord
                                 SET isActive = CASE
-                                    WHEN (SELECT COUNT(*) FROM TrainingSession WHERE membershipRecordId = NEW.membershipRecordId) >= 
-                                         (SELECT numberOfTrainingsAvailable FROM Membership WHERE id = (SELECT membershipId FROM MembershipRecord WHERE id = NEW.membershipRecordId))
-                                    THEN FALSE
-                                    ELSE isActive
-                                END,
-                                dateFinished = CASE
-                                    WHEN (SELECT COUNT(*) FROM TrainingSession WHERE membershipRecordId = NEW.membershipRecordId) >= 
-                                         (SELECT numberOfTrainingsAvailable FROM Membership WHERE id = (SELECT membershipId FROM MembershipRecord WHERE id = NEW.membershipRecordId))
-                                    THEN CURRENT_DATE
-                                    ELSE dateFinished
-                                END
+                                                   WHEN (SELECT COUNT(*) FROM TrainingSession WHERE membershipRecordId = NEW.membershipRecordId) >=
+                                                        (SELECT numberOfTrainingsAvailable FROM Membership WHERE id = (SELECT membershipId FROM MembershipRecord WHERE id = NEW.membershipRecordId))
+                                                       THEN FALSE
+                                                   ELSE isActive
+                                               END,
+                                    dateFinished = CASE
+                                                       WHEN (SELECT COUNT(*) FROM TrainingSession WHERE membershipRecordId = NEW.membershipRecordId) >=
+                                                            (SELECT numberOfTrainingsAvailable FROM Membership WHERE id = (SELECT membershipId FROM MembershipRecord WHERE id = NEW.membershipRecordId))
+                                                           THEN strftime('%Y-%m-%d', datetime('now', 'localtime'))
+                                                       ELSE dateFinished
+                                                   END
                                 WHERE id = NEW.membershipRecordId;
-                            END
-                    """
+                            END;
+                        """
                     )
                     statement.execute(
-                        """
-                        CREATE TRIGGER IF NOT EXISTS SetMembershipRecordIdToNull AFTER UPDATE ON MembershipRecord
-                            FOR EACH ROW
-                            WHEN NEW.isActive = FALSE
-                            BEGIN
-                                UPDATE Member
-                                SET membershipRecordId = NULL
-                                WHERE membershipRecordId = NEW.id;
-                            END
+                    """
+                            UPDATE MembershipRecord
+                            SET dateFinished = strftime('%Y-%m-%d', dateFinished)
+                            WHERE dateFinished IS NOT NULL;
                         """
                     )
                 }

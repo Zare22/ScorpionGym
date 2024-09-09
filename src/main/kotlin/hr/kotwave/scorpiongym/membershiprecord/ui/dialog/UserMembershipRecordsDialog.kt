@@ -255,10 +255,9 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 onItemSelected = {
                                     record.membershipId = it.id
                                     record.dateFinished =
-                                        record.dateStarted.plusMonths(memberships.find { it.id == record.membershipId }?.duration
+                                        record.dateStarted.plusMonths(memberships.find { membership ->  membership.id == record.membershipId }?.duration
                                             ?: 1
                                         ).minusDays(1)
-
                                     recordDateFinished = TextFieldValue(
                                         record.dateFinished.format(
                                             dateFormatter
@@ -384,10 +383,8 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                         id = 0,
                                         memberId = member.id,
                                         membershipId = 0,
-                                        dateStarted = records.maxByOrNull { it.dateFinished }?.dateFinished?.plusDays(1)
-                                            ?: LocalDate.now(),
-                                        dateFinished = records.maxByOrNull { it.dateStarted }?.dateStarted?.plusMonths(1)
-                                            ?.minusDays(1) ?: LocalDate.now().plusMonths(1).minusDays(1),
+                                        dateStarted = LocalDate.now().plusDays(1),
+                                        dateFinished = LocalDate.now().plusMonths(1),
                                         isActive = false,
                                         isPaid = false
                                     )
