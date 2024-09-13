@@ -1,6 +1,6 @@
 package hr.kotwave.scorpiongym
 
-import LoginScreen
+import hr.kotwave.scorpiongym.appuser.ui.LoginScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,9 +49,7 @@ fun main() = application {
     }
 
     DatabaseFactory.initDB()
-
     val windowState = rememberWindowState(placement = WindowPlacement.Maximized)
-
 
     Window(
         onCloseRequest = ::exitApplication,

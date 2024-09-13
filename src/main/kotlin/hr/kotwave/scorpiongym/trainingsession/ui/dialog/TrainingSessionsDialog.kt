@@ -162,7 +162,11 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                         text = buildAnnotatedString {
                             membership?.takeIf { it.isNoLimit }?.run {
                                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                    append("No limit")
+                                    append("Odrađeni treninzi u članarini: ")
+
+                                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                        append("${memberViewModel.trainingSessionsInActiveMembership.size}")
+                                    }
                                 }
                             } ?: run {
                                 append("Preostalo treninga u članarini: ")

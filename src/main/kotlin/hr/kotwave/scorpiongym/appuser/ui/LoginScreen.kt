@@ -1,3 +1,4 @@
+package hr.kotwave.scorpiongym.appuser.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
@@ -12,6 +13,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import hr.kotwave.scorpiongym.appuser.AppUserViewModel
@@ -33,8 +35,28 @@ class LoginScreen(private val onLoginSuccess: () -> Unit) : Screen {
         val passwordFocusRequester = remember { FocusRequester() }
         val loginButtonFocusRequester = remember { FocusRequester() }
 
+        LaunchedEffect(Unit) {
+            usernameFocusRequester.requestFocus()
+        }
+
+        fun performLogin() {
+            try {
+                appUserViewModel.loginAppUser(username, password)
+                onLoginSuccess()
+            } catch (e: Exception) {
+                loginError = true
+            }
+        }
+
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(16.dp).onPreviewKeyEvent { event ->
+                if (event.key == Key.Enter && event.type == KeyEventType.KeyDown) {
+                    performLogin()
+                    true
+                } else {
+                    false
+                }
+            },
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -42,14 +64,15 @@ class LoginScreen(private val onLoginSuccess: () -> Unit) : Screen {
             TextField(value = username,
                 onValueChange = { username = it },
                 label = { Text("Korisničko ime") },
-                modifier = Modifier.width(IntrinsicSize.Max).fillMaxWidth(0.5f).focusRequester(usernameFocusRequester).onKeyEvent {
-                    if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
-                        passwordFocusRequester.requestFocus()
-                        true
-                    } else {
-                        false
+                modifier = Modifier.width(IntrinsicSize.Max).fillMaxWidth(0.5f)
+                    .focusRequester(usernameFocusRequester)
+                    .onPreviewKeyEvent { event ->
+                        if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
+                            passwordFocusRequester.requestFocus()
+                            true
+                        } else false
                     }
-                })
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -63,20 +86,22 @@ class LoginScreen(private val onLoginSuccess: () -> Unit) : Screen {
                         Text(iconText)
                     }
                 },
-                modifier = Modifier.width(IntrinsicSize.Max).fillMaxWidth(0.5f).focusRequester(passwordFocusRequester)
-                    .onKeyEvent {
-                        if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
+                modifier = Modifier.width(IntrinsicSize.Max).fillMaxWidth(0.5f)
+                    .focusRequester(passwordFocusRequester)
+                    .onPreviewKeyEvent { event ->
+                        if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
                             loginButtonFocusRequester.requestFocus()
                             true
                         } else {
                             false
                         }
-                    })
+                    }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             if (loginError) {
-                InformativeDialog("Pogrešno korisničko ime ili lozinka") { loginError = false}
+                InformativeDialog("Pogrešno korisničko ime ili lozinka") { loginError = false }
             }
 
             Button(onClick = {
@@ -87,16 +112,27 @@ class LoginScreen(private val onLoginSuccess: () -> Unit) : Screen {
                     loginError = true
                 }
             },
-                modifier = Modifier.width(100.dp).focusRequester(loginButtonFocusRequester).onKeyEvent {
-                    if (it.key == Key.Tab && it.type == KeyEventType.KeyDown) {
-                        usernameFocusRequester.requestFocus()
-                        true
-                    } else {
-                        false
+                modifier = Modifier.width(100.dp)
+                    .focusRequester(loginButtonFocusRequester)
+                    .onPreviewKeyEvent { event ->
+                        if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
+                            usernameFocusRequester.requestFocus()
+                            true
+                        } else {
+                            false
+                        }
                     }
-                }) {
+            ) {
                 Text("Login")
             }
+
+            Spacer(modifier = Modifier.height(150.dp))
+
+            Text(
+                text = "Developed by Leo Žarković",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }

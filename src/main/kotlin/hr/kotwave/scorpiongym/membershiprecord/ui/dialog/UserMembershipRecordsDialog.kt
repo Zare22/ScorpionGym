@@ -27,6 +27,7 @@ import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
+import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
 import hr.kotwave.scorpiongym.trainingsession.ui.dialog.TrainingSessionsDialog
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
@@ -53,6 +54,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
     var nameOfMembershipType by remember { mutableStateOf("") }
     var confirmRecordDeleteDialog by remember { mutableStateOf(false) }
     var showTrainingSessionsDialog by remember { mutableStateOf(false) }
+    var expiredMembershipDialogOpened by remember { mutableStateOf(false) }
     var selectedRecordId by remember { mutableStateOf(0) }
 
     val expandedMembership = remember { mutableStateMapOf<Int, Boolean>() }
@@ -255,8 +257,9 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 onItemSelected = {
                                     record.membershipId = it.id
                                     record.dateFinished =
-                                        record.dateStarted.plusMonths(memberships.find { membership ->  membership.id == record.membershipId }?.duration
-                                            ?: 1
+                                        record.dateStarted.plusMonths(
+                                            memberships.find { membership -> membership.id == record.membershipId }?.duration
+                                                ?: 1
                                         ).minusDays(1)
                                     recordDateFinished = TextFieldValue(
                                         record.dateFinished.format(
@@ -268,8 +271,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 },
                                 focusRequester = FocusRequester(),
                                 nextFocusRequester = FocusRequester(),
-                                itemLabel = { it.name },
-                                readOnly = record.id != 0
+                                itemLabel = { it.name }
                             )
                             FocusableOutlinedTextField(
                                 value = recordDateStart,
@@ -428,12 +430,27 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 infoMessage = "Greška pri ažuriranju članarina"
                                 showInfoDialog = true
                             }
-                            onClose()
+                            if (memberViewModel.activeMembershipRecord != null && memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
+                                val membershipRecordDao: MembershipRecordDao = getKoin().get()
+                                memberViewModel.activeMembershipRecord?.copy(isActive = false, dateFinished = LocalDate.now())
+                                    ?.let { membershipRecordDao.updateMembershipRecord(it) }
+                                memberViewModel.initViewModel()
+                                expiredMembershipDialogOpened = true
+                            } else onClose()
                         },
                         buttonBackgroundColor = Color.Green
                     )
                 }
             }
         }
+    }
+    if (expiredMembershipDialogOpened) {
+        InformativeDialog(
+            message = "Članu ${memberViewModel.currentMember.name} ${memberViewModel.currentMember.surname} je istekla trenutna članarina",
+            onDismiss = {
+                expiredMembershipDialogOpened = false
+                onClose()
+            }
+        )
     }
 }

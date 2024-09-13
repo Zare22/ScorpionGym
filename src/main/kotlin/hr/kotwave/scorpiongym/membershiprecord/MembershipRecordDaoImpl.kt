@@ -139,11 +139,25 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         val querySelectInactive = "SELECT id FROM MembershipRecord WHERE dateFinished < ? AND isActive = 1"
         val queryUpdateInactive = "UPDATE MembershipRecord SET isActive = 0 WHERE id = ?"
 
-        val querySelectActivate = "SELECT MIN(id) as id FROM MembershipRecord WHERE dateStarted = ? AND isActive = 0 GROUP BY memberId"
+        val querySelectActivate = """
+            WITH minMembershipRecords AS (
+                SELECT MIN(mr.id) AS minId, mr.memberId
+                FROM MembershipRecord mr
+                WHERE mr.dateStarted <= ? 
+                AND (mr.dateFinished IS NULL OR mr.dateFinished > ?)
+                AND mr.isActive = 0
+                AND mr.memberId NOT IN (SELECT memberId FROM MembershipRecord WHERE isActive = 1)
+                GROUP BY mr.memberId
+            )
+            SELECT mr.id, mr.membershipId, m.isNoLimit, m.numberOfTrainingsAvailable
+            FROM minMembershipRecords minMr
+            JOIN MembershipRecord mr ON mr.id = minMr.minId
+            JOIN Membership m ON mr.membershipId = m.id
+        """
         val queryUpdateActivate = "UPDATE MembershipRecord SET isActive = 1 WHERE id = ?"
 
-        updateMemberships(querySelectInactive, queryUpdateInactive, today)
-        updateMemberships(querySelectActivate, queryUpdateActivate, today)
+        updateMemberships(querySelectInactive, queryUpdateInactive, today, onlyOneDate = true)
+        updateMemberships(querySelectActivate, queryUpdateActivate, today, onlyOneDate = false)
     }
 
     private fun fetchMemberAndMembershipDetails(memberId: Int, membershipId: Int): Triple<String, String, String> {
@@ -185,20 +199,53 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         }
     }
 
-    private
-
-    fun updateMemberships(selectQuery: String, updateQuery: String, date: LocalDate) {
+    private fun updateMemberships(selectQuery: String, updateQuery: String, date: LocalDate, onlyOneDate: Boolean) {
         dbConnection.prepareStatement(selectQuery).use { selectStatement ->
             selectStatement.setString(1, date.toString())
+
+            if (!onlyOneDate) {
+                selectStatement.setString(2, date.toString())
+            }
+
             val resultSet = selectStatement.executeQuery()
 
             dbConnection.prepareStatement(updateQuery).use { updateStatement ->
                 while (resultSet.next()) {
-                    val membershipId = resultSet.getInt("id")
-                    updateStatement.setInt(1, membershipId)
+                    val isNoLimit = resultSet.getBoolean("IsNoLimit")
+                    val numberOfTrainingsAvailable = resultSet.getInt("numberOfTrainingsAvailable")
+                    val membershipRecordId = resultSet.getInt("id")
+
+                    if (!isNoLimit) {
+                        val hasRemainingSessions =
+                            checkRemainingSessions(membershipRecordId, numberOfTrainingsAvailable)
+
+                        if (!hasRemainingSessions) {
+                            continue
+                        }
+                    }
+
+                    updateStatement.setInt(1, membershipRecordId)
                     updateStatement.executeUpdate()
                 }
             }
         }
+    }
+
+    private fun checkRemainingSessions(membershipRecordId: Int, numberOfTrainingsAvailable: Int): Boolean {
+        val sessionsQuery = """
+            SELECT COUNT(*) AS trainingsUsed FROM TrainingSession 
+            WHERE membershipRecordId = ?
+        """
+
+        dbConnection.prepareStatement(sessionsQuery).use { sessionStatement ->
+            sessionStatement.setInt(1, membershipRecordId)
+            val sessionResultSet = sessionStatement.executeQuery()
+
+            if (sessionResultSet.next()) {
+                val trainingsUsed = sessionResultSet.getInt("trainingsUsed")
+                return trainingsUsed < numberOfTrainingsAvailable
+            }
+        }
+        return false
     }
 }
