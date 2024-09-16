@@ -56,23 +56,19 @@ class LoginScreen(private val onLoginSuccess: () -> Unit) : Screen {
                 } else {
                     false
                 }
-            },
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            }, verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             TextField(value = username,
                 onValueChange = { username = it },
                 label = { Text("Korisničko ime") },
-                modifier = Modifier.width(IntrinsicSize.Max).fillMaxWidth(0.5f)
-                    .focusRequester(usernameFocusRequester)
+                modifier = Modifier.width(IntrinsicSize.Max).fillMaxWidth(0.5f).focusRequester(usernameFocusRequester)
                     .onPreviewKeyEvent { event ->
                         if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
                             passwordFocusRequester.requestFocus()
                             true
                         } else false
-                    }
-            )
+                    })
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -86,8 +82,7 @@ class LoginScreen(private val onLoginSuccess: () -> Unit) : Screen {
                         Text(iconText)
                     }
                 },
-                modifier = Modifier.width(IntrinsicSize.Max).fillMaxWidth(0.5f)
-                    .focusRequester(passwordFocusRequester)
+                modifier = Modifier.width(IntrinsicSize.Max).fillMaxWidth(0.5f).focusRequester(passwordFocusRequester)
                     .onPreviewKeyEvent { event ->
                         if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
                             loginButtonFocusRequester.requestFocus()
@@ -95,8 +90,7 @@ class LoginScreen(private val onLoginSuccess: () -> Unit) : Screen {
                         } else {
                             false
                         }
-                    }
-            )
+                    })
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -104,34 +98,22 @@ class LoginScreen(private val onLoginSuccess: () -> Unit) : Screen {
                 InformativeDialog("Pogrešno korisničko ime ili lozinka") { loginError = false }
             }
 
-            Button(onClick = {
-                try {
-                    appUserViewModel.loginAppUser(username, password)
-                    onLoginSuccess()
-                } catch (e: Exception) {
-                    loginError = true
-                }
-            },
-                modifier = Modifier.width(100.dp)
-                    .focusRequester(loginButtonFocusRequester)
-                    .onPreviewKeyEvent { event ->
-                        if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
-                            usernameFocusRequester.requestFocus()
-                            true
-                        } else {
-                            false
-                        }
+            Button(onClick = { performLogin() },
+                modifier = Modifier.width(100.dp).focusRequester(loginButtonFocusRequester).onPreviewKeyEvent { event ->
+                    if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
+                        usernameFocusRequester.requestFocus()
+                        true
+                    } else {
+                        false
                     }
-            ) {
+                }) {
                 Text("Login")
             }
 
             Spacer(modifier = Modifier.height(150.dp))
 
             Text(
-                text = "Developed by Leo Žarković",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
+                text = "Developed by Leo Žarković", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center
             )
         }
     }

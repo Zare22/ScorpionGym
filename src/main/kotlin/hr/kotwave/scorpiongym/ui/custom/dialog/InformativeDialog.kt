@@ -13,7 +13,7 @@ fun InformativeDialog(message: String, onDismiss: () -> Unit) {
         text = { Text(text = message) },
         confirmButton = {
             HoverableButton(
-                text = "Potvrdi",
+                text = "U redu",
                 onClick = { onDismiss() }
             )
         }

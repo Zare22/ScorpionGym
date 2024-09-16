@@ -27,6 +27,7 @@ import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.member.MembersListViewModel
 import hr.kotwave.scorpiongym.membership.Membership
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
+import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
 import hr.kotwave.scorpiongym.organization.Organization
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
@@ -52,7 +53,6 @@ fun MemberDetails(
 
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
 
-    //Elements that can gain focus
     val focusRequesters = List(9) { FocusRequester() }
     val verticalScrollState = rememberScrollState(0)
 
@@ -110,6 +110,7 @@ fun MemberDetails(
     }
 
     var currentRecordFinishDate by remember(memberViewModel.currentMember) { mutableStateOf(memberViewModel.activeMembershipRecord?.dateFinished) }
+    var currentRecordStartDate by remember(memberViewModel.currentMember) { mutableStateOf(memberViewModel.activeMembershipRecord?.dateStarted) }
 
     // Dropdown states
     var expandedMembership by remember { mutableStateOf(false) }
@@ -118,10 +119,17 @@ fun MemberDetails(
     // Renew dialog
     var renewMembershipDialogOpened by remember { mutableStateOf(false) }
     var showSameMemberDialog by remember { mutableStateOf(false) }
+    var expiredMembershipDialogOpened by remember { mutableStateOf(false) }
 
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
     var dateFinished by remember(memberViewModel.currentMember) {
+        mutableStateOf(
+            currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
+        )
+    }
+
+    var dateStarted by remember(memberViewModel.currentMember) {
         mutableStateOf(
             currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
         )
@@ -148,7 +156,9 @@ fun MemberDetails(
         )
         signedUpDate = memberViewModel.currentMember.signedUpDate
         currentRecordFinishDate = memberViewModel.activeMembershipRecord?.dateFinished
+        currentRecordStartDate = memberViewModel.activeMembershipRecord?.dateStarted
         dateFinished = currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
+        dateStarted = currentRecordStartDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
 
         dateOfBirth = TextFieldValue(
             memberViewModel.currentMember.dateOfBirth?.format(dateOfBirthFormatter) ?: ""
@@ -328,7 +338,11 @@ fun MemberDetails(
                                         memberViewModel.initViewModel()
                                         currentRecordFinishDate =
                                             memberViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateFinished
+                                        currentRecordStartDate =
+                                            memberViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateStarted
                                         dateFinished = currentRecordFinishDate?.format(dateFormatter)
+                                            ?: "Nema trenutno aktivne članarine"
+                                        dateStarted = currentRecordStartDate?.format(dateFormatter)
                                             ?: "Nema trenutno aktivne članarine"
                                         renewMembershipDialogOpened = false
                                     },
@@ -413,22 +427,47 @@ fun MemberDetails(
 
                 memberViewModel.currentMember.id.takeIf { it != 0 }?.let {
 
-                    OutlinedTextField(
-                        value = dateFinished,
-                        onValueChange = { newValue ->
-                            dateFinished = newValue
-                            val parsedDateTime = runCatching {
-                                LocalDate.parse(newValue, dateFormatter)
-                            }.getOrNull()
+                    if (memberViewModel.activeMembershipRecord != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = dateStarted,
+                                onValueChange = { newValue ->
+                                    dateStarted = newValue
+                                    val parsedDateTime = runCatching {
+                                        LocalDate.parse(newValue, dateFormatter)
+                                    }.getOrNull()
 
-                            currentRecordFinishDate = parsedDateTime
-                        },
-                        label = { Text("Datum isteka trenutne članarine") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        readOnly = memberViewModel.activeMembershipRecord == null
-                    )
+                                    currentRecordStartDate = parsedDateTime
+                                },
+                                label = { Text("Datum početka trenutne članarine") },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(end = 8.dp),
+                                readOnly = memberViewModel.activeMembershipRecord == null
+                            )
+
+                            OutlinedTextField(
+                                value = dateFinished,
+                                onValueChange = { newValue ->
+                                    dateFinished = newValue
+                                    val parsedDateTime = runCatching {
+                                        LocalDate.parse(newValue, dateFormatter)
+                                    }.getOrNull()
+
+                                    currentRecordFinishDate = parsedDateTime
+                                },
+                                label = { Text("Datum isteka trenutne članarine") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                readOnly = memberViewModel.activeMembershipRecord == null
+                            )
+                        }
+                    }
+
 
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -444,8 +483,7 @@ fun MemberDetails(
                             onItemSelected = { membership = it.id.toString() },
                             focusRequester = focusRequesters[4],
                             nextFocusRequester = focusRequesters[5],
-                            itemLabel = { it.name },
-                            readOnly = memberViewModel.activeMembershipRecord != null
+                            itemLabel = { it.name }
                         )
 
                         if (memberViewModel.activeMembershipRecord == null) {
@@ -544,9 +582,20 @@ fun MemberDetails(
                                     val index = memberViewModel.memberRecords.indexOfFirst { it.id == id }
                                     memberViewModel.updateMembershipRecord(
                                         index,
-                                        memberViewModel.activeMembershipRecord!!.copy(dateFinished = currentRecordFinishDate!!)
+                                        memberViewModel.activeMembershipRecord!!.copy(
+                                            membershipId = membership.toInt(),
+                                            dateStarted = currentRecordStartDate!!,
+                                            dateFinished = currentRecordFinishDate!!
+                                        )
                                     )
                                     memberViewModel.confirmMembershipRecordsUpdates()
+                                    if (memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
+                                        val membershipRecordDao: MembershipRecordDao = getKoin().get()
+                                        memberViewModel.activeMembershipRecord?.copy(isActive = false, dateFinished = LocalDate.now())
+                                            ?.let { membershipRecordDao.updateMembershipRecord(it) }
+                                        memberViewModel.initViewModel()
+                                        expiredMembershipDialogOpened = true
+                                    }
                                 }
                                 try {
                                     memberViewModel.updateMember(updatedMember)
@@ -561,6 +610,14 @@ fun MemberDetails(
                         buttonBackgroundColor = Color.Green
                     )
                 }
+            }
+            if (expiredMembershipDialogOpened) {
+                InformativeDialog(
+                    message = "Članu ${memberViewModel.currentMember.name} ${memberViewModel.currentMember.surname} je istekla trenutna članarina",
+                    onDismiss = {
+                        expiredMembershipDialogOpened = false
+                    }
+                )
             }
 
             VerticalScrollbar(

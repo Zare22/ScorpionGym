@@ -30,13 +30,17 @@ class MemberViewModel(
     val memberRecords: List<MembershipRecord> get() = _memberRecords
 
     private val _memberOtherServices = mutableStateListOf<MemberOtherService>()
-     val memberOtherServices: List<MemberOtherService> get() = _memberOtherServices
+    val memberOtherServices: List<MemberOtherService> get() = _memberOtherServices
 
     var activeMembershipRecord by mutableStateOf<MembershipRecord?>(null)
         private set
 
     private val _trainingSessionsInActiveMembership = mutableStateListOf<TrainingSession>()
     val trainingSessionsInActiveMembership: SnapshotStateList<TrainingSession> get() = _trainingSessionsInActiveMembership
+
+    private val modifiedSessions = mutableListOf<TrainingSession>()
+
+    private val modifiedRecords = mutableListOf<MembershipRecord>()
 
     var numberOfTrainingsAvailable by mutableStateOf(0)
         private set
@@ -56,7 +60,11 @@ class MemberViewModel(
             val membership = membershipDao.getMembershipById(activeMembershipRecord!!.membershipId)
             numberOfTrainingsAvailable = membership?.numberOfTrainingsAvailable ?: 0
 
-            _trainingSessionsInActiveMembership.addAll(trainingSessionDao.getAllTrainingSessionsForMembershipRecord(activeMembershipRecord!!.id))
+            _trainingSessionsInActiveMembership.addAll(
+                trainingSessionDao.getAllTrainingSessionsForMembershipRecord(
+                    activeMembershipRecord!!.id
+                )
+            )
         }
         _memberOtherServices.addAll(memberOtherServiceDao.getMembersOtherServices(currentMember.id))
     }
@@ -91,12 +99,26 @@ class MemberViewModel(
     fun updateTrainingSession(index: Int, updatedSession: TrainingSession) {
         if (index in _trainingSessionsInActiveMembership.indices) {
             _trainingSessionsInActiveMembership[index] = updatedSession
+            val existingSession = modifiedSessions.find { it.id == updatedSession.id }
+
+            if (existingSession != null) {
+                val existingIndex = modifiedSessions.indexOf(existingSession)
+                modifiedSessions[existingIndex] = updatedSession
+            } else if (updatedSession.id != 0)
+                modifiedSessions.add(updatedSession)
         }
     }
 
     fun updateMembershipRecord(index: Int, updatedMembershipRecord: MembershipRecord) {
         if (index in _memberRecords.indices) {
             _memberRecords[index] = updatedMembershipRecord
+            val existingRecord = modifiedRecords.find { it.id == updatedMembershipRecord.id }
+
+            if (existingRecord != null) {
+                val existingIndex = modifiedRecords.indexOf(existingRecord)
+                modifiedRecords[existingIndex] = updatedMembershipRecord
+            } else if (updatedMembershipRecord.id != 0)
+                modifiedRecords.add(updatedMembershipRecord)
         }
     }
 
@@ -122,6 +144,7 @@ class MemberViewModel(
 
     fun removeMembershipRecord(record: MembershipRecord) {
         _memberRecords.remove(record)
+        membershipRecordDao.deleteAllTrainingsAssociatedWithRecord(record)
         membershipRecordDao.deleteMembershipRecord(record)
     }
 
@@ -132,18 +155,22 @@ class MemberViewModel(
 
     fun confirmTrainingSessionUpdates() {
         _trainingSessionsInActiveMembership.forEach { session ->
-            if (session.id == 0) {
-                val id = trainingSessionDao.insertTrainingSession(session)
-                session.id = id
-            } else
-                trainingSessionDao.updateTrainingSession(session)
+            if (session.id == 0) trainingSessionDao.insertTrainingSession(session)
         }
+        modifiedSessions.forEach { session ->
+            if (session.id != 0) trainingSessionDao.updateTrainingSession(session)
+        }
+        modifiedSessions.clear()
     }
 
     fun confirmMembershipRecordsUpdates() {
         _memberRecords.forEach { record ->
-            if (record.id == 0) membershipRecordDao.insertMembershipRecord(record) else membershipRecordDao.updateMembershipRecord(record)
+            if (record.id == 0) membershipRecordDao.insertMembershipRecord(record)
         }
+        modifiedRecords.forEach { record ->
+            if (record.id != 0) membershipRecordDao.updateMembershipRecord(record)
+        }
+        modifiedRecords.clear()
         initViewModel()
     }
 

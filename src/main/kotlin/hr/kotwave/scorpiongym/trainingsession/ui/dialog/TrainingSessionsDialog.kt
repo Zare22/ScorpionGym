@@ -46,7 +46,6 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
     }
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
     val listState = rememberLazyListState()
-    val trainingSessions by remember { derivedStateOf { memberViewModel.trainingSessionsInActiveMembership.sortedBy { it.sessionDateTime } } }
     var updateTrigger by remember { mutableStateOf(false) }
     var expiredMembershipDialogOpened by remember { mutableStateOf(false) }
 
@@ -55,6 +54,8 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
 
     var showInfoDialog by remember { mutableStateOf(false) }
     var infoMessage by remember { mutableStateOf("") }
+
+    val trainingSessions by remember { derivedStateOf { memberViewModel.trainingSessionsInActiveMembership } }
 
     when {
 
@@ -209,7 +210,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                                     sessionDateTime = newValue
                                     val parsedDateTime =
                                         runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
-                                    if (parsedDateTime != null) {
+                                    if (parsedDateTime != null && parsedDateTime != session.sessionDateTime) {
                                         memberViewModel.updateTrainingSession(
                                             index,
                                             session.copy(sessionDateTime = parsedDateTime)
@@ -297,8 +298,10 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                             if (memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
                                 memberViewModel.initViewModel()
                                 expiredMembershipDialogOpened = true
-                            } else
+                            } else {
+                                memberViewModel.initViewModel()
                                 onClose()
+                            }
                         },
                         buttonBackgroundColor = Color.Green
                     )

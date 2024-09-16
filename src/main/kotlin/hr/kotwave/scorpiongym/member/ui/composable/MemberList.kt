@@ -254,8 +254,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                         showManageTrainingSessionsDialog = true
                     })
                 }
-                if (memberViewModel.memberRecords.isNotEmpty())
-                    items.add(ContextMenuItem("Pregled svih članarina") { showManageMembershipRecordsDialog = true })
+                items.add(ContextMenuItem("Pregled svih članarina") { showManageMembershipRecordsDialog = true })
                 items.add(ContextMenuItem("Upiši dodatnu uslugu članu") { showAddMemberOtherServiceDialog = true })
                 if (memberViewModel.memberOtherServices.isNotEmpty())
                     items.add(ContextMenuItem("Pregled svih ostalih usluga") { showManageMemberOtherServicesDialog = true })

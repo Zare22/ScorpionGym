@@ -1,6 +1,5 @@
 package hr.kotwave.scorpiongym
 
-import hr.kotwave.scorpiongym.appuser.ui.LoginScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,12 +18,14 @@ import androidx.compose.ui.window.rememberWindowState
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.SlideTransition
 import hr.kotwave.scorpiongym.appuser.AppUserViewModel
+import hr.kotwave.scorpiongym.appuser.ui.LoginScreen
 import hr.kotwave.scorpiongym.appuser.ui.UserActionsDialog
 import hr.kotwave.scorpiongym.database.DatabaseFactory
 import hr.kotwave.scorpiongym.di.appModule
 import hr.kotwave.scorpiongym.di.memberScopeModule
 import hr.kotwave.scorpiongym.member.ui.screen.MainScreen
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
+import hr.kotwave.scorpiongym.ui.custom.dialog.CreateNewAppUserDialog
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.menu.CustomMenu
 import hr.kotwave.scorpiongym.ui.theme.ScorpionGymTheme
@@ -71,11 +72,11 @@ fun ScorpionGymApp() {
     var isLoggedIn by remember { mutableStateOf(false) }
 
     var showUnregisteredServicesDialog by remember { mutableStateOf(false) }
+    var showCreateNewAppUserDialog by remember { mutableStateOf(false) }
 
     var infoMessage by remember { mutableStateOf("") }
     var showInfoDialog by remember { mutableStateOf(false) }
-    var showUserActionsDialog by remember { mutableStateOf(false) }
-    var activityLogs by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
+    var showAllActionsDialog by remember { mutableStateOf(false) }
 
     val appUserViewModel: AppUserViewModel = getKoin().get()
     val membershipRecordDao: MembershipRecordDao = getKoin().get()
@@ -96,8 +97,11 @@ fun ScorpionGymApp() {
                 showInfoDialog -> {
                     InformativeDialog(infoMessage) { showInfoDialog = false }
                 }
-                showUserActionsDialog -> {
-                    UserActionsDialog(logs = activityLogs, onClose = { showUserActionsDialog = false })
+                showAllActionsDialog -> {
+                    UserActionsDialog(logs = appUserViewModel.getAllActivityLogs(), onClose = { showAllActionsDialog = false })
+                }
+                showCreateNewAppUserDialog -> {
+                    CreateNewAppUserDialog { showCreateNewAppUserDialog = false }
                 }
             }
             Column(modifier = Modifier.fillMaxSize()) {
@@ -126,10 +130,11 @@ fun ScorpionGymApp() {
                             isLoggedIn = false
                             PreferencesHelper().clearUser()
                         },
-                        users = appUserViewModel.allUsers,
-                        onUserSelected = { userId ->
-                            activityLogs = appUserViewModel.getUserActivityLogs(userId)
-                            showUserActionsDialog = true
+                        onAllLogsSelected = {
+                            showAllActionsDialog = true
+                        },
+                        onCreateNewAppUser = {
+                            showCreateNewAppUserDialog = true
                         },
                         modifier = Modifier.align(Alignment.Start)
                     )

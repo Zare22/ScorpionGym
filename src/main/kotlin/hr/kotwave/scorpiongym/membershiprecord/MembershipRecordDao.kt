@@ -7,5 +7,6 @@ interface MembershipRecordDao {
     fun updateMembershipRecord(record: MembershipRecord)
     fun deleteMembershipRecord(membershipRecord: MembershipRecord)
     fun getMembersMembershipRecords(id: Int): List<MembershipRecord>
+    fun deleteAllTrainingsAssociatedWithRecord(membershipRecord: MembershipRecord)
     fun validateMemberships()
 }

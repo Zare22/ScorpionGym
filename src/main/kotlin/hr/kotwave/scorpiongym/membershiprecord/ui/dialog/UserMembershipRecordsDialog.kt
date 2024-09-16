@@ -45,7 +45,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
     val membershipViewModel: MembershipViewModel = getKoin().get()
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
     val listState = rememberLazyListState()
-    val records by remember { derivedStateOf { memberViewModel.memberRecords.sortedBy { it.dateStarted } } }
+    val records by remember { derivedStateOf { memberViewModel.memberRecords } }
 
     val initialIsPaidValues = remember { records.map { it.isPaid }.toMutableStateList() }
     val initialIsActiveValues = remember { records.map { it.isActive }.toMutableStateList() }
@@ -81,7 +81,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                 text = {
                     Text(
                         text = buildAnnotatedString {
-                            append("Ukoliko nastavite pobrisat ćete članarinu: ")
+                            append("Ukoliko nastavite pobrisat ćete sve vezane treninge i članarinu: ")
 
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                 append(nameOfMembershipType)
@@ -279,7 +279,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                     recordDateStart = newValue
                                     val parsedDateTime =
                                         runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
-                                    if (parsedDateTime != null) {
+                                    if (parsedDateTime != null && parsedDateTime != record.dateStarted) {
                                         memberViewModel.updateMembershipRecord(
                                             index,
                                             record.copy(dateStarted = parsedDateTime),
@@ -432,7 +432,10 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             }
                             if (memberViewModel.activeMembershipRecord != null && memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
                                 val membershipRecordDao: MembershipRecordDao = getKoin().get()
-                                memberViewModel.activeMembershipRecord?.copy(isActive = false, dateFinished = LocalDate.now())
+                                memberViewModel.activeMembershipRecord?.copy(
+                                    isActive = false,
+                                    dateFinished = LocalDate.now()
+                                )
                                     ?.let { membershipRecordDao.updateMembershipRecord(it) }
                                 memberViewModel.initViewModel()
                                 expiredMembershipDialogOpened = true

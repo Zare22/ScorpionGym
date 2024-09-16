@@ -9,7 +9,27 @@ import java.time.format.DateTimeFormatter
 
 class MembershipRecordDaoImpl(private val dbConnection: Connection) : MembershipRecordDao {
 
-    val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+
+    private val querySelectInactive = "SELECT id FROM MembershipRecord WHERE dateFinished < ? AND isActive = 1"
+    private val queryDeactivateMembership = "UPDATE MembershipRecord SET isActive = 0 WHERE id = ?"
+
+    private val querySelectToActivate = """
+        WITH minMembershipRecords AS (
+            SELECT MIN(mr.id) AS minId, mr.memberId
+            FROM MembershipRecord mr
+            WHERE mr.dateStarted <= ? 
+            AND (mr.dateFinished IS NULL OR mr.dateFinished > ?)
+            AND mr.isActive = 0
+            AND mr.memberId NOT IN (SELECT memberId FROM MembershipRecord WHERE isActive = 1)
+            GROUP BY mr.memberId
+        )
+        SELECT mr.id, mr.membershipId, m.isNoLimit, m.numberOfTrainingsAvailable
+        FROM minMembershipRecords minMr
+        JOIN MembershipRecord mr ON mr.id = minMr.minId
+        JOIN Membership m ON mr.membershipId = m.id
+    """
+    private val queryActivateMembership = "UPDATE MembershipRecord SET isActive = 1 WHERE id = ?"
 
     override fun getAllMembershipRecords(): List<MembershipRecord> {
         val records = mutableListOf<MembershipRecord>()
@@ -75,7 +95,7 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
             val resultSet = statement.executeQuery()
             insertedId = resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID članarine nije kreiran!")
         }
-        logActionOnMembershipRecord(record.memberId, record.membershipId, "Produžena je članarina")
+        logActionOnMembershipRecord(record.memberId, record.membershipId, "Kreirana je članarina")
 
         return insertedId
     }
@@ -111,7 +131,7 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
 
     override fun getMembersMembershipRecords(id: Int): List<MembershipRecord> {
         val memberRecords = mutableListOf<MembershipRecord>()
-        val query = "SELECT * FROM MembershipRecord WHERE memberId = ?"
+        val query = "SELECT * FROM MembershipRecord WHERE memberId = ? ORDER BY dateStarted"
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, id)
@@ -133,31 +153,20 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         return memberRecords
     }
 
+    override fun deleteAllTrainingsAssociatedWithRecord(membershipRecord: MembershipRecord) {
+        val deleteTrainingSessionsQuery = "DELETE FROM TrainingSession WHERE membershipRecordId = ?"
+
+        logActionOnMembershipRecord(membershipRecord.memberId, membershipRecord.membershipId, "Obrisani su treninzi vezani za članarinu")
+        dbConnection.prepareStatement(deleteTrainingSessionsQuery).use { statement ->
+            statement.setInt(1, membershipRecord.id)
+            statement.executeUpdate()
+        }
+
+    }
+
     override fun validateMemberships() {
-        val today = LocalDate.now()
-
-        val querySelectInactive = "SELECT id FROM MembershipRecord WHERE dateFinished < ? AND isActive = 1"
-        val queryUpdateInactive = "UPDATE MembershipRecord SET isActive = 0 WHERE id = ?"
-
-        val querySelectActivate = """
-            WITH minMembershipRecords AS (
-                SELECT MIN(mr.id) AS minId, mr.memberId
-                FROM MembershipRecord mr
-                WHERE mr.dateStarted <= ? 
-                AND (mr.dateFinished IS NULL OR mr.dateFinished > ?)
-                AND mr.isActive = 0
-                AND mr.memberId NOT IN (SELECT memberId FROM MembershipRecord WHERE isActive = 1)
-                GROUP BY mr.memberId
-            )
-            SELECT mr.id, mr.membershipId, m.isNoLimit, m.numberOfTrainingsAvailable
-            FROM minMembershipRecords minMr
-            JOIN MembershipRecord mr ON mr.id = minMr.minId
-            JOIN Membership m ON mr.membershipId = m.id
-        """
-        val queryUpdateActivate = "UPDATE MembershipRecord SET isActive = 1 WHERE id = ?"
-
-        updateMemberships(querySelectInactive, queryUpdateInactive, today, onlyOneDate = true)
-        updateMemberships(querySelectActivate, queryUpdateActivate, today, onlyOneDate = false)
+        deactivateExpiredMemberships()
+        activateMemberships()
     }
 
     private fun fetchMemberAndMembershipDetails(memberId: Int, membershipId: Int): Triple<String, String, String> {
@@ -199,26 +208,36 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         }
     }
 
-    private fun updateMemberships(selectQuery: String, updateQuery: String, date: LocalDate, onlyOneDate: Boolean) {
-        dbConnection.prepareStatement(selectQuery).use { selectStatement ->
-            selectStatement.setString(1, date.toString())
-
-            if (!onlyOneDate) {
-                selectStatement.setString(2, date.toString())
-            }
-
+    private fun deactivateExpiredMemberships() {
+        dbConnection.prepareStatement(querySelectInactive).use { selectStatement ->
+            selectStatement.setString(1, LocalDate.now().toString())
             val resultSet = selectStatement.executeQuery()
 
-            dbConnection.prepareStatement(updateQuery).use { updateStatement ->
+            dbConnection.prepareStatement(queryDeactivateMembership).use { updateStatement ->
                 while (resultSet.next()) {
-                    val isNoLimit = resultSet.getBoolean("IsNoLimit")
+                    val membershipRecordId = resultSet.getInt("id")
+                    updateStatement.setInt(1, membershipRecordId)
+                    updateStatement.executeUpdate()
+                }
+            }
+        }
+    }
+
+    private fun activateMemberships() {
+        val today = LocalDate.now()
+        dbConnection.prepareStatement(querySelectToActivate).use { selectStatement ->
+            selectStatement.setString(1, today.toString())
+            selectStatement.setString(2, today.toString())
+            val resultSet = selectStatement.executeQuery()
+
+            dbConnection.prepareStatement(queryActivateMembership).use { updateStatement ->
+                while (resultSet.next()) {
+                    val isNoLimit = resultSet.getBoolean("isNoLimit")
                     val numberOfTrainingsAvailable = resultSet.getInt("numberOfTrainingsAvailable")
                     val membershipRecordId = resultSet.getInt("id")
 
                     if (!isNoLimit) {
-                        val hasRemainingSessions =
-                            checkRemainingSessions(membershipRecordId, numberOfTrainingsAvailable)
-
+                        val hasRemainingSessions = checkRemainingSessions(membershipRecordId, numberOfTrainingsAvailable)
                         if (!hasRemainingSessions) {
                             continue
                         }

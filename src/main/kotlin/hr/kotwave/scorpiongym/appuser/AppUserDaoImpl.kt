@@ -63,26 +63,25 @@ class AppUserDaoImpl(private val connection: Connection) : AppUserDao {
         }
     }
 
-    override fun getUserActivityLogs(appUserId: Int): List<Pair<String, String>> {
-        val activityLogs = mutableListOf<Pair<String, String>>()
-        val query = "SELECT action, dateOfAction FROM UserActivityLog WHERE appUserId = ?"
+    override fun getAllActivityLogs(): List<Triple<String, String, String>> {
+        val activityLogs = mutableListOf<Triple<String, String, String>>()
+        val query = "SELECT action, dateOfAction, au.username FROM UserActivityLog ual INNER JOIN AppUser au on ual.appUserId = au.id"
 
         connection.prepareStatement(query).use { statement ->
-            statement.setInt(1, appUserId)
             val resultSet = statement.executeQuery()
 
-            val inputDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss") // Input format from SQLite
-            val outputDateFormat = SimpleDateFormat("MM.dd.yyyy HH:mm")
+            val inputDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            val outputDateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm")
 
             while (resultSet.next()) {
                 val action = resultSet.getString("action")
                 val dateOfActionString = resultSet.getString("dateOfAction")
+                val username = resultSet.getString("username")
                 val formattedDate = outputDateFormat.format(inputDateFormat.parse(dateOfActionString) ?: "")
 
-                activityLogs.add(Pair(action, formattedDate))
+                activityLogs.add(Triple(action, formattedDate, username))
             }
         }
-
         return activityLogs
     }
 }

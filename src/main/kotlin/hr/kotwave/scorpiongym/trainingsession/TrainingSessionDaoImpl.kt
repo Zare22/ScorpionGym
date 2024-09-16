@@ -4,6 +4,7 @@ import hr.kotwave.scorpiongym.util.PreferencesHelper
 import hr.kotwave.scorpiongym.util.parseToLocalDateTime
 import java.sql.Connection
 import java.sql.SQLException
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -94,7 +95,7 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
 
     override fun getAllTrainingSessionsForMembershipRecord(membershipRecordId: Int): List<TrainingSession> {
         val sessions = mutableListOf<TrainingSession>()
-        val query = "SELECT * FROM TrainingSession WHERE membershipRecordId = ? ORDER BY sessionDateTime DESC"
+        val query = "SELECT * FROM TrainingSession WHERE membershipRecordId = ? ORDER BY sessionDateTime"
 
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, membershipRecordId)
@@ -112,15 +113,15 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
         return sessions
     }
 
-    private fun fetchMemberAndMembershipDetails(trainingSessionId: Int): Triple<String, String, String> {
+    private fun fetchMemberAndMembershipDetails(trainingSessionId: Int): MemberAndMembershipDetails {
         val detailsQuery = """
-            SELECT m.name AS memberName, m.surname AS memberSurname, ms.name AS membershipName
-            FROM TrainingSession ts
-            JOIN MembershipRecord mr ON ts.membershipRecordId = mr.id
-            JOIN Member m ON mr.memberId = m.id
-            JOIN Membership ms ON mr.membershipId = ms.id
-            WHERE ts.id = ?
-        """
+        SELECT m.name AS memberName, m.surname AS memberSurname, ms.name AS membershipName, mr.dateStarted, mr.dateFinished
+        FROM TrainingSession ts
+        JOIN MembershipRecord mr ON ts.membershipRecordId = mr.id
+        JOIN Member m ON mr.memberId = m.id
+        JOIN Membership ms ON mr.membershipId = ms.id
+        WHERE ts.id = ?
+    """
 
         dbConnection.prepareStatement(detailsQuery).use { statement ->
             statement.setInt(1, trainingSessionId)
@@ -130,7 +131,19 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
                 val memberName = resultSet.getString("memberName")
                 val memberSurname = resultSet.getString("memberSurname")
                 val membershipName = resultSet.getString("membershipName")
-                return Triple(memberName, memberSurname, membershipName)
+
+                val dateFormatterFromDb = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                val dateFormatterForDisplay = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+
+                val dateStarted = resultSet.getString("dateStarted")?.let {
+                    LocalDate.parse(it, dateFormatterFromDb).format(dateFormatterForDisplay)
+                } ?: "N/A"
+
+                val dateFinished = resultSet.getString("dateFinished")?.let {
+                    LocalDate.parse(it, dateFormatterFromDb).format(dateFormatterForDisplay)
+                } ?: "N/A"
+
+                return MemberAndMembershipDetails(memberName, memberSurname, membershipName, dateStarted, dateFinished)
             } else {
                 throw SQLException("Nije moguće dohvatiti detalje za člana i članarinu.")
             }
@@ -139,8 +152,11 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
 
 
     private fun logActionOnTrainingSession(trainingSessionId: Int, actionDescription: String) {
-        val (memberName, memberSurname, membershipName) = fetchMemberAndMembershipDetails(trainingSessionId)
-        val logText = "$actionDescription za člana $memberName $memberSurname u članarini $membershipName"
+        val details = fetchMemberAndMembershipDetails(trainingSessionId)
+
+        val logText =
+            "$actionDescription za člana ${details.memberName} ${details.memberSurname} u članarini ${details.membershipName} " +
+                    "(Početak: ${details.dateStarted}, Kraj: ${details.dateFinished})"
 
         val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
 
@@ -153,3 +169,11 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
     }
 
 }
+
+data class MemberAndMembershipDetails(
+    val memberName: String,
+    val memberSurname: String,
+    val membershipName: String,
+    val dateStarted: String,
+    val dateFinished: String
+)
