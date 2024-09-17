@@ -89,13 +89,13 @@ class UnregisteredServiceDaoImpl(private val dbConnection: Connection) : Unregis
             statement.setInt(5, unregisteredService.id)
             statement.executeUpdate()
         }
-        logAction(unregisteredService.id, "Ažurirana je usluga")
+        logAction(unregisteredService.id, "Ažurirana je usluga za neregistriranog člana")
     }
 
     override fun deleteUnregisteredService(unregisteredService: UnregisteredService) {
         val query = "DELETE FROM UnregisteredService WHERE id = ?"
 
-        logAction(unregisteredService.id, "Obrisana je usluga")
+        logAction(unregisteredService.id, "Obrisana je usluga za neregistriranog člana")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, unregisteredService.id)
             statement.executeUpdate()
@@ -120,7 +120,7 @@ class UnregisteredServiceDaoImpl(private val dbConnection: Connection) : Unregis
                 val otherServiceName = resultSet.getString("otherServiceName")
                 return Pair(membershipName, otherServiceName)
             } else {
-                throw SQLException("Nije moguće dohvatiti detalje za uslugu.")
+                throw SQLException("Nije moguće dohvatiti detalje za uslugu neregistriranog člana.")
             }
         }
     }

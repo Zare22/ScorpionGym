@@ -15,6 +15,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import hr.kotwave.scorpiongym.appuser.AppUserViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
@@ -48,72 +49,98 @@ class LoginScreen(private val onLoginSuccess: () -> Unit) : Screen {
             }
         }
 
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp).onPreviewKeyEvent { event ->
-                if (event.key == Key.Enter && event.type == KeyEventType.KeyDown) {
-                    performLogin()
-                    true
-                } else {
-                    false
-                }
-            }, verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier.fillMaxSize().padding(16.dp)
         ) {
-
-            TextField(value = username,
-                onValueChange = { username = it },
-                label = { Text("Korisničko ime") },
-                modifier = Modifier.width(IntrinsicSize.Max).fillMaxWidth(0.5f).focusRequester(usernameFocusRequester)
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
                     .onPreviewKeyEvent { event ->
-                        if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
-                            passwordFocusRequester.requestFocus()
-                            true
-                        } else false
-                    })
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextField(value = password,
-                onValueChange = { password = it },
-                label = { Text("Lozinka") },
-                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    val iconText = if (showPassword) "🙈" else "👁️"
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Text(iconText)
-                    }
-                },
-                modifier = Modifier.width(IntrinsicSize.Max).fillMaxWidth(0.5f).focusRequester(passwordFocusRequester)
-                    .onPreviewKeyEvent { event ->
-                        if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
-                            loginButtonFocusRequester.requestFocus()
+                        if (event.key == Key.Enter && event.type == KeyEventType.KeyDown) {
+                            performLogin()
                             true
                         } else {
                             false
                         }
-                    })
+                    },
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
 
-            Spacer(modifier = Modifier.height(16.dp))
+                TextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Korisničko ime") },
+                    modifier = Modifier
+                        .width(IntrinsicSize.Max)
+                        .fillMaxWidth(0.5f)
+                        .focusRequester(usernameFocusRequester)
+                        .onPreviewKeyEvent { event ->
+                            if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
+                                passwordFocusRequester.requestFocus()
+                                true
+                            } else false
+                        }
+                )
 
-            if (loginError) {
-                InformativeDialog("Pogrešno korisničko ime ili lozinka") { loginError = false }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Lozinka") },
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        val iconText = if (showPassword) "🙈" else "👁️"
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Text(iconText)
+                        }
+                    },
+                    modifier = Modifier
+                        .width(IntrinsicSize.Max)
+                        .fillMaxWidth(0.5f)
+                        .focusRequester(passwordFocusRequester)
+                        .onPreviewKeyEvent { event ->
+                            if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
+                                loginButtonFocusRequester.requestFocus()
+                                true
+                            } else {
+                                false
+                            }
+                        }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (loginError) {
+                    InformativeDialog("Pogrešno korisničko ime ili lozinka") { loginError = false }
+                }
+
+                Button(
+                    onClick = { performLogin() },
+                    modifier = Modifier
+                        .width(100.dp)
+                        .focusRequester(loginButtonFocusRequester)
+                        .onPreviewKeyEvent { event ->
+                            if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
+                                usernameFocusRequester.requestFocus()
+                                true
+                            } else {
+                                false
+                            }
+                        }
+                ) {
+                    Text("Login")
+                }
             }
-
-            Button(onClick = { performLogin() },
-                modifier = Modifier.width(100.dp).focusRequester(loginButtonFocusRequester).onPreviewKeyEvent { event ->
-                    if (event.key == Key.Tab && event.type == KeyEventType.KeyDown) {
-                        usernameFocusRequester.requestFocus()
-                        true
-                    } else {
-                        false
-                    }
-                }) {
-                Text("Login")
-            }
-
-            Spacer(modifier = Modifier.height(150.dp))
 
             Text(
-                text = "Developed by Leo Žarković", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center
+                text = "Developed by Leo Žarković",
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 12.sp
             )
         }
     }

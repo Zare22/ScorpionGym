@@ -22,7 +22,7 @@ class AppUserViewModel(private val appUserDao: AppUserDao) {
     fun getAllActivityLogs(): List<Triple<String, String, String>> = appUserDao.getAllActivityLogs()
 
     fun registerAppUser(userName: String, password: String, isAdmin: Boolean = false) {
-        val newUser = createAppUser(userName, hashPassword(password), isAdmin)
+        val newUser = createAppUser(userName, password, isAdmin)
         appUserDao.registerAppUser(newUser.username, newUser.password, isAdmin)
     }
 

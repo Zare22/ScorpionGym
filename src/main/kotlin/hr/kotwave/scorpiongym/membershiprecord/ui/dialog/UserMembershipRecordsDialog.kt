@@ -132,7 +132,10 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
 
     Dialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
-        onDismissRequest = { onClose() }
+        onDismissRequest = {
+            memberViewModel.removeUnconfirmedFutureMembershipRecords()
+            onClose()
+        }
     ) {
         Card(
             modifier = Modifier

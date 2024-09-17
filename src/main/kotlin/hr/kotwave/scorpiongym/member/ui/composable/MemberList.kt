@@ -51,6 +51,9 @@ fun MemberList(onItemClick: (Member) -> Unit) {
             { it.name.lowercase(Locales.CroatianLocale) })
     )
 
+    val paidMembersCount = membersListViewModel.members.count { getRibbonColor(it) == Color.Green }
+    val unpaidMembersCount = membersListViewModel.members.count { getRibbonColor(it) == Color.Red }
+
     Column {
         FlowRow(
             modifier = Modifier
@@ -92,13 +95,13 @@ fun MemberList(onItemClick: (Member) -> Unit) {
                         memberFilterOption = MemberFilterOption.PAID
                         expanded = false
                     }) {
-                        Text("Aktivni(podmireni dugovi)")
+                        Text("Aktivni(podmireni dugovi)" + if (PreferencesHelper().isAdmin) " - $paidMembersCount" else "")
                     }
                     DropdownMenuItem(onClick = {
                         memberFilterOption = MemberFilterOption.UNPAID
                         expanded = false
                     }) {
-                        Text("Neplaćeno")
+                        Text("Neplaćeno" + if (PreferencesHelper().isAdmin) " - $unpaidMembersCount" else "")
                     }
                     DropdownMenuItem(onClick = {
                         memberFilterOption = MemberFilterOption.NO_ACTIVE_SUBSCRIPTION

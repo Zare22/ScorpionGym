@@ -105,7 +105,7 @@ fun AddUnregisteredServiceDialog(onClose: () -> Unit) {
                 Text(
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                     text = buildAnnotatedString {
-                        append("Upisat ćete odabranu uslugu za člana na datum: ")
+                        append("Upisat ćete odabranu uslugu za neregistriranog člana na datum: ")
 
                         withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                             append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy. HH:mm")))
