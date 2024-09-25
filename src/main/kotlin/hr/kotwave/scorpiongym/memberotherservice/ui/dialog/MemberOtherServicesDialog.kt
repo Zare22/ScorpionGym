@@ -35,12 +35,12 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
+fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
     val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
     val otherServiceViewModel: OtherServiceViewModel = getKoin().get()
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
     val listState = rememberLazyListState()
-    val memberOtherServices by remember { derivedStateOf { memberViewModel.memberOtherServices.sortedBy { it.dateOfService } } }
+    val memberOtherServices by remember { derivedStateOf { memberViewModel.memberOtherServices } }
     val initialIsPaidValues = remember { memberOtherServices.map { it.isPaid }.toMutableStateList() }
 
     var selectedMemberOtherServiceToDelete by remember { mutableStateOf<MemberOtherService?>(null) }
@@ -50,6 +50,16 @@ fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
     var showInfoDialog by remember { mutableStateOf(false) }
     var infoMessage by remember { mutableStateOf("") }
 
+    val individualTrainingCount by remember {
+        derivedStateOf {
+            memberViewModel.memberOtherServices.count { memberOtherService ->
+                val otherServiceType = otherServiceViewModel.otherServices.find { otherService ->
+                    otherService.id == memberOtherService.otherServiceId
+                }
+                otherServiceType?.name?.contains("Individualni trening", ignoreCase = true) == true
+            }
+        }
+    }
 
     when {
 
@@ -168,23 +178,6 @@ fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
                         var isPaid by remember { mutableStateOf(memberOtherService.isPaid) }
                         val price = otherServiceType?.price
 
-                        //Leave if we want to introduce discount on other services
-//                        memberViewModel.currentMember.organizationId?.let { organizationId ->
-//                            if (organizationId != 0) {
-//                                val typeOfOrganizationViewModel: TypeOfOrganizationViewModel = getKoin().get()
-//                                val typeOfOrganization =
-//                                    typeOfOrganizationViewModel.organizationTypes.find { typeOfOrg ->
-//                                        typeOfOrg.id == organizationId
-//                                    }
-//                                if (typeOfOrganization != null) {
-//                                    val discountRate = typeOfOrganization.discountRate / 100.0
-//                                    price?.let { originalPrice ->
-//                                        price = originalPrice * (1 - discountRate)
-//                                    }
-//                                }
-//                            }
-//                        }
-
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -207,7 +200,7 @@ fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
                                     memberOtherServiceDate = newValue
                                     val parsedDateTime =
                                         runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
-                                    if (parsedDateTime != null) {
+                                    if (parsedDateTime != null && parsedDateTime != memberOtherService.dateOfService) {
                                         memberViewModel.updateMemberOtherService(
                                             index,
                                             memberOtherService.copy(dateOfService = parsedDateTime)
@@ -274,6 +267,15 @@ fun OtherServicesDialog(member: Member, onClose: () -> Unit) {
                                 )
                             }
                             onClose()
+                        }
+                    )
+                    Text(
+                        text = buildAnnotatedString {
+                            append("Broj individualnih treninga: ")
+
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append(individualTrainingCount.toString())
+                            }
                         }
                     )
                     HoverableButton(

@@ -17,7 +17,8 @@ class OtherServiceViewModel(private val otherServiceDao: OtherServiceDao) : Koin
     }
 
     fun addOtherService(otherService: OtherService) {
-        otherServiceDao.insertOtherService(otherService)
+        val otherServiceId = otherServiceDao.insertOtherService(otherService)
+        otherService.id = otherServiceId
         _otherServices.add(otherService)
     }
 

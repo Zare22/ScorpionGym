@@ -41,7 +41,6 @@ class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOr
                 )
             }
         }
-
         return typeOfOrganization
     }
 
@@ -52,16 +51,17 @@ class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOr
             RETURNING id
         """
 
+        val insertedId: Int
         dbConnection.prepareStatement(query).use { statement ->
             statement.setString(1, typeOfOrganization.name)
             statement.setDouble(2, typeOfOrganization.discountRate)
 
             val resultSet = statement.executeQuery()
 
-            logActionOnTypeOfOrganization("Kreiran novi tip organizacije ${typeOfOrganization.name}")
-
-            return resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID tipa organizacije nije kreiran!")
+            insertedId = resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID tipa organizacije nije kreiran!")
         }
+        logActionOnTypeOfOrganization("Kreiran novi tip organizacije ${typeOfOrganization.name}")
+        return insertedId
     }
 
     override fun updateTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
@@ -75,20 +75,18 @@ class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOr
             statement.setDouble(2, typeOfOrganization.discountRate)
             statement.setInt(3, typeOfOrganization.id)
             statement.executeUpdate()
-
-            logActionOnTypeOfOrganization("Ažurirani podatci organizacije ${typeOfOrganization.name}")
         }
+        logActionOnTypeOfOrganization("Ažurirani podatci organizacije ${typeOfOrganization.name}")
     }
 
     override fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
         val query = "DELETE FROM TypeOfOrganization WHERE id = ?"
 
-        logActionOnTypeOfOrganization("Pobrisan tip organizacije ${typeOfOrganization.name}")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, typeOfOrganization.id)
             statement.executeUpdate()
-
         }
+        logActionOnTypeOfOrganization("Pobrisan tip organizacije ${typeOfOrganization.name}")
     }
 
     private fun logActionOnTypeOfOrganization(text: String) {
@@ -98,7 +96,7 @@ class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOr
             statement.setInt(1, PreferencesHelper().loggedInUserId!!)
             statement.setString(2, text)
             statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            statement.executeQuery()
+            statement.executeUpdate()
         }
     }
 }

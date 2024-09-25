@@ -30,7 +30,7 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
     }
 
     override fun getMemberOtherServiceById(id: Int): MemberOtherService? {
-        val query = "SELECT * FROM MemberOtherService WHERE id = ?"
+        val query = "SELECT * FROM MemberOtherService WHERE id = ? ORDER BY dateOfService"
         var memberOtherService: MemberOtherService? = null
 
         dbConnection.prepareStatement(query).use { statement ->

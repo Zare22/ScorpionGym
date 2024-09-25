@@ -55,7 +55,7 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
     }
 
     override fun getMembershipRecordById(id: Int): MembershipRecord? {
-        val query = "SELECT * FROM MembershipRecord WHERE id = ?"
+        val query = "SELECT * FROM MembershipRecord WHERE id = ? ORDER BY dateStarted"
         var record: MembershipRecord? = null
 
         dbConnection.prepareStatement(query).use { statement ->

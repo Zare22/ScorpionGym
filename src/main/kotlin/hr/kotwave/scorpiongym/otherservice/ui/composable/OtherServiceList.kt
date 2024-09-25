@@ -1,23 +1,30 @@
 package hr.kotwave.scorpiongym.otherservice.ui.composable
 
+import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Card
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import hr.kotwave.scorpiongym.otherservice.OtherService
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
+import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.util.Locales
+import hr.kotwave.scorpiongym.util.PreferencesHelper
 import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
@@ -52,16 +59,75 @@ fun OtherServiceList(onItemClick: (OtherService) -> Unit) {
 
 @Composable
 fun OtherServiceItem(otherService: OtherService, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clickable(onClick = onClick)
-            .pointerHoverIcon(PointerIcon.Hand, false),
-        elevation = 4.dp
+    val otherServiceViewModel: OtherServiceViewModel = getKoin().get()
+
+    var showDeleteOtherServiceDialogAlert by remember { mutableStateOf(false) }
+    var showInfoDialog by remember { mutableStateOf(false) }
+    var infoMessage by remember { mutableStateOf("") }
+
+    when {
+        showInfoDialog -> {
+            InformativeDialog(infoMessage) { showInfoDialog = false }
+        }
+
+        showDeleteOtherServiceDialogAlert -> {
+            AlertDialog(
+                onDismissRequest = { showDeleteOtherServiceDialogAlert = false },
+                title = { Text("Brisanje ostale usluge", color = Color.Red) },
+                text = {
+                    Text(
+                        text = buildAnnotatedString {
+                            append("Ukoliko nastavite pobrisat ćete ostalu uslugu ")
+
+                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                append(otherService.name)
+                            }
+                        }
+                    )
+                },
+                confirmButton = {
+                    HoverableButton(
+                        text = "Potvrdi",
+                        buttonBackgroundColor = Color.Red,
+                        onClick = {
+                            try {
+                                otherServiceViewModel.deleteOtherService(otherService)
+                            } catch (e: Exception) {
+                                infoMessage = "Nije moguće pobrisati ostalu uslugu jer se koristi!"
+                                showInfoDialog = true
+                            }
+                            showDeleteOtherServiceDialogAlert = false
+                        }
+                    )
+                },
+                dismissButton = {
+                    HoverableButton(
+                        text = "Odustani",
+                        onClick = { showDeleteOtherServiceDialogAlert = false }
+                    )
+                }
+            )
+        }
+    }
+    ContextMenuArea(
+        items = {
+            val items = mutableListOf<ContextMenuItem>()
+            if (PreferencesHelper().isAdmin)
+                items.add(ContextMenuItem("Obriši ostalu uslugu") { showDeleteOtherServiceDialogAlert = true })
+            items
+        }
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(otherService.name, style = MaterialTheme.typography.h6)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .clickable(onClick = onClick)
+                .pointerHoverIcon(PointerIcon.Hand, false),
+            elevation = 4.dp
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(otherService.name, style = MaterialTheme.typography.h6)
+            }
         }
     }
 }

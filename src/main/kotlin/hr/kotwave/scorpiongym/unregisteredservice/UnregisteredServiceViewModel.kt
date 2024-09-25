@@ -24,4 +24,12 @@ class UnregisteredServiceViewModel(private val unregisteredServiceDao: Unregiste
         unregisteredServiceDao.deleteUnregisteredService(unregisteredServices)
         _unregisteredServices.remove(unregisteredServices)
     }
+
+    fun updateUnregisteredOtherService(index: Int, unregisteredService: UnregisteredService) {
+        TODO("Not yet implemented")
+    }
+
+    fun confirmUnregisteredOtherServicesUpdates() {
+        TODO("Not yet implemented")
+    }
 }

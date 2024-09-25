@@ -39,8 +39,8 @@ class MemberViewModel(
     val trainingSessionsInActiveMembership: SnapshotStateList<TrainingSession> get() = _trainingSessionsInActiveMembership
 
     private val modifiedSessions = mutableListOf<TrainingSession>()
-
     private val modifiedRecords = mutableListOf<MembershipRecord>()
+    private val modifiedMemberOtherServices = mutableListOf<MemberOtherService>()
 
     var numberOfTrainingsAvailable by mutableStateOf(0)
         private set
@@ -128,7 +128,15 @@ class MemberViewModel(
 
     fun updateMemberOtherService(index: Int, updatedMemberOtherService: MemberOtherService) {
         if (index in _memberOtherServices.indices) {
+
             _memberOtherServices[index] = updatedMemberOtherService
+            val existingService = modifiedMemberOtherServices.find { it.id == updatedMemberOtherService.id}
+
+            if (existingService != null) {
+                val existingIndex = modifiedMemberOtherServices.indexOf(existingService)
+                modifiedMemberOtherServices[existingIndex] = updatedMemberOtherService
+            } else if (updatedMemberOtherService.id != 0)
+                modifiedMemberOtherServices.add(updatedMemberOtherService)
         }
     }
 
@@ -176,8 +184,13 @@ class MemberViewModel(
 
     fun confirmMemberOtherServicesUpdates() {
         _memberOtherServices.forEach { memberOtherService ->
-            memberOtherServiceDao.updateMemberOtherService(memberOtherService)
+            if(memberOtherService.id == 0) memberOtherServiceDao.updateMemberOtherService(memberOtherService)
         }
+        modifiedMemberOtherServices.forEach { modifiedMemberOtherService ->
+            if (modifiedMemberOtherService.id != 0) memberOtherServiceDao.updateMemberOtherService(modifiedMemberOtherService)
+        }
+        modifiedMemberOtherServices.clear()
+        initViewModel()
     }
 
     fun assignActiveMembershipRecord(membershipRecord: MembershipRecord) {

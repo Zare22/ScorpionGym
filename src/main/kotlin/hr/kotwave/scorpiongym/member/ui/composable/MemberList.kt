@@ -23,7 +23,7 @@ import hr.kotwave.scorpiongym.member.MemberFilterOption
 import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.member.MembersListViewModel
 import hr.kotwave.scorpiongym.memberotherservice.ui.dialog.AddMemberOtherServiceDialog
-import hr.kotwave.scorpiongym.memberotherservice.ui.dialog.OtherServicesDialog
+import hr.kotwave.scorpiongym.memberotherservice.ui.dialog.MemberOtherServicesDialog
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.membershiprecord.ui.dialog.UserMembershipRecordsDialog
 import hr.kotwave.scorpiongym.trainingsession.ui.dialog.AddSingleTrainingSessionDialog
@@ -160,7 +160,7 @@ fun MemberList(onItemClick: (Member) -> Unit) {
 fun MemberItem(member: Member, onClick: () -> Unit) {
     var showAddSingleTrainingSessionDialog by remember { mutableStateOf(false) }
     var showAddMemberOtherServiceDialog by remember { mutableStateOf(false) }
-    var showDeleteMemberDialogAlertOpened by remember { mutableStateOf(false) }
+    var showDeleteMemberDialogAlert by remember { mutableStateOf(false) }
     var showManageTrainingSessionsDialog by remember { mutableStateOf(false) }
     var showManageMembershipRecordsDialog by remember { mutableStateOf(false) }
     var showManageMemberOtherServicesDialog by remember { mutableStateOf(false) }
@@ -189,9 +189,9 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
             UserMembershipRecordsDialog(member, onClose = { showManageMembershipRecordsDialog = false })
         }
 
-        showDeleteMemberDialogAlertOpened -> {
+        showDeleteMemberDialogAlert -> {
             AlertDialog(
-                onDismissRequest = { showDeleteMemberDialogAlertOpened = false },
+                onDismissRequest = { showDeleteMemberDialogAlert = false },
                 title = { Text("Brisanje člana", color = Color.Red) },
                 text = {
                     Text(
@@ -217,14 +217,14 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                                 infoMessage = "Greška kod brisanja člana"
                                 showInfoDialog = true
                             }
-                            showDeleteMemberDialogAlertOpened = false
+                            showDeleteMemberDialogAlert = false
                         }
                     )
                 },
                 dismissButton = {
                     HoverableButton(
                         text = "Odustani",
-                        onClick = { showDeleteMemberDialogAlertOpened = false }
+                        onClick = { showDeleteMemberDialogAlert = false }
                     )
                 }
             )
@@ -235,7 +235,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
         }
 
         showManageMemberOtherServicesDialog -> {
-            OtherServicesDialog(member, onClose = { showManageMemberOtherServicesDialog = false })
+            MemberOtherServicesDialog(member, onClose = { showManageMemberOtherServicesDialog = false })
         }
     }
 
@@ -262,7 +262,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                 if (memberViewModel.memberOtherServices.isNotEmpty())
                     items.add(ContextMenuItem("Pregled svih ostalih usluga") { showManageMemberOtherServicesDialog = true })
                 if (PreferencesHelper().isAdmin)
-                    items.add(ContextMenuItem("Obriši člana") { showDeleteMemberDialogAlertOpened = true })
+                    items.add(ContextMenuItem("Obriši člana") { showDeleteMemberDialogAlert = true })
 
                 items
             }
@@ -312,7 +312,11 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                                 buildAnnotatedString {
                                     append("Tip aktivne članarine: ")
                                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        typeOfMembership?.let { append(it.name) }
+                                        typeOfMembership?.let {
+                                            append(it.name)
+                                            append(" do ")
+                                            append(memberViewModel.activeMembershipRecord!!.dateFinished.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")))
+                                        }
                                     }
                                 },
                                 style = MaterialTheme.typography.body2

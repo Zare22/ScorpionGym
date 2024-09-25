@@ -39,9 +39,10 @@ object DatabaseFactory {
         connection?.use { con ->
             con.autoCommit = false
             try {
-                con.createStatement().use { statement ->
-
-                }
+//                con.createStatement().use { statement ->
+//                    statement.execute("CREATE TABLE IF NOT EXISTS CurrentSessionUser (currentAppUserId INTEGER PRIMARY KEY CHECK (currentAppUserId = 1))")
+//
+//                }
                 con.commit()
             } catch (e: SQLException) {
                 e.printStackTrace()

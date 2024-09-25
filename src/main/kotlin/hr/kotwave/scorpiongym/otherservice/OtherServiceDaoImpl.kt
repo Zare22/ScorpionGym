@@ -84,11 +84,11 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
     override fun deleteOtherServiceById(otherService: OtherService) {
         val query = "DELETE FROM OtherService WHERE id = ?"
 
-        logActionOnOtherService("Pobrisana usluga ${otherService.name}")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, otherService.id)
             statement.executeUpdate()
         }
+        logActionOnOtherService("Pobrisana usluga ${otherService.name}")
     }
 
     private fun logActionOnOtherService(text: String) {
