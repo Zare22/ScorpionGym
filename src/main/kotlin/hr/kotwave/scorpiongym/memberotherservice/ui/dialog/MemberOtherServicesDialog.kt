@@ -283,11 +283,11 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                         onClick = {
                             try {
                                 memberViewModel.confirmMemberOtherServicesUpdates()
+                                onClose()
                             } catch (e: Exception) {
-                                infoMessage = "Greška pri ažuriranju člana"
+                                infoMessage = "Greška pri ažuriranju ostale usluge"
                                 showInfoDialog = true
                             }
-                            onClose()
                         },
                         buttonBackgroundColor = Color.Green
                     )

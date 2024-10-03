@@ -72,8 +72,8 @@ fun AddUnregisteredServiceDialog(onClose: () -> Unit) {
                     items = combinedList,
                     selectedItem = combinedList.find {
                         when (it) {
-                            is ServiceItem.OtherServiceItem -> it.id.toString() == selectedId
-                            is ServiceItem.MembershipItem -> it.id.toString() == selectedId
+                            is ServiceItem.OtherServiceItem -> it.id == otherServiceId
+                            is ServiceItem.MembershipItem -> it.id == membershipId
                         }
                     },
                     onItemSelected = { selectedItem ->

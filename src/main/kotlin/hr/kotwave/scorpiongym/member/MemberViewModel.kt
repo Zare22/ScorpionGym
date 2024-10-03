@@ -184,7 +184,7 @@ class MemberViewModel(
 
     fun confirmMemberOtherServicesUpdates() {
         _memberOtherServices.forEach { memberOtherService ->
-            if(memberOtherService.id == 0) memberOtherServiceDao.updateMemberOtherService(memberOtherService)
+            if(memberOtherService.id == 0) memberOtherServiceDao.insertMemberOtherService(memberOtherService)
         }
         modifiedMemberOtherServices.forEach { modifiedMemberOtherService ->
             if (modifiedMemberOtherService.id != 0) memberOtherServiceDao.updateMemberOtherService(modifiedMemberOtherService)

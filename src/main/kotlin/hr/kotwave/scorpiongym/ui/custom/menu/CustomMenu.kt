@@ -16,9 +16,11 @@ fun CustomMenu(
     onLogout: () -> Unit,
     onAllLogsSelected: () -> Unit,
     onCreateNewAppUser: () -> Unit,
+    onOpenUnregisteredServiceDialog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var settingsMenuExpanded by remember { mutableStateOf(false) }
+    var unregisteredServiceMenuExpanded by remember { mutableStateOf(false) }
 
     Row(modifier = modifier.fillMaxWidth().padding(8.dp)) {
         Box {
@@ -62,13 +64,32 @@ fun CustomMenu(
             }
         }
         Spacer(Modifier.width(8.dp))
-        Text(
-            text = "Upiši uslugu za neregistriranog člana",
-            modifier = Modifier
-                .clickable { onAddUnregisteredService() }
-                .padding(8.dp),
-            style = MaterialTheme.typography.body1
-        )
+        Box {
+            Text(
+                text = "Neregistrirane usluge",
+                modifier = Modifier
+                    .clickable { unregisteredServiceMenuExpanded = !unregisteredServiceMenuExpanded }
+                    .padding(8.dp),
+                style = MaterialTheme.typography.body1
+            )
+            DropdownMenu(
+                expanded = unregisteredServiceMenuExpanded,
+                onDismissRequest = { unregisteredServiceMenuExpanded = false }
+            ) {
+                DropdownMenuItem(onClick = {
+                    onAddUnregisteredService()
+                    unregisteredServiceMenuExpanded = false
+                }) {
+                    Text("Upiši uslugu za neregistriranog člana", style = MaterialTheme.typography.body2)
+                }
+                DropdownMenuItem(onClick = {
+                    onOpenUnregisteredServiceDialog()
+                    unregisteredServiceMenuExpanded = false
+                }) {
+                    Text("Povijest neregistriranih usluga", style = MaterialTheme.typography.body2)
+                }
+            }
+        }
         Spacer(Modifier.width(8.dp))
 
         if (PreferencesHelper().isAdmin) {

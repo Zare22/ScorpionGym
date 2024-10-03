@@ -30,6 +30,7 @@ import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.menu.CustomMenu
 import hr.kotwave.scorpiongym.ui.theme.ScorpionGymTheme
 import hr.kotwave.scorpiongym.unregisteredservice.ui.dialog.AddUnregisteredServiceDialog
+import hr.kotwave.scorpiongym.unregisteredservice.ui.dialog.UnregisteredServiceDialog
 import hr.kotwave.scorpiongym.util.PreferencesHelper
 import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
@@ -53,7 +54,20 @@ fun main() = application {
     val windowState = rememberWindowState(placement = WindowPlacement.Maximized)
 
     Window(
-        onCloseRequest = ::exitApplication,
+        onCloseRequest = {
+            PreferencesHelper().clearUser()
+            DatabaseFactory.connect().use { con ->
+                con?.autoCommit = false
+                try {
+                    con?.prepareStatement("UPDATE CurrentSessionUser SET currentAppUserId = null")?.executeUpdate()
+                    con?.commit()
+                } catch (e: Exception) {
+                    con?.rollback()
+                    println("Error setting currentAppUserId to null: ${e.message}")
+                }
+            }
+            exitApplication()
+        },
         title = "Scorpion Gym",
         state = windowState,
         icon = painterResource("ScorpionWindowIcon.png")
@@ -71,7 +85,8 @@ fun ScorpionGymApp() {
 
     var isLoggedIn by remember { mutableStateOf(false) }
 
-    var showUnregisteredServicesDialog by remember { mutableStateOf(false) }
+    var showAddUnregisteredServiceDialog by remember { mutableStateOf(false) }
+    var showUnregisteredServicesHistoryDialog by remember { mutableStateOf(false) }
     var showCreateNewAppUserDialog by remember { mutableStateOf(false) }
 
     var infoMessage by remember { mutableStateOf("") }
@@ -91,8 +106,8 @@ fun ScorpionGymApp() {
     ScorpionGymTheme(darkTheme = darkTheme) {
         Surface {
             when {
-                showUnregisteredServicesDialog -> {
-                    AddUnregisteredServiceDialog { showUnregisteredServicesDialog = false }
+                showAddUnregisteredServiceDialog -> {
+                    AddUnregisteredServiceDialog { showAddUnregisteredServiceDialog = false }
                 }
                 showInfoDialog -> {
                     InformativeDialog(infoMessage) { showInfoDialog = false }
@@ -102,6 +117,9 @@ fun ScorpionGymApp() {
                 }
                 showCreateNewAppUserDialog -> {
                     CreateNewAppUserDialog { showCreateNewAppUserDialog = false }
+                }
+                showUnregisteredServicesHistoryDialog -> {
+                    UnregisteredServiceDialog { showUnregisteredServicesHistoryDialog = false  }
                 }
             }
             Column(modifier = Modifier.fillMaxSize()) {
@@ -124,9 +142,20 @@ fun ScorpionGymApp() {
                             }
                         },
                         onAddUnregisteredService = {
-                            showUnregisteredServicesDialog = true
+                            showAddUnregisteredServiceDialog = true
                         },
                         onLogout = {
+                            DatabaseFactory.connect().use { con ->
+                                con?.autoCommit = false
+                                try {
+                                    con?.prepareStatement("UPDATE CurrentSessionUser SET currentAppUserId = null")?.executeUpdate()
+                                    con?.commit()
+                                } catch (e: Exception) {
+                                    con?.rollback()
+                                    infoMessage = "Greška pri postavljanju logiranog korisnika u bazu"
+                                    showInfoDialog = true
+                                }
+                            }
                             isLoggedIn = false
                             PreferencesHelper().clearUser()
                         },
@@ -135,6 +164,9 @@ fun ScorpionGymApp() {
                         },
                         onCreateNewAppUser = {
                             showCreateNewAppUserDialog = true
+                        },
+                        onOpenUnregisteredServiceDialog = {
+                            showUnregisteredServicesHistoryDialog = true
                         },
                         modifier = Modifier.align(Alignment.Start)
                     )
@@ -163,6 +195,20 @@ fun ScorpionGymApp() {
                             }
                         } else {
                             Navigator(LoginScreen(onLoginSuccess = {
+                                DatabaseFactory.connect().use { con ->
+                                    con?.autoCommit = false
+                                    try {
+                                        con?.prepareStatement("UPDATE CurrentSessionUser SET currentAppUserId = ?").use { preparedStatement ->
+                                            preparedStatement?.setInt(1, PreferencesHelper().loggedInUserId!!)
+                                            preparedStatement?.executeUpdate()
+                                        }
+                                        con?.commit()
+                                    } catch (e: Exception) {
+                                        con?.rollback()
+                                        infoMessage = "Greška pri postavljanju logiranog korisnika u bazu"
+                                        showInfoDialog = true
+                                    }
+                                }
                                 isLoggedIn = true
                             })) { navigator ->
                                 SlideTransition(navigator)

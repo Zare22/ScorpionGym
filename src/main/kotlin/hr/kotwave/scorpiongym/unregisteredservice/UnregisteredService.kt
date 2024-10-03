@@ -6,6 +6,6 @@ data class UnregisteredService(
     var id: Int = 0,
     val dateOfService: LocalDateTime,
     val isPaid: Boolean,
-    val membershipId: Int? = null,
-    val otherServiceId: Int? = null
+    var membershipId: Int? = null,
+    var otherServiceId: Int? = null
 )

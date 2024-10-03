@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
+import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableCheckbox
@@ -38,15 +39,21 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
     val otherServiceViewModel: OtherServiceViewModel = getKoin().get()
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
     val listState = rememberLazyListState()
-    val unregisteredOtherServices by remember { derivedStateOf { unregisteredServiceViewModel.unregisteredServices.sortedBy { it.dateOfService } } }
+    val unregisteredOtherServices by remember { derivedStateOf { unregisteredServiceViewModel.unregisteredServices } }
     val initialIsPaidValues = remember { unregisteredOtherServices.map { it.isPaid }.toMutableStateList() }
 
     var selectedUnregisteredOtherService by remember { mutableStateOf<UnregisteredService?>(null) }
     var nameOfOtherService by remember { mutableStateOf("") }
     var confirmOtherServiceDeleteDialog by remember { mutableStateOf(false) }
 
+    var showInfoDialog by remember { mutableStateOf(false) }
+    var infoMessage by remember { mutableStateOf("") }
 
     when {
+        showInfoDialog -> {
+            InformativeDialog(infoMessage) { showInfoDialog = false }
+        }
+
         confirmOtherServiceDeleteDialog -> {
             AlertDialog(
                 onDismissRequest = { confirmOtherServiceDeleteDialog = false },
@@ -73,7 +80,11 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                         text = "Potvrdi",
                         buttonBackgroundColor = Color.Red,
                         onClick = {
-                            selectedUnregisteredOtherService?.let { unregisteredServiceViewModel.deleteUnregisteredService(it) }
+                            selectedUnregisteredOtherService?.let {
+                                unregisteredServiceViewModel.deleteUnregisteredService(
+                                    it
+                                )
+                            }
                             confirmOtherServiceDeleteDialog = false
                         }
                     )
@@ -136,21 +147,21 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                     state = listState,
                     modifier = Modifier.weight(1f)
                 ) {
-                    itemsIndexed(unregisteredOtherServices) { index, memberOtherService ->
+                    itemsIndexed(unregisteredOtherServices) { index, unregisteredOtherService ->
                         val otherServiceType =
-                            otherServiceViewModel.otherServices.find { otherService -> otherService.id == memberOtherService.otherServiceId }
+                            otherServiceViewModel.otherServices.find { otherService -> otherService.id == unregisteredOtherService.otherServiceId }
                         val otherServiceTypeName = otherServiceType?.name?.let { TextFieldValue(it) }
-                        var memberOtherServiceDate by remember {
+                        var unregisteredOtherServiceDate by remember {
                             mutableStateOf(
                                 TextFieldValue(
-                                    memberOtherService.dateOfService.format(
+                                    unregisteredOtherService.dateOfService.format(
                                         dateFormatter
                                     )
                                 )
                             )
                         }
 
-                        var isPaid by remember { mutableStateOf(memberOtherService.isPaid) }
+                        var isPaid by remember { mutableStateOf(unregisteredOtherService.isPaid) }
                         val price = otherServiceType?.price
 
                         Row(
@@ -170,15 +181,15 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                                 modifier = Modifier.weight(1f).padding(end = 8.dp)
                             )
                             FocusableOutlinedTextField(
-                                value = memberOtherServiceDate,
+                                value = unregisteredOtherServiceDate,
                                 onValueChange = { newValue ->
-                                    memberOtherServiceDate = newValue
+                                    unregisteredOtherServiceDate = newValue
                                     val parsedDateTime =
                                         runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
-                                    if (parsedDateTime != null && parsedDateTime != memberOtherService.dateOfService) {
+                                    if (parsedDateTime != null && parsedDateTime != unregisteredOtherService.dateOfService) {
                                         unregisteredServiceViewModel.updateUnregisteredOtherService(
                                             index,
-                                            memberOtherService.copy(dateOfService = parsedDateTime)
+                                            unregisteredOtherService.copy(dateOfService = parsedDateTime)
                                         )
                                     }
                                 },
@@ -196,7 +207,7 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                                     isPaid = !isPaid
                                     unregisteredServiceViewModel.updateUnregisteredOtherService(
                                         index,
-                                        memberOtherService.copy(
+                                        unregisteredOtherService.copy(
                                             isPaid = isPaid
                                         )
                                     )
@@ -206,7 +217,7 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                             )
                             IconButton(
                                 onClick = {
-                                    selectedUnregisteredOtherService = memberOtherService
+                                    selectedUnregisteredOtherService = unregisteredOtherService
                                     nameOfOtherService = otherServiceTypeName?.text ?: ""
                                     confirmOtherServiceDeleteDialog = true
                                 },
@@ -247,8 +258,13 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                     HoverableButton(
                         text = "Potvrdi promjene",
                         onClick = {
-                            unregisteredServiceViewModel.confirmUnregisteredOtherServicesUpdates()
-                            onClose()
+                            try {
+                                unregisteredServiceViewModel.confirmUnregisteredOtherServicesUpdates()
+                                onClose()
+                            } catch (e: Exception) {
+                                infoMessage = "Greška pri ažuriranju ostale usluge"
+                                showInfoDialog = true
+                            }
                         },
                         buttonBackgroundColor = Color.Green
                     )

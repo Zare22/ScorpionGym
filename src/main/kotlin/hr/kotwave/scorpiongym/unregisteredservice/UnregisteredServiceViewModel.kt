@@ -6,6 +6,8 @@ class UnregisteredServiceViewModel(private val unregisteredServiceDao: Unregiste
     private val _unregisteredServices = mutableStateListOf<UnregisteredService>()
     val unregisteredServices: List<UnregisteredService> get() = _unregisteredServices
 
+    private val modifiedUnregisteredOtherServices = mutableListOf<UnregisteredService>()
+
     init {
         getUnregisteredServices()
     }
@@ -16,7 +18,7 @@ class UnregisteredServiceViewModel(private val unregisteredServiceDao: Unregiste
     }
 
     fun addUnregisteredService(unregisteredServices: UnregisteredService) {
-        unregisteredServiceDao.insertUnregisteredService(unregisteredServices)
+        unregisteredServices.id = unregisteredServiceDao.insertUnregisteredService(unregisteredServices)
         _unregisteredServices.add(unregisteredServices)
     }
 
@@ -26,10 +28,30 @@ class UnregisteredServiceViewModel(private val unregisteredServiceDao: Unregiste
     }
 
     fun updateUnregisteredOtherService(index: Int, unregisteredService: UnregisteredService) {
-        TODO("Not yet implemented")
+        if (index in _unregisteredServices.indices) {
+
+            _unregisteredServices[index] = unregisteredService
+            val existingService = modifiedUnregisteredOtherServices.find { it.id == unregisteredService.id}
+
+            if (existingService != null) {
+                val existingIndex = modifiedUnregisteredOtherServices.indexOf(existingService)
+                modifiedUnregisteredOtherServices[existingIndex] = unregisteredService
+            } else if (unregisteredService.id != 0)
+                modifiedUnregisteredOtherServices.add(unregisteredService)
+        }
     }
 
     fun confirmUnregisteredOtherServicesUpdates() {
-        TODO("Not yet implemented")
+        _unregisteredServices.forEach { unregisteredService ->
+            if(unregisteredService.id == 0)
+                unregisteredServiceDao.insertUnregisteredService(unregisteredService)
+        }
+        modifiedUnregisteredOtherServices.forEach { unregisteredService ->
+            if (unregisteredService.id != 0)
+                unregisteredServiceDao.updateUnregisteredService(unregisteredService)
+        }
+        _unregisteredServices.clear()
+        modifiedUnregisteredOtherServices.clear()
+        getUnregisteredServices()
     }
 }

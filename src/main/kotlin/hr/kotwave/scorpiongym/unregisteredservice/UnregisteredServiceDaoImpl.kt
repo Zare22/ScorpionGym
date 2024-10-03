@@ -11,16 +11,19 @@ class UnregisteredServiceDaoImpl(private val dbConnection: Connection) : Unregis
 
     override fun getAllUnregisteredServices(): List<UnregisteredService> {
         val unregisteredServices = mutableListOf<UnregisteredService>()
-        val query = "SELECT * FROM UnregisteredService"
+        val query = "SELECT * FROM UnregisteredService ORDER BY dateOfService"
 
         dbConnection.createStatement().use { statement ->
             val resultSet = statement.executeQuery(query)
             while (resultSet.next()) {
+                val membershipId = resultSet.getObject("membershipId")?.let { resultSet.getInt("membershipId") }
+                val otherServiceId = resultSet.getObject("otherServiceId")?.let { resultSet.getInt("otherServiceId") }
+
                 val unregisteredService = UnregisteredService(
                     id = resultSet.getInt("id"),
                     dateOfService = parseToLocalDateTime(resultSet.getString("dateOfService")),
-                    membershipId = resultSet.getInt("membershipId"),
-                    otherServiceId = resultSet.getInt("otherServiceId"),
+                    membershipId = membershipId,
+                    otherServiceId = otherServiceId,
                     isPaid = resultSet.getBoolean("isPaid")
                 )
                 unregisteredServices.add(unregisteredService)
