@@ -38,7 +38,7 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalLayoutApi::class)
 @Composable
-fun MemberList(onItemClick: (Member) -> Unit) {
+fun MemberList(onItemClick: (Member) -> Unit, searchQueryAfterAddingNewMember: String) {
     var searchQuery by remember { mutableStateOf("") }
     var memberFilterOption by remember { mutableStateOf<MemberFilterOption?>(null) }
     var expanded by remember { mutableStateOf(false) }
@@ -53,6 +53,12 @@ fun MemberList(onItemClick: (Member) -> Unit) {
 
     val paidMembersCount = membersListViewModel.members.count { getRibbonColor(it) == Color.Green }
     val unpaidMembersCount = membersListViewModel.members.count { getRibbonColor(it) == Color.Red }
+
+    LaunchedEffect(searchQueryAfterAddingNewMember) {
+        if (searchQueryAfterAddingNewMember.isNotEmpty()) {
+            searchQuery = searchQueryAfterAddingNewMember
+        }
+    }
 
     Column {
         FlowRow(

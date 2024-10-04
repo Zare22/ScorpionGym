@@ -40,6 +40,8 @@ class MainScreen : Screen {
         var isCreatingNewMember by remember { mutableStateOf(false) }
         var detailsVisible by remember { mutableStateOf(false) }
 
+        var searchQueryAfterAddingNewMember by remember { mutableStateOf("") }
+
         //ViewModel init
         val membersListViewModel: MembersListViewModel = getKoin().get()
         val membershipViewModel: MembershipViewModel = getKoin().get()
@@ -93,7 +95,8 @@ class MainScreen : Screen {
                             selectedMember = member
                             isCreatingNewMember = false
                             detailsVisible = true
-                        }
+                        },
+                        searchQueryAfterAddingNewMember
                     )
                 }
             }
@@ -123,6 +126,7 @@ class MainScreen : Screen {
                         onUpdateClick = { updatedMember ->
                             if (isCreatingNewMember) {
                                 membersListViewModel.addMember(updatedMember)
+                                searchQueryAfterAddingNewMember = "${updatedMember.name} ${updatedMember.surname}"
                                 closeMemberScope(Member(0))
                                 isCreatingNewMember = false
                             } else {
