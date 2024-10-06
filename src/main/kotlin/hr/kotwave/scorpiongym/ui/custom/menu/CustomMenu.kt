@@ -6,7 +6,9 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import hr.kotwave.scorpiongym.paymentauditlog.PaymentAuditLogViewModel
 import hr.kotwave.scorpiongym.util.PreferencesHelper
+import org.koin.java.KoinJavaComponent.getKoin
 
 @Composable
 fun CustomMenu(
@@ -17,6 +19,7 @@ fun CustomMenu(
     onAllLogsSelected: () -> Unit,
     onCreateNewAppUser: () -> Unit,
     onOpenUnregisteredServiceDialog: () -> Unit,
+    onCashRegisterSelected: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var settingsMenuExpanded by remember { mutableStateOf(false) }
@@ -97,6 +100,16 @@ fun CustomMenu(
                 text = "Povijest aktivnosti",
                 modifier = Modifier
                     .clickable { onAllLogsSelected() }
+                    .padding(8.dp),
+                style = MaterialTheme.typography.body1
+            )
+            Text(
+                text = "Kasa",
+                modifier = Modifier
+                    .clickable {
+                        getKoin().get<PaymentAuditLogViewModel>().initPaymentAuditLogs()
+                        onCashRegisterSelected()
+                    }
                     .padding(8.dp),
                 style = MaterialTheme.typography.body1
             )

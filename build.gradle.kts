@@ -24,7 +24,8 @@ dependencies {
     implementation("io.insert-koin:koin-core:3.2.0")
     implementation("cafe.adriel.voyager:voyager-navigator:1.1.0-beta01")
     implementation("cafe.adriel.voyager:voyager-transitions:1.1.0-beta01")
-    implementation("io.github.dzirbel:compose-material-context-menu:0.2.0")
+//    implementation("org.jetbrains.compose.material3:material3-desktop:1.6.11")
+//    implementation("androidx.compose.material:material-icons-extended:1.7.2")
 }
 
 compose.desktop {

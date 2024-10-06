@@ -9,8 +9,6 @@ import java.time.format.DateTimeFormatter
 
 class MembershipRecordDaoImpl(private val dbConnection: Connection) : MembershipRecordDao {
 
-    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-
     private val querySelectInactive = "SELECT id FROM MembershipRecord WHERE dateFinished < ? AND isActive = 1"
     private val queryDeactivateMembership = "UPDATE MembershipRecord SET isActive = 0 WHERE id = ?"
 

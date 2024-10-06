@@ -25,6 +25,7 @@ import hr.kotwave.scorpiongym.di.appModule
 import hr.kotwave.scorpiongym.di.memberScopeModule
 import hr.kotwave.scorpiongym.member.ui.screen.MainScreen
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
+import hr.kotwave.scorpiongym.paymentauditlog.ui.CashRegisterDialog
 import hr.kotwave.scorpiongym.ui.custom.dialog.CreateNewAppUserDialog
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.menu.CustomMenu
@@ -88,6 +89,7 @@ fun ScorpionGymApp() {
     var showAddUnregisteredServiceDialog by remember { mutableStateOf(false) }
     var showUnregisteredServicesHistoryDialog by remember { mutableStateOf(false) }
     var showCreateNewAppUserDialog by remember { mutableStateOf(false) }
+    var showCashRegisterDialog by remember { mutableStateOf(false) }
 
     var infoMessage by remember { mutableStateOf("") }
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -120,6 +122,9 @@ fun ScorpionGymApp() {
                 }
                 showUnregisteredServicesHistoryDialog -> {
                     UnregisteredServiceDialog { showUnregisteredServicesHistoryDialog = false  }
+                }
+                showCashRegisterDialog -> {
+                    CashRegisterDialog { showCashRegisterDialog = false }
                 }
             }
             Column(modifier = Modifier.fillMaxSize()) {
@@ -167,6 +172,9 @@ fun ScorpionGymApp() {
                         },
                         onOpenUnregisteredServiceDialog = {
                             showUnregisteredServicesHistoryDialog = true
+                        },
+                        onCashRegisterSelected = {
+                            showCashRegisterDialog = true
                         },
                         modifier = Modifier.align(Alignment.Start)
                     )
