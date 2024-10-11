@@ -5,7 +5,6 @@ import java.time.LocalDate
 
 class PaymentAuditLogViewModel(private val paymentAuditLogDao: PaymentAuditLogDao) {
     private val _paymentAuditLogs = mutableStateListOf<PaymentAuditLog>()
-    val paymentAuditLogs: List<PaymentAuditLog> get() = _paymentAuditLogs
 
     fun initPaymentAuditLogs() {
         _paymentAuditLogs.clear()
@@ -13,9 +12,15 @@ class PaymentAuditLogViewModel(private val paymentAuditLogDao: PaymentAuditLogDa
         _paymentAuditLogs.addAll(loadedPaymentAuditLogs)
     }
 
-    fun getUserTotalByDate(date: LocalDate): Map<String, Double> {
+    fun getUserTotalByDateRange(from: LocalDate?, to: LocalDate?): Map<String, Double> {
         val filteredLogs = _paymentAuditLogs.filter {
-            it.changedAt == date
+            val logDate = it.changedAt
+            when {
+                from != null && to != null -> logDate!! in from..to
+                from != null -> logDate!! >= from
+                to != null -> logDate!! <= to
+                else -> true
+            }
         }
 
         return filteredLogs.groupBy { it.appUser!!.username }

@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
@@ -25,6 +26,7 @@ import hr.kotwave.scorpiongym.di.appModule
 import hr.kotwave.scorpiongym.di.memberScopeModule
 import hr.kotwave.scorpiongym.member.ui.screen.MainScreen
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
+import hr.kotwave.scorpiongym.paymentauditlog.PaymentAuditLogViewModel
 import hr.kotwave.scorpiongym.paymentauditlog.ui.CashRegisterDialog
 import hr.kotwave.scorpiongym.ui.custom.dialog.CreateNewAppUserDialog
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
@@ -51,8 +53,8 @@ fun main() = application {
         modules(appModule, memberScopeModule)
     }
 
-    DatabaseFactory.initDB()
     val windowState = rememberWindowState(placement = WindowPlacement.Maximized)
+    var showCashRegisterDialog by remember { mutableStateOf(false) }
 
     Window(
         onCloseRequest = {
@@ -71,15 +73,24 @@ fun main() = application {
         },
         title = "Scorpion Gym",
         state = windowState,
-        icon = painterResource("ScorpionWindowIcon.png")
+        icon = painterResource("ScorpionWindowIcon.png"),
+        onKeyEvent = {
+            if (it.type == KeyEventType.KeyDown  && it.isCtrlPressed && it.isShiftPressed && it.key == Key.K && PreferencesHelper().isAdmin) {
+                getKoin().get<PaymentAuditLogViewModel>().initPaymentAuditLogs()
+                showCashRegisterDialog = true
+                true
+            } else {
+                false
+            }
+        }
     ) {
         window.minimumSize = Dimension(1000, 800)
-        ScorpionGymApp()
+        ScorpionGymApp(showCashRegisterDialog, onCloseCashRegister = { showCashRegisterDialog = false })
     }
 }
 
 @Composable
-fun ScorpionGymApp() {
+fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> Unit) {
     val preferencesHelper = remember { PreferencesHelper() }
     var darkTheme by remember { mutableStateOf(preferencesHelper.isDarkTheme) }
     val coroutineScope = rememberCoroutineScope()
@@ -89,7 +100,6 @@ fun ScorpionGymApp() {
     var showAddUnregisteredServiceDialog by remember { mutableStateOf(false) }
     var showUnregisteredServicesHistoryDialog by remember { mutableStateOf(false) }
     var showCreateNewAppUserDialog by remember { mutableStateOf(false) }
-    var showCashRegisterDialog by remember { mutableStateOf(false) }
 
     var infoMessage by remember { mutableStateOf("") }
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -124,7 +134,7 @@ fun ScorpionGymApp() {
                     UnregisteredServiceDialog { showUnregisteredServicesHistoryDialog = false  }
                 }
                 showCashRegisterDialog -> {
-                    CashRegisterDialog { showCashRegisterDialog = false }
+                    CashRegisterDialog { onCloseCashRegister() }
                 }
             }
             Column(modifier = Modifier.fillMaxSize()) {
@@ -172,9 +182,6 @@ fun ScorpionGymApp() {
                         },
                         onOpenUnregisteredServiceDialog = {
                             showUnregisteredServicesHistoryDialog = true
-                        },
-                        onCashRegisterSelected = {
-                            showCashRegisterDialog = true
                         },
                         modifier = Modifier.align(Alignment.Start)
                     )

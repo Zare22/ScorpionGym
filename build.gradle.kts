@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "hr.kotwave"
-version = "1.1.0"
+version = "1.1.2"
 
 repositories {
     mavenCentral()
@@ -24,8 +24,6 @@ dependencies {
     implementation("io.insert-koin:koin-core:3.2.0")
     implementation("cafe.adriel.voyager:voyager-navigator:1.1.0-beta01")
     implementation("cafe.adriel.voyager:voyager-transitions:1.1.0-beta01")
-//    implementation("org.jetbrains.compose.material3:material3-desktop:1.6.11")
-//    implementation("androidx.compose.material:material-icons-extended:1.7.2")
 }
 
 compose.desktop {
@@ -37,7 +35,7 @@ compose.desktop {
             includeAllModules = true
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "ScorpionGym"
-            packageVersion = "1.1.0"
+            packageVersion = "1.1.2"
 
             windows {
                 upgradeUuid = "123e4567-e89b-12d3-a456-426614174000"
