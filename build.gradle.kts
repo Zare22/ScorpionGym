@@ -40,6 +40,7 @@ compose.desktop {
             windows {
                 upgradeUuid = "123e4567-e89b-12d3-a456-426614174000"
                 menuGroup = "Scorpion Gym"
+                iconFile.set(project.file("src/main/resources/windows.ico"))
             }
         }
 

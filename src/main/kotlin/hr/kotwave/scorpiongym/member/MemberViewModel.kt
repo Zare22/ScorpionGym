@@ -152,8 +152,10 @@ class MemberViewModel(
 
     fun removeMembershipRecord(record: MembershipRecord) {
         _memberRecords.remove(record)
-        membershipRecordDao.deleteAllTrainingsAssociatedWithRecord(record)
-        membershipRecordDao.deleteMembershipRecord(record)
+        if (record.id != 0) {
+            membershipRecordDao.deleteAllTrainingsAssociatedWithRecord(record)
+            membershipRecordDao.deleteMembershipRecord(record)
+        }
     }
 
     fun removeMemberOtherService(memberOtherService: MemberOtherService) {

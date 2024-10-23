@@ -63,6 +63,7 @@ fun UserActionsDialog(logs: List<Triple<String, String, String>>, onClose: () ->
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Aktivnosti radnika", style = MaterialTheme.typography.h6)
+                Divider(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
 
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
 

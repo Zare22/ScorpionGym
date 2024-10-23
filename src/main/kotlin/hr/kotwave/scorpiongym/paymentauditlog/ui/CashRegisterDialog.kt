@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import hr.kotwave.scorpiongym.paymentauditlog.PaymentAuditLogViewModel
+import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -30,6 +31,7 @@ fun CashRegisterDialog(onClose: () -> Unit) {
     var toDate by remember { mutableStateOf("") }
     var userSums by remember { mutableStateOf<Map<String, Double>>(emptyMap()) }
     val lazyListState = rememberLazyListState(0)
+    var periodSum by remember { mutableStateOf(0.0) }
 
     val triggerShowPaymentAuditLogs = {
         val parsedFromDate =
@@ -38,6 +40,7 @@ fun CashRegisterDialog(onClose: () -> Unit) {
             runCatching { LocalDate.parse(toDate, DateTimeFormatter.ofPattern("dd.MM.yyyy")) }.getOrNull()
 
         userSums = paymentAuditLogViewModel.getUserTotalByDateRange(parsedFromDate, parsedToDate)
+        periodSum = userSums.values.sum()
     }
 
     Dialog(onDismissRequest = { onClose() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -59,6 +62,7 @@ fun CashRegisterDialog(onClose: () -> Unit) {
                     }
             ) {
                 Text("Kasa", style = MaterialTheme.typography.h6)
+                Divider(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
 
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                     OutlinedTextField(
@@ -75,22 +79,20 @@ fun CashRegisterDialog(onClose: () -> Unit) {
                         modifier = Modifier.weight(1f).padding(start = 16.dp),
                         singleLine = true
                     )
-                    Button(
+                    HoverableButton(
+                        text = "Danas",
                         onClick = {
                             val today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
                             fromDate = today
                             toDate = today
                             triggerShowPaymentAuditLogs()
-                        }, modifier = Modifier.align(Alignment.CenterVertically).padding(start = 16.dp)
-                    ) {
-                        Text("Danas")
-                    }
-                    Button(
+                        }, modifier = Modifier.align(Alignment.CenterVertically)
+                    )
+                    HoverableButton(
+                        text = "Prikaži",
                         onClick = { triggerShowPaymentAuditLogs() },
-                        modifier = Modifier.align(Alignment.CenterVertically).padding(start = 16.dp)
-                    ) {
-                        Text("Prikaži")
-                    }
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -118,6 +120,7 @@ fun CashRegisterDialog(onClose: () -> Unit) {
                                             text = "%.2f€".format(entry.value),
                                             color = if (entry.value > 0) Color.Green else Color.Red,
                                             style = MaterialTheme.typography.body1,
+                                            fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(start = 16.dp)
                                         )
 
@@ -135,10 +138,20 @@ fun CashRegisterDialog(onClose: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(
-                    onClick = { onClose() }, modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text("Close")
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = periodSum.toString(),
+                        color = if (periodSum > 0) Color.Green else Color.Red,
+                        style = MaterialTheme.typography.body1,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+
+                    HoverableButton(
+                        text = "Zatvori",
+                        onClick = { onClose() },
+                        modifier = Modifier.align(Alignment.BottomEnd)
+                    )
                 }
             }
         }

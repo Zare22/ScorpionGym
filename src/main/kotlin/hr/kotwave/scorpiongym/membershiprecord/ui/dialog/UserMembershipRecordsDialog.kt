@@ -384,12 +384,16 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             HoverableButton(
                                 text = "+ Dodaj novu članarinu",
                                 onClick = {
+                                    var dateStarted: LocalDate = LocalDate.now()
+                                    if (memberViewModel.activeMembershipRecord != null)
+                                        dateStarted = memberViewModel.memberRecords.maxOfOrNull { record -> record.dateFinished }?.plusDays(1) ?: dateStarted
+                                    val dateFinished = dateStarted.plusMonths(1).minusDays(1)
                                     val newRecord = MembershipRecord(
                                         id = 0,
                                         memberId = member.id,
                                         membershipId = 0,
-                                        dateStarted = LocalDate.now().plusDays(1),
-                                        dateFinished = LocalDate.now().plusMonths(1),
+                                        dateStarted = dateStarted,
+                                        dateFinished = dateFinished,
                                         isActive = false,
                                         isPaid = false
                                     )
@@ -438,8 +442,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 memberViewModel.activeMembershipRecord?.copy(
                                     isActive = false,
                                     dateFinished = LocalDate.now()
-                                )
-                                    ?.let { membershipRecordDao.updateMembershipRecord(it) }
+                                )?.let { membershipRecordDao.updateMembershipRecord(it) }
                                 memberViewModel.initViewModel()
                                 expiredMembershipDialogOpened = true
                             } else onClose()
