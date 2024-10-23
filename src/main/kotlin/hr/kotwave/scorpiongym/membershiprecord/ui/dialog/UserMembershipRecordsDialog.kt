@@ -385,7 +385,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 text = "+ Dodaj novu članarinu",
                                 onClick = {
                                     var dateStarted: LocalDate = LocalDate.now()
-                                    if (memberViewModel.activeMembershipRecord != null)
+                                    if (memberViewModel.activeMembershipRecord != null || memberViewModel.memberRecords.any { record -> record.isActive })
                                         dateStarted = memberViewModel.memberRecords.maxOfOrNull { record -> record.dateFinished }?.plusDays(1) ?: dateStarted
                                     val dateFinished = dateStarted.plusMonths(1).minusDays(1)
                                     val newRecord = MembershipRecord(
