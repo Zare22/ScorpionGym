@@ -224,6 +224,12 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
                                         showInfoDialog = true
                                     }
                                 }
+                                try {
+                                    membershipRecordDao.validateMemberships()
+                                } catch (e: Exception) {
+                                    infoMessage = "Greška pri ažuriranju aktivnosti članarina"
+                                    showInfoDialog = true
+                                }
                                 isLoggedIn = true
                             })) { navigator ->
                                 SlideTransition(navigator)

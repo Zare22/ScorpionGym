@@ -34,7 +34,6 @@ object DatabaseFactory {
         }
     }
 
-    //If something has to be initialized on production
     fun initDB() {
         val connection = connect()
         connection?.use { con ->
