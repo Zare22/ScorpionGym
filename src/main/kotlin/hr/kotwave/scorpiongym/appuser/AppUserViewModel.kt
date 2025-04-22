@@ -1,12 +1,21 @@
 package hr.kotwave.scorpiongym.appuser
 
+import androidx.compose.runtime.mutableStateListOf
 import hr.kotwave.scorpiongym.util.PreferencesHelper
 import java.security.MessageDigest
 
 class AppUserViewModel(private val appUserDao: AppUserDao) {
 
-    val allUsers: List<AppUser> by lazy {
-        appUserDao.getAllUsers()
+    var allUsers = mutableStateListOf<AppUser>()
+        private set
+
+    init {
+        refreshUsers()
+    }
+
+    fun refreshUsers() {
+        allUsers.clear()
+        allUsers.addAll(appUserDao.getAllUsers())
     }
 
     fun loginAppUser(username: String, password: String) : Boolean {
@@ -24,6 +33,12 @@ class AppUserViewModel(private val appUserDao: AppUserDao) {
     fun registerAppUser(userName: String, password: String, isAdmin: Boolean = false) {
         val newUser = createAppUser(userName, password, isAdmin)
         appUserDao.registerAppUser(newUser.username, newUser.password, isAdmin)
+        refreshUsers()
+    }
+
+    fun deleteAppUser(appUser: AppUser) {
+        appUserDao.deleteAppUser(appUser)
+        refreshUsers()
     }
 
     private fun createAppUser(username: String, plainPassword: String, isAdmin: Boolean): AppUser {

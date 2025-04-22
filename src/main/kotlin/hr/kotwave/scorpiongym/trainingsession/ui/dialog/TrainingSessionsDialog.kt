@@ -1,9 +1,11 @@
 package hr.kotwave.scorpiongym.trainingsession.ui.dialog
 
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -105,7 +107,8 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
         onDismissRequest = {
             memberViewModel.removeTrainingSessionsWithoutId()
             onClose()
-        }) {
+        }
+    ) {
         Card(modifier = Modifier.fillMaxHeight(0.8f)) {
             Column {
                 Row(
@@ -183,85 +186,97 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                 }
 
                 Divider(modifier = Modifier.height(2.dp))
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(16.dp)
-                ) {
-                    itemsIndexed(trainingSessions) { index, session ->
-                        var sessionDateTime by remember {
-                            mutableStateOf(
-                                TextFieldValue(
-                                    session.sessionDateTime.format(
-                                        dateFormatter
+
+                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.padding(start = 6.dp, end = 6.dp),
+                        contentPadding = PaddingValues(16.dp)
+                    ) {
+                        itemsIndexed(trainingSessions) { index, session ->
+                            var sessionDateTime by remember {
+                                mutableStateOf(
+                                    TextFieldValue(
+                                        session.sessionDateTime.format(
+                                            dateFormatter
+                                        )
                                     )
                                 )
-                            )
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                        ) {
-                            FocusableOutlinedTextField(
-                                modifier = Modifier.weight(0.8f),
-                                value = sessionDateTime,
-                                onValueChange = { newValue ->
-                                    sessionDateTime = newValue
-                                    val parsedDateTime =
-                                        runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
-                                    if (parsedDateTime != null && parsedDateTime != session.sessionDateTime) {
-                                        memberViewModel.updateTrainingSession(
-                                            index,
-                                            session.copy(sessionDateTime = parsedDateTime)
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                FocusableOutlinedTextField(
+                                    modifier = Modifier.weight(0.8f),
+                                    value = sessionDateTime,
+                                    onValueChange = { newValue ->
+                                        sessionDateTime = newValue
+                                        val parsedDateTime =
+                                            runCatching {
+                                                LocalDateTime.parse(
+                                                    newValue.text,
+                                                    dateFormatter
+                                                )
+                                            }.getOrNull()
+                                        if (parsedDateTime != null && parsedDateTime != session.sessionDateTime) {
+                                            memberViewModel.updateTrainingSession(
+                                                index,
+                                                session.copy(sessionDateTime = parsedDateTime)
+                                            )
+                                        }
+                                    },
+                                    label = "Datum treninga",
+                                    currentFocusRequester = FocusRequester(),
+                                    nextFocusRequester = FocusRequester(),
+                                    canSwitchWithTab = false
+                                )
+                                session.id.takeIf { it != 0 }?.let {
+                                    IconButton(
+                                        onClick = {
+                                            selectedSessionToDelete = session
+                                            confirmSessionDeleteDialog = true
+                                        },
+                                        modifier = Modifier.weight(0.2f).padding(end = 4.dp)
+                                            .align(Alignment.CenterVertically)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Obriši",
+                                            tint = Color.Red
                                         )
                                     }
-                                },
-                                label = "Datum treninga",
-                                currentFocusRequester = FocusRequester(),
-                                nextFocusRequester = FocusRequester(),
-                                canSwitchWithTab = false
-                            )
-                            session.id.takeIf { it != 0 }?.let {
-                                IconButton(
-                                    onClick = {
-                                        selectedSessionToDelete = session
-                                        confirmSessionDeleteDialog = true
-                                    },
-                                    modifier = Modifier.weight(0.2f).padding(end = 4.dp)
-                                        .align(Alignment.CenterVertically)
+                                }
+                            }
+                        }
+                        if (memberViewModel.trainingSessionsInActiveMembership.size < memberViewModel.numberOfTrainingsAvailable) {
+                            item {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.Center
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Obriši",
-                                        tint = Color.Red
+                                    HoverableButton(
+                                        text = "+ Dodaj novi trening",
+                                        onClick = {
+                                            val newSession = TrainingSession(
+                                                sessionDateTime = LocalDateTime.now(),
+                                                membershipRecordId = memberViewModel.activeMembershipRecord!!.id
+                                            )
+                                            memberViewModel.addTrainingSession(newSession)
+                                            updateTrigger = !updateTrigger
+                                        }
                                     )
                                 }
                             }
                         }
                     }
-                    if (memberViewModel.trainingSessionsInActiveMembership.size < memberViewModel.numberOfTrainingsAvailable) {
-                        item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                HoverableButton(
-                                    text = "+ Dodaj novi trening",
-                                    onClick = {
-                                        val newSession = TrainingSession(
-                                            sessionDateTime = LocalDateTime.now(),
-                                            membershipRecordId = memberViewModel.activeMembershipRecord!!.id
-                                        )
-                                        memberViewModel.addTrainingSession(newSession)
-                                        updateTrigger = !updateTrigger
-                                    }
-                                )
-                            }
-                        }
-                    }
+                    VerticalScrollbar(
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                        adapter = rememberScrollbarAdapter(listState),
+                    )
                 }
 
                 LaunchedEffect(updateTrigger) {

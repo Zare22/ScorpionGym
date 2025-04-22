@@ -19,6 +19,7 @@ import androidx.compose.ui.window.rememberWindowState
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.transitions.SlideTransition
 import hr.kotwave.scorpiongym.appuser.AppUserViewModel
+import hr.kotwave.scorpiongym.appuser.ui.AppUsersList
 import hr.kotwave.scorpiongym.appuser.ui.LoginScreen
 import hr.kotwave.scorpiongym.appuser.ui.UserActionsDialog
 import hr.kotwave.scorpiongym.database.DatabaseFactory
@@ -100,6 +101,7 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
     var showAddUnregisteredServiceDialog by remember { mutableStateOf(false) }
     var showUnregisteredServicesHistoryDialog by remember { mutableStateOf(false) }
     var showCreateNewAppUserDialog by remember { mutableStateOf(false) }
+    var showAppUsersListDialog by remember { mutableStateOf(false) }
 
     var infoMessage by remember { mutableStateOf("") }
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -135,6 +137,9 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
                 }
                 showCashRegisterDialog -> {
                     CashRegisterDialog { onCloseCashRegister() }
+                }
+                showAppUsersListDialog -> {
+                    AppUsersList { showAppUsersListDialog = false }
                 }
             }
             Column(modifier = Modifier.fillMaxSize()) {
@@ -182,6 +187,9 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
                         },
                         onOpenUnregisteredServiceDialog = {
                             showUnregisteredServicesHistoryDialog = true
+                        },
+                        onOpenAppUserList = {
+                            showAppUsersListDialog = true
                         },
                         modifier = Modifier.align(Alignment.Start)
                     )

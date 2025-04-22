@@ -1,9 +1,11 @@
 package hr.kotwave.scorpiongym.membershiprecord.ui.dialog
 
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -35,6 +37,7 @@ import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableCheckbox
+import hr.kotwave.scorpiongym.ui.theme.Typography
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -56,6 +59,8 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
     var showTrainingSessionsDialog by remember { mutableStateOf(false) }
     var expiredMembershipDialogOpened by remember { mutableStateOf(false) }
     var selectedRecordId by remember { mutableStateOf(0) }
+    var countOfPaidRecords by remember { mutableStateOf(records.count { it.isPaid }) }
+    var countOfUnpaidRecords by remember { mutableStateOf(records.size - countOfPaidRecords) }
 
     val expandedMembership = remember { mutableStateMapOf<Int, Boolean>() }
 
@@ -142,7 +147,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                 .fillMaxHeight(0.8f)
                 .fillMaxWidth(0.8f)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.fillMaxHeight().padding(16.dp)) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -194,214 +199,222 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                 }
                 Divider(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
 
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    itemsIndexed(records) { index, record ->
-                        val membershipType =
-                            membershipViewModel.memberships.find { membership -> membership.id == record.membershipId }
+                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.padding(start = 6.dp, end = 6.dp)
+                    ) {
+                        itemsIndexed(records) { index, record ->
+                            val membershipType =
+                                membershipViewModel.memberships.find { membership -> membership.id == record.membershipId }
 
-                        val membershipTypeName = membershipType?.name?.let { TextFieldValue(it) }
-                        var recordDateStart by remember {
-                            mutableStateOf(
-                                TextFieldValue(
-                                    record.dateStarted.format(
-                                        dateFormatter
+                            val membershipTypeName = membershipType?.name?.let { TextFieldValue(it) }
+                            var recordDateStart by remember {
+                                mutableStateOf(
+                                    TextFieldValue(
+                                        record.dateStarted.format(
+                                            dateFormatter
+                                        )
                                     )
                                 )
-                            )
-                        }
-                        var recordDateFinished by remember {
-                            mutableStateOf(
-                                TextFieldValue(
-                                    record.dateFinished.format(
-                                        dateFormatter
-                                    )
-                                )
-                            )
-                        }
-
-                        var isPaid by remember { mutableStateOf(record.isPaid) }
-                        var isActive by remember { mutableStateOf(record.isActive) }
-                        var price = membershipType?.price
-
-                        memberViewModel.currentMember.organizationId?.let { organizationId ->
-                            if (organizationId != 0) {
-                                val typeOfOrganizationViewModel: TypeOfOrganizationViewModel = getKoin().get()
-                                val typeOfOrganization =
-                                    typeOfOrganizationViewModel.organizationTypes.find { typeOfOrg ->
-                                        typeOfOrg.id == organizationId
-                                    }
-                                if (typeOfOrganization != null) {
-                                    val discountRate = typeOfOrganization.discountRate / 100.0
-                                    price?.let { originalPrice ->
-                                        price = originalPrice * (1 - discountRate)
-                                    }
-                                }
                             }
-                        }
-
-                        val expanded = expandedMembership.getOrDefault(index, false)
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Dropdown(
-                                modifier = Modifier.weight(1f).padding(end = 8.dp),
-                                expanded = expanded,
-                                onExpandedChange = { expandedMembership[index] = it },
-                                label = "Tip članarine",
-                                items = memberships,
-                                selectedItem = memberships.find { it.id.toString() == record.membershipId.toString() },
-                                onItemSelected = {
-                                    record.membershipId = it.id
-                                    record.dateFinished =
-                                        record.dateStarted.plusMonths(
-                                            memberships.find { membership -> membership.id == record.membershipId }?.duration
-                                                ?: 1
-                                        ).minusDays(1)
-                                    recordDateFinished = TextFieldValue(
+                            var recordDateFinished by remember {
+                                mutableStateOf(
+                                    TextFieldValue(
                                         record.dateFinished.format(
                                             dateFormatter
                                         )
                                     )
+                                )
+                            }
 
-                                    expandedMembership[index] = false
-                                },
-                                focusRequester = FocusRequester(),
-                                nextFocusRequester = FocusRequester(),
-                                itemLabel = { it.name }
-                            )
-                            FocusableOutlinedTextField(
-                                value = recordDateStart,
-                                onValueChange = { newValue ->
-                                    recordDateStart = newValue
-                                    val parsedDateTime =
-                                        runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
-                                    if (parsedDateTime != null && parsedDateTime != record.dateStarted) {
-                                        memberViewModel.updateMembershipRecord(
-                                            index,
-                                            record.copy(dateStarted = parsedDateTime),
-                                        )
+                            var isPaid by remember { mutableStateOf(record.isPaid) }
+                            var isActive by remember { mutableStateOf(record.isActive) }
+                            var price = membershipType?.price
+
+                            memberViewModel.currentMember.organizationId?.let { organizationId ->
+                                if (organizationId != 0) {
+                                    val typeOfOrganizationViewModel: TypeOfOrganizationViewModel = getKoin().get()
+                                    val typeOfOrganization =
+                                        typeOfOrganizationViewModel.organizationTypes.find { typeOfOrg ->
+                                            typeOfOrg.id == organizationId
+                                        }
+                                    if (typeOfOrganization != null) {
+                                        val discountRate = typeOfOrganization.discountRate / 100.0
+                                        price?.let { originalPrice ->
+                                            price = originalPrice * (1 - discountRate)
+                                        }
                                     }
-                                },
-                                label = "",
-                                currentFocusRequester = FocusRequester(),
-                                nextFocusRequester = FocusRequester(),
-                                canSwitchWithTab = false,
-                                readOnly = !record.isActive && record.dateFinished.isBefore(LocalDate.now()),
-                                modifier = Modifier.weight(1f).padding(end = 8.dp)
-                            )
-                            FocusableOutlinedTextField(
-                                value = recordDateFinished,
-                                onValueChange = { newValue ->
-                                    recordDateFinished = newValue
-                                    val parsedDateTime =
-                                        runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
-                                    if (parsedDateTime != null) {
-                                        memberViewModel.updateMembershipRecord(
-                                            index,
-                                            record.copy(dateFinished = parsedDateTime),
-                                        )
-                                    }
-                                },
-                                label = "",
-                                currentFocusRequester = FocusRequester(),
-                                nextFocusRequester = FocusRequester(),
-                                canSwitchWithTab = false,
-                                readOnly = false,
-                                modifier = Modifier.weight(1f).padding(end = 8.dp)
-                            )
-                            HoverableCheckbox(
-                                modifier = Modifier.weight(0.5f).padding(end = 8.dp),
-                                checked = isPaid,
-                                onCheckedChange = {
-                                    isPaid = !isPaid
-                                    memberViewModel.updateMembershipRecord(
-                                        index,
-                                        record.copy(
-                                            isPaid = isPaid
-                                        )
-                                    )
-                                },
-                                hoverText = "$price €",
-                                showPopupOnHover = !isPaid
-                            )
-                            Checkbox(
-                                modifier = Modifier.weight(0.5f).padding(end = 4.dp),
-                                checked = record.isActive,
-                                onCheckedChange = {
-                                    isActive = !isActive
-                                    memberViewModel.updateMembershipRecord(
-                                        index,
-                                        record.copy(
-                                            isActive = isActive
-                                        )
-                                    )
-                                },
-                                enabled = !records.any { it.isActive } && record.dateFinished.isAfter(LocalDate.now())
-                            )
-                            IconButton(
-                                onClick = {
-                                    selectedRecordId = record.id
-                                    showTrainingSessionsDialog = true
-                                },
-                                modifier = Modifier.weight(0.5f).padding(end = 4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Pokaži treninge",
-                                    tint = Color.Green
-                                )
-                            }
-                            IconButton(
-                                onClick = {
-                                    selectedRecordToDelete = record
-                                    nameOfMembershipType = membershipTypeName?.text ?: ""
-                                    confirmRecordDeleteDialog = true
-                                },
-                                modifier = Modifier.weight(0.5f).padding(end = 4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete",
-                                    tint = Color.Red
-                                )
-                            }
-                        }
-                    }
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            HoverableButton(
-                                text = "+ Dodaj novu članarinu",
-                                onClick = {
-                                    var dateStarted: LocalDate = LocalDate.now()
-                                    if (memberViewModel.activeMembershipRecord != null || memberViewModel.memberRecords.any { record -> record.isActive })
-                                        dateStarted = memberViewModel.memberRecords.maxOfOrNull { record -> record.dateFinished }?.plusDays(1) ?: dateStarted
-                                    val dateFinished = dateStarted.plusMonths(1).minusDays(1)
-                                    val newRecord = MembershipRecord(
-                                        id = 0,
-                                        memberId = member.id,
-                                        membershipId = 0,
-                                        dateStarted = dateStarted,
-                                        dateFinished = dateFinished,
-                                        isActive = false,
-                                        isPaid = false
-                                    )
-                                    memberViewModel.addFutureMembershipRecord(newRecord)
                                 }
-                            )
+                            }
+
+                            val expanded = expandedMembership.getOrDefault(index, false)
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Dropdown(
+                                    modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                    expanded = expanded,
+                                    onExpandedChange = { expandedMembership[index] = it },
+                                    label = "Tip članarine",
+                                    items = memberships,
+                                    selectedItem = memberships.find { it.id.toString() == record.membershipId.toString() },
+                                    onItemSelected = {
+                                        record.membershipId = it.id
+                                        record.dateFinished =
+                                            record.dateStarted.plusMonths(
+                                                memberships.find { membership -> membership.id == record.membershipId }?.duration
+                                                    ?: 1
+                                            ).minusDays(1)
+                                        recordDateFinished = TextFieldValue(
+                                            record.dateFinished.format(
+                                                dateFormatter
+                                            )
+                                        )
+
+                                        expandedMembership[index] = false
+                                    },
+                                    focusRequester = FocusRequester(),
+                                    nextFocusRequester = FocusRequester(),
+                                    itemLabel = { it.name }
+                                )
+                                FocusableOutlinedTextField(
+                                    value = recordDateStart,
+                                    onValueChange = { newValue ->
+                                        recordDateStart = newValue
+                                        val parsedDateTime =
+                                            runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
+                                        if (parsedDateTime != null && parsedDateTime != record.dateStarted) {
+                                            memberViewModel.updateMembershipRecord(
+                                                index,
+                                                record.copy(dateStarted = parsedDateTime),
+                                            )
+                                        }
+                                    },
+                                    label = "",
+                                    currentFocusRequester = FocusRequester(),
+                                    nextFocusRequester = FocusRequester(),
+                                    canSwitchWithTab = false,
+                                    readOnly = !record.isActive && record.dateFinished.isBefore(LocalDate.now()),
+                                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                                )
+                                FocusableOutlinedTextField(
+                                    value = recordDateFinished,
+                                    onValueChange = { newValue ->
+                                        recordDateFinished = newValue
+                                        val parsedDateTime =
+                                            runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
+                                        if (parsedDateTime != null) {
+                                            memberViewModel.updateMembershipRecord(
+                                                index,
+                                                record.copy(dateFinished = parsedDateTime),
+                                            )
+                                        }
+                                    },
+                                    label = "",
+                                    currentFocusRequester = FocusRequester(),
+                                    nextFocusRequester = FocusRequester(),
+                                    canSwitchWithTab = false,
+                                    readOnly = false,
+                                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                                )
+                                HoverableCheckbox(
+                                    modifier = Modifier.weight(0.5f).padding(end = 8.dp),
+                                    checked = isPaid,
+                                    onCheckedChange = {
+                                        isPaid = !isPaid
+                                        memberViewModel.updateMembershipRecord(
+                                            index,
+                                            record.copy(
+                                                isPaid = isPaid
+                                            )
+                                        )
+                                    },
+                                    hoverText = "$price €",
+                                    showPopupOnHover = !isPaid
+                                )
+                                Checkbox(
+                                    modifier = Modifier.weight(0.5f).padding(end = 4.dp),
+                                    checked = record.isActive,
+                                    onCheckedChange = {
+                                        isActive = !isActive
+                                        memberViewModel.updateMembershipRecord(
+                                            index,
+                                            record.copy(
+                                                isActive = isActive
+                                            )
+                                        )
+                                    },
+                                    enabled = !records.any { it.isActive } && record.dateFinished.isAfter(LocalDate.now())
+                                )
+                                IconButton(
+                                    onClick = {
+                                        selectedRecordId = record.id
+                                        showTrainingSessionsDialog = true
+                                    },
+                                    modifier = Modifier.weight(0.5f).padding(end = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Pokaži treninge",
+                                        tint = Color.Green
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        selectedRecordToDelete = record
+                                        nameOfMembershipType = membershipTypeName?.text ?: ""
+                                        confirmRecordDeleteDialog = true
+                                    },
+                                    modifier = Modifier.weight(0.5f).padding(end = 4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete",
+                                        tint = Color.Red
+                                    )
+                                }
+                            }
+                        }
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                HoverableButton(
+                                    text = "+ Dodaj novu članarinu",
+                                    onClick = {
+                                        var dateStarted: LocalDate = LocalDate.now()
+                                        if (memberViewModel.activeMembershipRecord != null || memberViewModel.memberRecords.any { record -> record.isActive })
+                                            dateStarted =
+                                                memberViewModel.memberRecords.maxOfOrNull { record -> record.dateFinished }
+                                                    ?.plusDays(1) ?: dateStarted
+                                        val dateFinished = dateStarted.plusMonths(1).minusDays(1)
+                                        val newRecord = MembershipRecord(
+                                            id = 0,
+                                            memberId = member.id,
+                                            membershipId = 0,
+                                            dateStarted = dateStarted,
+                                            dateFinished = dateFinished,
+                                            isActive = false,
+                                            isPaid = false
+                                        )
+                                        memberViewModel.addFutureMembershipRecord(newRecord)
+                                    }
+                                )
+                            }
                         }
                     }
+                    VerticalScrollbar(
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                        adapter = rememberScrollbarAdapter(listState),
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -428,12 +441,28 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             onClose()
                         }
                     )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.wrapContentWidth()
+                    ) {
+                        Text(
+                            text = "Plaćeno: $countOfPaidRecords",
+                            style = Typography.button,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Neplaćeno: $countOfUnpaidRecords",
+                            style = Typography.button,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                     HoverableButton(
                         text = "Potvrdi promjene",
                         onClick = {
                             try {
                                 memberViewModel.confirmMembershipRecordsUpdates()
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 infoMessage = "Greška pri ažuriranju članarina"
                                 showInfoDialog = true
                             }

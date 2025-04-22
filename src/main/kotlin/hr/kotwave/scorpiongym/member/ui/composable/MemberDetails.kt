@@ -22,6 +22,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import hr.kotwave.scorpiongym.di.rememberMemberViewModel
+import hr.kotwave.scorpiongym.member.Gender
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.member.MembersListViewModel
@@ -102,6 +103,10 @@ fun MemberDetails(
         )
     }
 
+    var gender by remember(memberViewModel.currentMember) {
+        mutableStateOf(memberViewModel.currentMember.gender)
+    }
+
     var signedUpDate by remember(memberViewModel.currentMember) { mutableStateOf(memberViewModel.currentMember.signedUpDate) }
     var organization by remember(memberViewModel.currentMember) { mutableStateOf(memberViewModel.currentMember.organizationId.toString()) }
 
@@ -163,6 +168,8 @@ fun MemberDetails(
         dateOfBirth = TextFieldValue(
             memberViewModel.currentMember.dateOfBirth?.format(dateOfBirthFormatter) ?: ""
         )
+
+        gender = memberViewModel.currentMember.gender
     }
 
     when {
@@ -413,6 +420,26 @@ fun MemberDetails(
                     nextFocusRequester = focusRequesters[4]
                 )
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Gender.entries.forEach { option ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = gender == option,
+                                onCheckedChange = { isChecked ->
+                                    gender = if (isChecked) option else null
+                                }
+                            )
+                            Text(text = option.label)
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value = signedUpDate.format(dateFormatter),
                     onValueChange = {},
@@ -576,6 +603,7 @@ fun MemberDetails(
                                             dateOfBirthFormatter
                                         )
                                     }.getOrNull(),
+                                    gender = gender
                                 )
                                 if (memberViewModel.activeMembershipRecord != null) {
                                     val id = memberViewModel.activeMembershipRecord?.id

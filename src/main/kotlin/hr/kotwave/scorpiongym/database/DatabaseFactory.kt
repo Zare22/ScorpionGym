@@ -9,6 +9,7 @@ object DatabaseFactory {
     init {
         try {
             Class.forName("org.sqlite.JDBC")
+            initDB()
         } catch (e: ClassNotFoundException) {
             e.printStackTrace()
         }
@@ -39,11 +40,24 @@ object DatabaseFactory {
         connection?.use { con ->
             con.autoCommit = false
             try {
+                if (!columnExists(con, "Member", "gender")) {
+                    con.createStatement().use { stmt ->
+                        stmt.execute("ALTER TABLE Member ADD COLUMN gender TEXT")
+                    }
+                }
                 con.commit()
             } catch (e: Exception) {
                 con.rollback()
                 e.printStackTrace()
             }
         }
+    }
+
+    fun columnExists(connection: Connection, tableName: String, columnName: String): Boolean {
+        val resultSet = connection.createStatement().executeQuery("PRAGMA table_info($tableName)")
+        while (resultSet.next()) {
+            if (resultSet.getString("name") == columnName) return true
+        }
+        return false
     }
 }

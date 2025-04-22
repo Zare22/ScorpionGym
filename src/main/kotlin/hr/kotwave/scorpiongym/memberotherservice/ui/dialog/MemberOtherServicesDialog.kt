@@ -27,9 +27,11 @@ import hr.kotwave.scorpiongym.member.MemberViewModel
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherService
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
+import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableCheckbox
+import hr.kotwave.scorpiongym.ui.theme.Typography
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -43,9 +45,15 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
     val memberOtherServices by remember { derivedStateOf { memberViewModel.memberOtherServices } }
     val initialIsPaidValues = remember { memberOtherServices.map { it.isPaid }.toMutableStateList() }
 
+    var countOfPaidOtherServices by remember { mutableStateOf(memberOtherServices.count { it.isPaid }) }
+    var countOfUnpaidOtherServices by remember { mutableStateOf(memberOtherServices.size - countOfPaidOtherServices) }
+
     var selectedMemberOtherServiceToDelete by remember { mutableStateOf<MemberOtherService?>(null) }
     var nameOfOtherService by remember { mutableStateOf("") }
     var confirmOtherServiceDeleteDialog by remember { mutableStateOf(false) }
+    var updateTrigger by remember { mutableStateOf(false) }
+
+    val expandedOtherService = remember { mutableStateMapOf<Int, Boolean>() }
 
     var showInfoDialog by remember { mutableStateOf(false) }
     var infoMessage by remember { mutableStateOf("") }
@@ -177,6 +185,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
 
                         var isPaid by remember { mutableStateOf(memberOtherService.isPaid) }
                         val price = otherServiceType?.price
+                        val expanded = expandedOtherService.getOrDefault(index, false)
 
                         Row(
                             modifier = Modifier
@@ -184,15 +193,22 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            FocusableOutlinedTextField(
-                                value = otherServiceTypeName ?: TextFieldValue(""),
-                                onValueChange = {},
-                                label = "",
-                                currentFocusRequester = FocusRequester(),
+                            Dropdown(
+                                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                expanded = expanded,
+                                onExpandedChange = { expandedOtherService[index] = it },
+                                label = "Naziv",
+                                items = otherServiceViewModel.otherServices,
+                                selectedItem = otherServiceViewModel.otherServices.find { it.id.toString() == memberOtherService.otherServiceId.toString() },
+                                onItemSelected = {
+                                    memberOtherService.otherServiceId = it.id
+                                    memberOtherService.memberId = memberViewModel.currentMember.id
+                                    memberOtherService.dateOfService = memberOtherService.dateOfService
+                                    expandedOtherService[index] = false
+                                },
+                                focusRequester = FocusRequester(),
                                 nextFocusRequester = FocusRequester(),
-                                canSwitchWithTab = false,
-                                readOnly = true,
-                                modifier = Modifier.weight(1f).padding(end = 8.dp)
+                                itemLabel = { it.name }
                             )
                             FocusableOutlinedTextField(
                                 value = memberOtherServiceDate,
@@ -245,6 +261,34 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                             }
                         }
                     }
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            HoverableButton(
+                                text = "+ Dodaj novu uslugu",
+                                onClick = {
+                                    val newOtherService = MemberOtherService(
+                                        dateOfService = LocalDateTime.now(),
+                                        memberId = memberViewModel.currentMember.id,
+                                        isPaid = false,
+                                        otherServiceId = 0
+                                    )
+                                    memberViewModel.addNewMemberOtherService(newOtherService, true)
+                                    updateTrigger = !updateTrigger
+                                }
+                            )
+                        }
+                    }
+                }
+
+                LaunchedEffect(updateTrigger) {
+                    if (memberOtherServices.isNotEmpty()) {
+                        listState.animateScrollToItem(memberOtherServices.size - 1)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -258,6 +302,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                     HoverableButton(
                         text = "Povratak",
                         onClick = {
+                            memberViewModel.removeUnconfirmedMemberOtherServices()
                             memberOtherServices.forEachIndexed { index, record ->
                                 memberViewModel.updateMemberOtherService(
                                     index,
@@ -270,14 +315,26 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                         }
                     )
                     Text(
-                        text = buildAnnotatedString {
-                            append("Broj individualnih treninga: ")
-
-                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append(individualTrainingCount.toString())
-                            }
-                        }
+                        text = "Broj individualnih treninga: $individualTrainingCount",
+                        style = MaterialTheme.typography.h6,
+                        textAlign = TextAlign.Center
                     )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.wrapContentWidth()
+                    ) {
+                        Text(
+                            text = "Plaćeno: $countOfPaidOtherServices",
+                            style = Typography.button,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Neplaćeno: $countOfUnpaidOtherServices",
+                            style = Typography.button,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                     HoverableButton(
                         text = "Potvrdi promjene",
                         onClick = {

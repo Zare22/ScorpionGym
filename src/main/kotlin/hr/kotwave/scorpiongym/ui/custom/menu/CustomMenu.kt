@@ -16,6 +16,7 @@ fun CustomMenu(
     onLogout: () -> Unit,
     onAllLogsSelected: () -> Unit,
     onCreateNewAppUser: () -> Unit,
+    onOpenAppUserList: () -> Unit,
     onOpenUnregisteredServiceDialog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -53,6 +54,12 @@ fun CustomMenu(
                         settingsMenuExpanded = false
                     }) {
                         Text("Kreiraj novog korisnika", style = MaterialTheme.typography.body2)
+                    }
+                    DropdownMenuItem(onClick = {
+                        onOpenAppUserList()
+                        settingsMenuExpanded = false
+                    }) {
+                        Text("Pregled korisnika", style = MaterialTheme.typography.body2)
                     }
                 }
                 DropdownMenuItem(onClick = {

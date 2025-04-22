@@ -14,4 +14,10 @@ data class Member(
     val statusId: Int? = 0,
     val remark: String? = "",
     val dateOfBirth: LocalDate? = null,
+    val gender: Gender? = null
 )
+
+enum class Gender(val label: String) {
+    MALE("Muško"),
+    FEMALE("Žensko")
+}

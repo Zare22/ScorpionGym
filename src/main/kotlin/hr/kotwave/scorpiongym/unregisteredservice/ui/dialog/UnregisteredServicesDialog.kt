@@ -26,6 +26,7 @@ import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableCheckbox
+import hr.kotwave.scorpiongym.ui.theme.Typography
 import hr.kotwave.scorpiongym.unregisteredservice.UnregisteredService
 import hr.kotwave.scorpiongym.unregisteredservice.UnregisteredServiceViewModel
 import org.koin.java.KoinJavaComponent.getKoin
@@ -41,6 +42,9 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
     val listState = rememberLazyListState()
     val unregisteredOtherServices by remember { derivedStateOf { unregisteredServiceViewModel.unregisteredServices } }
     val initialIsPaidValues = remember { unregisteredOtherServices.map { it.isPaid }.toMutableStateList() }
+
+    var countOfPaidOtherServices by remember { mutableStateOf(unregisteredOtherServices.count { it.isPaid }) }
+    var countOfUnpaidOtherServices by remember { mutableStateOf(unregisteredOtherServices.size - countOfPaidOtherServices) }
 
     var selectedUnregisteredOtherService by remember { mutableStateOf<UnregisteredService?>(null) }
     var nameOfOtherService by remember { mutableStateOf("") }
@@ -255,6 +259,22 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                             onClose()
                         }
                     )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.wrapContentWidth()
+                    ) {
+                        Text(
+                            text = "Plaćeno: $countOfPaidOtherServices",
+                            style = Typography.button,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Neplaćeno: $countOfUnpaidOtherServices",
+                            style = Typography.button,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                     HoverableButton(
                         text = "Potvrdi promjene",
                         onClick = {

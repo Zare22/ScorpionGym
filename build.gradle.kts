@@ -35,7 +35,7 @@ compose.desktop {
             includeAllModules = true
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "ScorpionGym"
-            packageVersion = "1.1.4"
+            packageVersion = "1.1.5"
 
             windows {
                 upgradeUuid = "123e4567-e89b-12d3-a456-426614174000"

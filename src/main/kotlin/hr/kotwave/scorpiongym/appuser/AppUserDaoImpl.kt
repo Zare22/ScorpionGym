@@ -84,6 +84,39 @@ class AppUserDaoImpl(private val connection: Connection) : AppUserDao {
         }
         return activityLogs
     }
+
+    override fun deleteAppUser(user: AppUser) {
+        connection.autoCommit = false
+
+        try {
+            val deleteLogs = "DELETE FROM UserActivityLog WHERE appUserId = ?"
+            val deleteAudits = "DELETE FROM PaymentAuditLog WHERE loggedInUserId = ?"
+            val deleteUser = "DELETE FROM AppUser WHERE id = ?"
+
+            connection.prepareStatement(deleteLogs).use { stmt ->
+                stmt.setInt(1, user.id)
+                stmt.executeUpdate()
+            }
+
+            connection.prepareStatement(deleteAudits).use { stmt ->
+                stmt.setInt(1, user.id)
+                stmt.executeUpdate()
+            }
+
+            connection.prepareStatement(deleteUser).use { stmt ->
+                stmt.setInt(1, user.id)
+                stmt.executeUpdate()
+            }
+
+            connection.commit()
+        } catch (e: SQLException) {
+            connection.rollback()
+            throw SQLException("Greška pri brisanju korisnika")
+        } finally {
+            connection.autoCommit = true
+        }
+    }
+
 }
 
 private fun mapResultSetToAppUser(resultSet: ResultSet): AppUser {

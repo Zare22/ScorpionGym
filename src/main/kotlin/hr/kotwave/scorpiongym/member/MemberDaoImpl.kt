@@ -26,7 +26,10 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
                     organizationId = resultSet.getInt("organizationId"),
                     statusId = resultSet.getInt("statusId"),
                     remark = resultSet.getString("remark"),
-                    dateOfBirth = resultSet.getString("dateOfBirth")?.let { parseToLocalDate(it) }
+                    dateOfBirth = resultSet.getString("dateOfBirth")?.let { parseToLocalDate(it) },
+                    gender = resultSet.getString("gender")?.let {
+                        runCatching { Gender.valueOf(it) }.getOrNull()
+                    }
                 )
                 members.add(member)
             }
@@ -53,7 +56,10 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
                     organizationId = resultSet.getInt("organizationId"),
                     statusId = resultSet.getInt("statusId"),
                     remark = resultSet.getString("remark"),
-                    dateOfBirth = resultSet.getString("dateOfBirth")?.let { parseToLocalDate(it) }
+                    dateOfBirth = resultSet.getString("dateOfBirth")?.let { parseToLocalDate(it) },
+                    gender = resultSet.getString("gender")?.let {
+                        runCatching { Gender.valueOf(it) }.getOrNull()
+                    }
                 )
             }
         }
@@ -63,8 +69,8 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
 
     override fun insertMember(member: Member): Int {
         val query = """
-            INSERT INTO Member (name, surname, phoneNumber, signedUpDate, organizationId, remark, dateOfBirth)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO Member (name, surname, phoneNumber, signedUpDate, organizationId, remark, dateOfBirth, gender)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             RETURNING id
         """
 
@@ -81,7 +87,9 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
             member.dateOfBirth?.let {
                 statement.setString(7, it.toString())
             } ?: statement.setNull(7, java.sql.Types.DATE)
-
+            member.gender?.let { gender ->
+                statement.setString(8, gender.toString())
+            } ?: statement.setNull(8, java.sql.Types.VARCHAR)
             val resultSet = statement.executeQuery()
 
             insertedId = resultSet.takeIf { it.next() }?.getInt(1)
@@ -93,7 +101,7 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
 
     override fun updateMember(member: Member) {
         val query = """
-            UPDATE Member SET name = ?, surname = ?, phoneNumber = ?, organizationId = ?, remark = ?, membershipRecordId = ?, dateOfBirth = ?
+            UPDATE Member SET name = ?, surname = ?, phoneNumber = ?, organizationId = ?, remark = ?, membershipRecordId = ?, dateOfBirth = ?, gender = ?
             WHERE id = ?
         """
 
@@ -111,7 +119,10 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
             member.dateOfBirth?.let {
                 statement.setString(7, it.toString())
             } ?: statement.setNull(7, java.sql.Types.DATE)
-            statement.setInt(8, member.id)
+            member.gender?.let { gender ->
+                statement.setString(8, gender.toString())
+            } ?: statement.setNull(8, java.sql.Types.VARCHAR)
+            statement.setInt(9, member.id)
 
             statement.executeUpdate()
         }
