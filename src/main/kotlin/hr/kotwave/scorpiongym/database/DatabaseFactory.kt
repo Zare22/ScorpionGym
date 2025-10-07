@@ -3,6 +3,7 @@ package hr.kotwave.scorpiongym.database
 import java.nio.file.FileSystems
 import java.sql.Connection
 import java.sql.DriverManager
+import java.sql.SQLException
 
 object DatabaseFactory {
 
@@ -40,9 +41,42 @@ object DatabaseFactory {
         connection?.use { con ->
             con.autoCommit = false
             try {
-                if (!columnExists(con, "Member", "gender")) {
+                val trainingSessionSchema = getTableSchema(con, "TrainingSession")
+                if (trainingSessionSchema != null && trainingSessionSchema.contains("ON DELETE RESTRICT")) {
+                    println("Applying migration: Rebuilding TrainingSession table with ON DELETE CASCADE...")
                     con.createStatement().use { stmt ->
-                        stmt.execute("ALTER TABLE Member ADD COLUMN gender TEXT")
+                        val beforeCount = getTableCount(con, "TrainingSession")
+                        println("  - Original row count: $beforeCount")
+
+                        stmt.execute("""
+                        CREATE TABLE TrainingSession_new (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            membershipRecordId INTEGER NOT NULL,
+                            sessionDateTime DATETIME NOT NULL,
+                            FOREIGN KEY (membershipRecordId) 
+                                REFERENCES MembershipRecord(id) 
+                                ON DELETE CASCADE
+                        )
+                    """)
+
+                        stmt.execute("""
+                        INSERT INTO TrainingSession_new (id, membershipRecordId, sessionDateTime)
+                        SELECT id, membershipRecordId, sessionDateTime FROM TrainingSession
+                    """)
+
+                        val afterCount = getTableCount(con, "TrainingSession_new")
+                        println("  - New table row count: $afterCount")
+
+                        if (beforeCount != afterCount) {
+                            con.rollback()
+                            throw SQLException("Data migration failed: Row count mismatch for TrainingSession. Rolling back.")
+                        }
+
+                        stmt.execute("DROP TABLE TrainingSession")
+
+                        stmt.execute("ALTER TABLE TrainingSession_new RENAME TO TrainingSession")
+
+                        println("Migration successful.")
                     }
                 }
                 con.commit()
@@ -53,11 +87,19 @@ object DatabaseFactory {
         }
     }
 
-    fun columnExists(connection: Connection, tableName: String, columnName: String): Boolean {
-        val resultSet = connection.createStatement().executeQuery("PRAGMA table_info($tableName)")
-        while (resultSet.next()) {
-            if (resultSet.getString("name") == columnName) return true
+    fun getTableSchema(con: Connection, tableName: String): String? {
+        con.prepareStatement("SELECT sql FROM sqlite_master WHERE type='table' AND name = ?").use { stmt ->
+            stmt.setString(1, tableName)
+            val rs = stmt.executeQuery()
+            return if (rs.next()) rs.getString("sql") else null
         }
-        return false
+    }
+
+
+    fun getTableCount(con: Connection, tableName: String): Long {
+        con.prepareStatement("SELECT COUNT(*) FROM $tableName").use { stmt ->
+            val rs = stmt.executeQuery()
+            return if (rs.next()) rs.getLong(1) else 0L
+        }
     }
 }
