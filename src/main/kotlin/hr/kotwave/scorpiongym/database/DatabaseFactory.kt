@@ -79,7 +79,34 @@ object DatabaseFactory {
                         println("Migration successful.")
                     }
                 }
+
+                println("Applying database triggers...")
+                con.createStatement().use { stmt ->
+                    stmt.execute("DROP TRIGGER IF EXISTS UpdateMembershipStatus;")
+                    stmt.execute("""
+                        CREATE TRIGGER UpdateMembershipStatus AFTER INSERT ON TrainingSession
+                        FOR EACH ROW
+                        BEGIN
+                            UPDATE MembershipRecord
+                            SET isActive = FALSE,
+                                dateFinished = strftime('%Y-%m-%d', datetime('now', 'localtime'))
+                            WHERE id = NEW.membershipRecordId
+                              AND isActive = TRUE 
+                              AND 
+                              (SELECT COUNT(*) FROM TrainingSession WHERE membershipRecordId = NEW.membershipRecordId) >= 
+                              COALESCE(
+                                  (SELECT m.numberOfTrainingsAvailable 
+                                   FROM Membership AS m
+                                   JOIN MembershipRecord AS mr ON m.id = mr.membershipId
+                                   WHERE mr.id = NEW.membershipRecordId),
+                                  0 
+                              );
+                        END;
+                    """)
+                    println("Trigger 'UpdateMembershipStatus' created/updated successfully.")
+                }
                 con.commit()
+
             } catch (e: Exception) {
                 con.rollback()
                 e.printStackTrace()
