@@ -1,37 +1,16 @@
 package hr.kotwave.scorpiongym.otherservice
 
-import androidx.compose.runtime.mutableStateListOf
-import org.koin.core.component.KoinComponent
+import hr.kotwave.scorpiongym.util.CrudViewModel
 
-class OtherServiceViewModel(private val otherServiceDao: OtherServiceDao) : KoinComponent {
-    private val _otherServices = mutableStateListOf<OtherService>()
-    val otherServices: List<OtherService> get() = _otherServices
+class OtherServiceViewModel(dao: OtherServiceDao) : CrudViewModel<OtherService>(
+    loader = dao::getAllOtherServices,
+    inserter = dao::insertOtherService,
+    updater = dao::updateOtherService,
+    deleter = dao::deleteOtherServiceById,
+) {
+    val otherServices: List<OtherService> get() = items
 
-    init {
-        getOtherServices()
-    }
-
-    private fun getOtherServices() {
-        val loadedOtherServices = otherServiceDao.getAllOtherServices()
-        _otherServices.addAll(loadedOtherServices)
-    }
-
-    fun addOtherService(otherService: OtherService) {
-        val otherServiceId = otherServiceDao.insertOtherService(otherService)
-        otherService.id = otherServiceId
-        _otherServices.add(otherService)
-    }
-
-    fun updateOtherService(otherService: OtherService) {
-        otherServiceDao.updateOtherService(otherService)
-        val index = _otherServices.indexOfFirst { it.id == otherService.id }
-        if (index != -1) {
-            _otherServices[index] = otherService
-        }
-    }
-
-    fun deleteOtherService(otherService: OtherService) {
-        otherServiceDao.deleteOtherServiceById(otherService)
-        _otherServices.remove(otherService)
-    }
+    fun addOtherService(otherService: OtherService) = add(otherService)
+    fun updateOtherService(otherService: OtherService) = update(otherService)
+    fun deleteOtherService(otherService: OtherService) = remove(otherService)
 }

@@ -1,36 +1,16 @@
 package hr.kotwave.scorpiongym.typeoforganization
 
-import androidx.compose.runtime.mutableStateListOf
-import org.koin.core.component.KoinComponent
+import hr.kotwave.scorpiongym.util.CrudViewModel
 
-class TypeOfOrganizationViewModel(private val typeOfOrganizationDao: TypeOfOrganizationDao) : KoinComponent {
-    private val _organizationTypes = mutableStateListOf<TypeOfOrganization>()
-    val organizationTypes: List<TypeOfOrganization> get() = _organizationTypes
+class TypeOfOrganizationViewModel(dao: TypeOfOrganizationDao) : CrudViewModel<TypeOfOrganization>(
+    loader = dao::getAllTypesOfOrganizations,
+    inserter = dao::insertTypeOfOrganization,
+    updater = dao::updateTypeOfOrganization,
+    deleter = dao::deleteTypeOfOrganization,
+) {
+    val organizationTypes: List<TypeOfOrganization> get() = items
 
-    init {
-        getTypeOfOrganizations()
-    }
-
-    private fun getTypeOfOrganizations() {
-        val loadedOrganizations = typeOfOrganizationDao.getAllTypesOfOrganizations()
-        _organizationTypes.addAll(loadedOrganizations)
-    }
-
-    fun addTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
-        typeOfOrganization.id = typeOfOrganizationDao.insertTypeOfOrganization(typeOfOrganization)
-        _organizationTypes.add(typeOfOrganization)
-    }
-
-    fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
-        typeOfOrganizationDao.deleteTypeOfOrganization(typeOfOrganization)
-        _organizationTypes.remove(typeOfOrganization)
-    }
-
-    fun updateTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
-        typeOfOrganizationDao.updateTypeOfOrganization(typeOfOrganization)
-        val index = _organizationTypes.indexOfFirst { it.id == typeOfOrganization.id }
-        if (index != -1) {
-            _organizationTypes[index] = typeOfOrganization
-        }
-    }
+    fun addTypeOfOrganization(typeOfOrganization: TypeOfOrganization) = add(typeOfOrganization)
+    fun updateTypeOfOrganization(typeOfOrganization: TypeOfOrganization) = update(typeOfOrganization)
+    fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization) = remove(typeOfOrganization)
 }

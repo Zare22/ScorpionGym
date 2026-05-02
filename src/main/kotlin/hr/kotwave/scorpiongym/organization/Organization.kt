@@ -1,7 +1,9 @@
 package hr.kotwave.scorpiongym.organization
 
+import hr.kotwave.scorpiongym.util.Identifiable
+
 data class Organization(
-    var id: Int = 0,
+    override var id: Int = 0,
     val name: String = "",
     val typeOfOrganizationId: Int? = null
-)
+) : Identifiable

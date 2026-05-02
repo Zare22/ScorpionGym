@@ -1,38 +1,16 @@
 package hr.kotwave.scorpiongym.membership
 
-import androidx.compose.runtime.mutableStateListOf
-import org.koin.core.component.KoinComponent
+import hr.kotwave.scorpiongym.util.CrudViewModel
 
-class MembershipViewModel(private val membershipDao: MembershipDao) : KoinComponent {
-    private val _memberships = mutableStateListOf<Membership>()
-    val memberships: List<Membership> get() = _memberships
+class MembershipViewModel(dao: MembershipDao) : CrudViewModel<Membership>(
+    loader = dao::getAllMemberships,
+    inserter = dao::insertMembership,
+    updater = dao::updateMembership,
+    deleter = dao::deleteMembership,
+) {
+    val memberships: List<Membership> get() = items
 
-    init {
-        getMemberships()
-    }
-
-    private fun getMemberships() {
-        val loadedMemberships = membershipDao.getAllMemberships()
-        _memberships.addAll(loadedMemberships)
-    }
-
-    fun addMembership(membership: Membership) {
-        val membershipId = membershipDao.insertMembership(membership)
-        membership.id = membershipId
-        _memberships.add(membership)
-    }
-
-    fun removeMembership(membership: Membership) {
-        membershipDao.deleteMembership(membership)
-        _memberships.remove(membership)
-    }
-
-    fun updateMembership(membership: Membership) {
-        membershipDao.updateMembership(membership)
-        val index = _memberships.indexOfFirst { it.id == membership.id }
-        if (index != -1) {
-            _memberships[index] = membership
-        }
-    }
-
+    fun addMembership(membership: Membership) = add(membership)
+    fun updateMembership(membership: Membership) = update(membership)
+    fun removeMembership(membership: Membership) = remove(membership)
 }
