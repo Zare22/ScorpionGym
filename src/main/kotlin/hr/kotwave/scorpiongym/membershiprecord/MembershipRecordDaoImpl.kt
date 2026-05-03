@@ -1,13 +1,13 @@
 package hr.kotwave.scorpiongym.membershiprecord
 
-import hr.kotwave.scorpiongym.util.PreferencesHelper
+import hr.kotwave.scorpiongym.util.AuditLog
 import java.sql.Connection
 import java.sql.SQLException
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class MembershipRecordDaoImpl(private val dbConnection: Connection) : MembershipRecordDao {
+    private val auditLog = AuditLog(dbConnection)
+
 
     private val querySelectInactive = "SELECT id FROM MembershipRecord WHERE dateFinished < ? AND isActive = 1"
     private val queryDeactivateMembership = "UPDATE MembershipRecord SET isActive = 0 WHERE id = ?"
@@ -196,14 +196,7 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         val (memberName, memberSurname, membershipName) = fetchMemberAndMembershipDetails(memberId, membershipId)
         val logText = "$actionDescription $membershipName za člana $memberName $memberSurname"
 
-        val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
-
-        dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, PreferencesHelper().loggedInUserId!!)
-            statement.setString(2, logText)
-            statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            statement.executeUpdate()
-        }
+        auditLog.write(logText)
     }
 
     private fun deactivateExpiredMemberships() {

@@ -1,12 +1,12 @@
 package hr.kotwave.scorpiongym.otherservice
 
-import hr.kotwave.scorpiongym.util.PreferencesHelper
+import hr.kotwave.scorpiongym.util.AuditLog
 import java.sql.Connection
 import java.sql.SQLException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDao {
+    private val auditLog = AuditLog(dbConnection)
+
     override fun getAllOtherServices(): List<OtherService> {
         val otherServices = mutableListOf<OtherService>()
         val query = "SELECT * FROM OtherService"
@@ -62,7 +62,7 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
             insertedId =
                 resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID ostale usluge nije kreiran!")
         }
-        logActionOnOtherService("Kreirana nova usluga ${otherService.name}")
+        auditLog.write("Kreirana nova usluga ${otherService.name}")
         return insertedId
     }
 
@@ -78,7 +78,7 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
             statement.setInt(3, otherService.id)
             statement.executeUpdate()
         }
-        logActionOnOtherService("Ažurirani podatci usluge ${otherService.name}")
+        auditLog.write("Ažurirani podatci usluge ${otherService.name}")
     }
 
     override fun deleteOtherServiceById(otherService: OtherService) {
@@ -88,17 +88,7 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
             statement.setInt(1, otherService.id)
             statement.executeUpdate()
         }
-        logActionOnOtherService("Pobrisana usluga ${otherService.name}")
+        auditLog.write("Pobrisana usluga ${otherService.name}")
     }
 
-    private fun logActionOnOtherService(text: String) {
-        val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
-
-        dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, PreferencesHelper().loggedInUserId!!)
-            statement.setString(2, text)
-            statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            statement.executeUpdate()
-        }
-    }
 }

@@ -1,13 +1,13 @@
 package hr.kotwave.scorpiongym.memberotherservice
 
-import hr.kotwave.scorpiongym.util.PreferencesHelper
+import hr.kotwave.scorpiongym.util.AuditLog
 import hr.kotwave.scorpiongym.util.parseToLocalDateTime
 import java.sql.Connection
 import java.sql.SQLException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOtherServiceDao {
+    private val auditLog = AuditLog(dbConnection)
+
     override fun getAllMemberOtherServices(): List<MemberOtherService> {
         val memberOtherServices = mutableListOf<MemberOtherService>()
         val query = "SELECT * FROM MemberOtherService"
@@ -149,18 +149,7 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
 
     private fun logAction(serviceId: Int, actionDescription: String) {
         val (memberName, memberSurname, otherServiceName) = fetchMemberAndServiceDetails(serviceId)
-        logActionOnMemberOtherService("$actionDescription $otherServiceName za člana $memberName $memberSurname")
-    }
-
-    private fun logActionOnMemberOtherService(text: String) {
-        val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
-
-        dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, PreferencesHelper().loggedInUserId!!)
-            statement.setString(2, text)
-            statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            statement.executeUpdate()
-        }
+        auditLog.write("$actionDescription $otherServiceName za člana $memberName $memberSurname")
     }
 
 }

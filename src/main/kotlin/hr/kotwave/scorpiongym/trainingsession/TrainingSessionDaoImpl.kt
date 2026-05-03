@@ -1,14 +1,15 @@
 package hr.kotwave.scorpiongym.trainingsession
 
-import hr.kotwave.scorpiongym.util.PreferencesHelper
+import hr.kotwave.scorpiongym.util.AuditLog
 import hr.kotwave.scorpiongym.util.parseToLocalDateTime
 import java.sql.Connection
 import java.sql.SQLException
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSessionDao {
+    private val auditLog = AuditLog(dbConnection)
+
 
     override fun getAllTrainingSessions(): List<TrainingSession> {
         val sessions = mutableListOf<TrainingSession>()
@@ -158,14 +159,7 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
             "$actionDescription za člana ${details.memberName} ${details.memberSurname} u članarini ${details.membershipName} " +
                     "(Početak: ${details.dateStarted}, Kraj: ${details.dateFinished})"
 
-        val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
-
-        dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, PreferencesHelper().loggedInUserId!!)
-            statement.setString(2, logText)
-            statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            statement.executeUpdate()
-        }
+        auditLog.write(logText)
     }
 
 }

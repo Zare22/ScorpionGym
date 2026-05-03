@@ -1,12 +1,12 @@
 package hr.kotwave.scorpiongym.organization
 
-import hr.kotwave.scorpiongym.util.PreferencesHelper
+import hr.kotwave.scorpiongym.util.AuditLog
 import java.sql.Connection
 import java.sql.SQLException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class OrganizationDaoImpl(private val dbConnection: Connection) : OrganizationDao {
+    private val auditLog = AuditLog(dbConnection)
+
     override fun getAllOrganizations(): List<Organization> {
         val organizations = mutableListOf<Organization>()
         val query = "SELECT * FROM Organization"
@@ -65,7 +65,7 @@ class OrganizationDaoImpl(private val dbConnection: Connection) : OrganizationDa
 
             insertedId = resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID organizacije nije kreiran!")
         }
-        logActionOnOrganization("Kreirana nova organizacija ${organization.name}")
+        auditLog.write("Kreirana nova organizacija ${organization.name}")
         return insertedId
     }
 
@@ -81,27 +81,17 @@ class OrganizationDaoImpl(private val dbConnection: Connection) : OrganizationDa
             statement.setInt(3, organization.id)
             statement.executeUpdate()
         }
-        logActionOnOrganization("Ažurirani podatci organizacije ${organization.name}")
+        auditLog.write("Ažurirani podatci organizacije ${organization.name}")
     }
 
     override fun deleteOrganization(organization: Organization) {
         val query = "DELETE FROM Organization WHERE id = ?"
 
-        logActionOnOrganization("Pobrisana članarina ${organization.name}")
+        auditLog.write("Pobrisana članarina ${organization.name}")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, organization.id)
             statement.executeUpdate()
         }
     }
 
-    private fun logActionOnOrganization(text: String) {
-        val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
-
-        dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, PreferencesHelper().loggedInUserId!!)
-            statement.setString(2, text)
-            statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            statement.executeUpdate()
-        }
-    }
 }

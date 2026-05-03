@@ -1,14 +1,14 @@
 package hr.kotwave.scorpiongym.member
 
-import hr.kotwave.scorpiongym.util.PreferencesHelper
+import hr.kotwave.scorpiongym.util.AuditLog
 import hr.kotwave.scorpiongym.util.parseToLocalDate
 import hr.kotwave.scorpiongym.util.parseToLocalDateTime
 import java.sql.Connection
 import java.sql.SQLException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
+    private val auditLog = AuditLog(dbConnection)
+
     override fun getAllMembers(): List<Member> {
         val members = mutableListOf<Member>()
         val query = "SELECT * FROM Member"
@@ -95,7 +95,7 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
             insertedId = resultSet.takeIf { it.next() }?.getInt(1)
                 ?: throw SQLException("ID člana se nije kreirao!")
         }
-        logActionOnMember("Kreiran novi član: ${member.name} ${member.surname}")
+        auditLog.write("Kreiran novi član: ${member.name} ${member.surname}")
         return insertedId
     }
 
@@ -126,28 +126,18 @@ class MemberDaoImpl(private val dbConnection: Connection) : MemberDao {
 
             statement.executeUpdate()
         }
-        logActionOnMember("Ažuriranje osobnih podataka člana: ${member.name} ${member.surname}")
+        auditLog.write("Ažuriranje osobnih podataka člana: ${member.name} ${member.surname}")
 
     }
 
     override fun deleteMember(member: Member) {
         val query = "DELETE FROM Member WHERE id = ?"
 
-        logActionOnMember("Pobrisan član: ${member.name} ${member.surname}")
+        auditLog.write("Pobrisan član: ${member.name} ${member.surname}")
         dbConnection.prepareStatement(query).use { statement ->
             statement.setInt(1, member.id)
             statement.executeUpdate()
         }
     }
 
-    private fun logActionOnMember(text: String) {
-        val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
-
-        dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, PreferencesHelper().loggedInUserId!!)
-            statement.setString(2, text)
-            statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            statement.executeUpdate()
-        }
-    }
 }

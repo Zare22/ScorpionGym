@@ -1,12 +1,12 @@
 package hr.kotwave.scorpiongym.typeoforganization
 
-import hr.kotwave.scorpiongym.util.PreferencesHelper
+import hr.kotwave.scorpiongym.util.AuditLog
 import java.sql.Connection
 import java.sql.SQLException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOrganizationDao {
+    private val auditLog = AuditLog(dbConnection)
+
     override fun getAllTypesOfOrganizations(): List<TypeOfOrganization> {
         val typesOfOrganizations = mutableListOf<TypeOfOrganization>()
         val query = "SELECT * FROM TypeOfOrganization"
@@ -60,7 +60,7 @@ class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOr
 
             insertedId = resultSet.takeIf { it.next() }?.getInt(1) ?: throw SQLException("ID tipa organizacije nije kreiran!")
         }
-        logActionOnTypeOfOrganization("Kreiran novi tip organizacije ${typeOfOrganization.name}")
+        auditLog.write("Kreiran novi tip organizacije ${typeOfOrganization.name}")
         return insertedId
     }
 
@@ -76,7 +76,7 @@ class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOr
             statement.setInt(3, typeOfOrganization.id)
             statement.executeUpdate()
         }
-        logActionOnTypeOfOrganization("Ažurirani podatci organizacije ${typeOfOrganization.name}")
+        auditLog.write("Ažurirani podatci organizacije ${typeOfOrganization.name}")
     }
 
     override fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization) {
@@ -86,17 +86,7 @@ class TypeOfOrganizationDaoImpl(private val dbConnection: Connection) : TypeOfOr
             statement.setInt(1, typeOfOrganization.id)
             statement.executeUpdate()
         }
-        logActionOnTypeOfOrganization("Pobrisan tip organizacije ${typeOfOrganization.name}")
+        auditLog.write("Pobrisan tip organizacije ${typeOfOrganization.name}")
     }
 
-    private fun logActionOnTypeOfOrganization(text: String) {
-        val query = "INSERT INTO UserActivityLog(appUserId, action, dateOfAction) VALUES (?, ?, ?)"
-
-        dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, PreferencesHelper().loggedInUserId!!)
-            statement.setString(2, text)
-            statement.setString(3, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            statement.executeUpdate()
-        }
-    }
 }
