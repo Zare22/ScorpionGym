@@ -10,7 +10,7 @@ import androidx.compose.runtime.mutableStateListOf
  * the protected [items] / [add] / [update] / [remove] surface.
  */
 abstract class CrudViewModel<T : Identifiable>(
-    private val loader: () -> List<T>,
+    loader: () -> List<T>,
     private val inserter: (T) -> Int,
     private val updater: (T) -> Unit,
     private val deleter: (T) -> Unit,
