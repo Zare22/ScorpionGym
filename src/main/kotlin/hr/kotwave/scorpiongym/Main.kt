@@ -111,7 +111,7 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
     val membershipRecordDao: MembershipRecordDao = getKoin().get()
 
     try {
-        membershipRecordDao.validateMemberships()
+        membershipRecordDao.refreshMembershipStatuses()
     } catch (e: Exception) {
         infoMessage = "Greška pri ažuriranju aktivnosti članarina"
         showInfoDialog = true
@@ -233,7 +233,7 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
                                     }
                                 }
                                 try {
-                                    membershipRecordDao.validateMemberships()
+                                    membershipRecordDao.refreshMembershipStatuses()
                                 } catch (e: Exception) {
                                     infoMessage = "Greška pri ažuriranju aktivnosti članarina"
                                     showInfoDialog = true

@@ -162,7 +162,7 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
 
     }
 
-    override fun validateMemberships() {
+    override fun refreshMembershipStatuses() {
         deactivateExpiredMemberships()
         activateMemberships()
     }
