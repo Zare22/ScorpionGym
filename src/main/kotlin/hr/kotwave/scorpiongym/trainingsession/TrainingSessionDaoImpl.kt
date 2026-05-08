@@ -30,7 +30,7 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
         return sessions
     }
 
-    override fun getSessionById(id: Int): TrainingSession? {
+    override fun getTrainingSessionById(id: Int): TrainingSession? {
         val query = "SELECT * FROM TrainingSession WHERE id = ?"
         var trainingSession: TrainingSession? = null
 
@@ -84,7 +84,7 @@ class TrainingSessionDaoImpl(private val dbConnection: Connection) : TrainingSes
         logActionOnTrainingSession(trainingSession.id, "Ažuriran je trening")
     }
 
-    override fun deleteSessionById(trainingSession: TrainingSession) {
+    override fun deleteTrainingSession(trainingSession: TrainingSession) {
         val query = "DELETE FROM TrainingSession WHERE id = ?"
 
         logActionOnTrainingSession(trainingSession.id, "Pobrisan je trening")

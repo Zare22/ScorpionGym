@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat
 
 class AppUserDaoImpl(private val connection: Connection) : AppUserDao {
 
-    override fun getAllUsers(): ArrayList<AppUser> {
+    override fun getAllAppUsers(): ArrayList<AppUser> {
         val users = ArrayList<AppUser>()
         val query = "SELECT * FROM AppUser"
 

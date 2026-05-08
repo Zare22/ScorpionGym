@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateListOf
  *
  * Subclasses pass DAO method references as the four lambdas and may expose
  * domain-specific aliases (e.g. `memberships`, `addMembership`) on top of
- * the protected [items] / [add] / [update] / [remove] surface.
+ * the protected [items] / [add] / [update] / [delete] surface.
  */
 abstract class CrudViewModel<T : Identifiable>(
     loader: () -> List<T>,
@@ -35,7 +35,7 @@ abstract class CrudViewModel<T : Identifiable>(
         }
     }
 
-    protected fun remove(item: T) {
+    protected fun delete(item: T) {
         deleter(item)
         _items.remove(item)
     }

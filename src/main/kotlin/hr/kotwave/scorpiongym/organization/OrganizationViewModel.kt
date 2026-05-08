@@ -12,5 +12,5 @@ class OrganizationViewModel(dao: OrganizationDao) : CrudViewModel<Organization>(
 
     fun addOrganization(organization: Organization) = add(organization)
     fun updateOrganization(organization: Organization) = update(organization)
-    fun deleteOrganization(organization: Organization) = remove(organization)
+    fun deleteOrganization(organization: Organization) = delete(organization)
 }

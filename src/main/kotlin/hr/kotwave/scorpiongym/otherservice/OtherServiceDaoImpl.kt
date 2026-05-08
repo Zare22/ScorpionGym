@@ -26,7 +26,7 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
         return otherServices
     }
 
-    override fun getServiceById(id: Int): OtherService? {
+    override fun getOtherServiceById(id: Int): OtherService? {
         val query = "SELECT * FROM OtherService WHERE id = ?"
         var otherService: OtherService? = null
 
@@ -81,7 +81,7 @@ class OtherServiceDaoImpl(private val dbConnection: Connection) : OtherServiceDa
         auditLog.write("Ažurirani podatci usluge ${otherService.name}")
     }
 
-    override fun deleteOtherServiceById(otherService: OtherService) {
+    override fun deleteOtherService(otherService: OtherService) {
         val query = "DELETE FROM OtherService WHERE id = ?"
 
         dbConnection.prepareStatement(query).use { statement ->

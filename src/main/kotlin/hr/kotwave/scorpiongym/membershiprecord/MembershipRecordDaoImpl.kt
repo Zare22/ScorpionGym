@@ -127,12 +127,12 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         }
     }
 
-    override fun getMembersMembershipRecords(id: Int): List<MembershipRecord> {
+    override fun getMembershipRecordsForMember(memberId: Int): List<MembershipRecord> {
         val memberRecords = mutableListOf<MembershipRecord>()
         val query = "SELECT * FROM MembershipRecord WHERE memberId = ? ORDER BY dateStarted"
 
         dbConnection.prepareStatement(query).use { statement ->
-            statement.setInt(1, id)
+            statement.setInt(1, memberId)
             val resultSet = statement.executeQuery()
             while (resultSet.next()) {
                 val record = MembershipRecord(

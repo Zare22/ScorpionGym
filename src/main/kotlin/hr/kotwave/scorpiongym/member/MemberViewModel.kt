@@ -54,7 +54,7 @@ class MemberViewModel(
         _trainingSessionsInActiveMembership.clear()
         _memberOtherServices.clear()
         numberOfTrainingsAvailable = 0
-        _memberRecords.addAll(membershipRecordDao.getMembersMembershipRecords(currentMember.id))
+        _memberRecords.addAll(membershipRecordDao.getMembershipRecordsForMember(currentMember.id))
         activeMembershipRecord = memberRecords.find { membershipRecord -> membershipRecord.isActive }
         if (activeMembershipRecord != null) {
             val membership = membershipDao.getMembershipById(activeMembershipRecord!!.membershipId)
@@ -66,7 +66,7 @@ class MemberViewModel(
                 )
             )
         }
-        _memberOtherServices.addAll(memberOtherServiceDao.getMembersOtherServices(currentMember.id))
+        _memberOtherServices.addAll(memberOtherServiceDao.getOtherServicesForMember(currentMember.id))
     }
 
     fun addNewMembershipRecord(membershipRecord: MembershipRecord) {
@@ -141,17 +141,17 @@ class MemberViewModel(
         }
     }
 
-    fun removeTrainingSession(trainingSession: TrainingSession) {
+    fun deleteTrainingSession(trainingSession: TrainingSession) {
         _trainingSessionsInActiveMembership.remove(trainingSession)
         if (trainingSession.id != 0)
-            trainingSessionDao.deleteSessionById(trainingSession)
+            trainingSessionDao.deleteTrainingSession(trainingSession)
     }
 
     fun removeTrainingSessionsWithoutId() {
         _trainingSessionsInActiveMembership.removeIf { training -> training.id == 0 }
     }
 
-    fun removeMembershipRecord(record: MembershipRecord) {
+    fun deleteMembershipRecord(record: MembershipRecord) {
         _memberRecords.remove(record)
         if (record.id != 0) {
             membershipRecordDao.deleteAllTrainingsAssociatedWithRecord(record)
@@ -159,9 +159,9 @@ class MemberViewModel(
         }
     }
 
-    fun removeMemberOtherService(memberOtherService: MemberOtherService) {
+    fun deleteMemberOtherService(memberOtherService: MemberOtherService) {
         _memberOtherServices.remove(memberOtherService)
-        memberOtherServiceDao.deleteMemberOtherServiceById(memberOtherService)
+        memberOtherServiceDao.deleteMemberOtherService(memberOtherService)
     }
 
     fun confirmTrainingSessionUpdates() {

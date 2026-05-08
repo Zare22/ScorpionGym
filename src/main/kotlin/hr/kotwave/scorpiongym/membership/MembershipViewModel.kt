@@ -12,5 +12,5 @@ class MembershipViewModel(dao: MembershipDao) : CrudViewModel<Membership>(
 
     fun addMembership(membership: Membership) = add(membership)
     fun updateMembership(membership: Membership) = update(membership)
-    fun removeMembership(membership: Membership) = remove(membership)
+    fun deleteMembership(membership: Membership) = delete(membership)
 }

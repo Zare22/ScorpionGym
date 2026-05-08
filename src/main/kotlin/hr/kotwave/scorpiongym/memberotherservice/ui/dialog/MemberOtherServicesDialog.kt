@@ -102,7 +102,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                         buttonBackgroundColor = Color.Red,
                         onClick = {
                             try {
-                                selectedMemberOtherServiceToDelete?.let { memberViewModel.removeMemberOtherService(it) }
+                                selectedMemberOtherServiceToDelete?.let { memberViewModel.deleteMemberOtherService(it) }
                             } catch (e: Exception) {
                                 infoMessage = "Greška pri brisanju usluge"
                                 showInfoDialog = true

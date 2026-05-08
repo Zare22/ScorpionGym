@@ -3,8 +3,8 @@ package hr.kotwave.scorpiongym.memberotherservice
 import androidx.compose.runtime.mutableStateListOf
 
 class MemberOtherServiceViewModel(private val memberOtherServiceDao: MemberOtherServiceDao) {
-    private val _memberOtherService = mutableStateListOf<MemberOtherService>()
-    val memberOtherService: List<MemberOtherService> get() = _memberOtherService
+    private val _memberOtherServices = mutableStateListOf<MemberOtherService>()
+    val memberOtherServices: List<MemberOtherService> get() = _memberOtherServices
 
     init {
         getMemberOtherServices()
@@ -12,16 +12,16 @@ class MemberOtherServiceViewModel(private val memberOtherServiceDao: MemberOther
 
     private fun getMemberOtherServices() {
         val loadedMemberOtherService = memberOtherServiceDao.getAllMemberOtherServices()
-        _memberOtherService.addAll(loadedMemberOtherService)
+        _memberOtherServices.addAll(loadedMemberOtherService)
     }
 
     fun addMemberOtherService(memberOtherService: MemberOtherService) {
         memberOtherServiceDao.insertMemberOtherService(memberOtherService)
-        _memberOtherService.add(memberOtherService)
+        _memberOtherServices.add(memberOtherService)
     }
 
     fun deleteMemberOtherService(memberOtherService: MemberOtherService) {
-        memberOtherServiceDao.deleteMemberOtherServiceById(memberOtherService)
-        _memberOtherService.remove(memberOtherService)
+        memberOtherServiceDao.deleteMemberOtherService(memberOtherService)
+        _memberOtherServices.remove(memberOtherService)
     }
 }

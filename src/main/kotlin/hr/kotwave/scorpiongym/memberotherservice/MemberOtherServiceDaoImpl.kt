@@ -91,7 +91,7 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
         logAction(memberOtherService.id, "Ažurirana je usluga")
     }
 
-    override fun deleteMemberOtherServiceById(memberOtherService: MemberOtherService) {
+    override fun deleteMemberOtherService(memberOtherService: MemberOtherService) {
         val query = "DELETE FROM MemberOtherService WHERE id = ?"
 
         logAction(memberOtherService.id, "Obrisana je usluga")
@@ -101,7 +101,7 @@ class MemberOtherServiceDaoImpl(private val dbConnection: Connection) : MemberOt
         }
     }
 
-    override fun getMembersOtherServices(memberId: Int): List<MemberOtherService> {
+    override fun getOtherServicesForMember(memberId: Int): List<MemberOtherService> {
         val memberOtherServices = mutableListOf<MemberOtherService>()
         val query = "SELECT * FROM MemberOtherService WHERE memberId = ?"
 

@@ -86,7 +86,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                         buttonBackgroundColor = Color.Red,
                         onClick = {
                             selectedSessionToDelete?.let {
-                                memberViewModel.removeTrainingSession(it)
+                                memberViewModel.deleteTrainingSession(it)
                                 memberViewModel.initViewModel()
                             }
                             confirmSessionDeleteDialog = false

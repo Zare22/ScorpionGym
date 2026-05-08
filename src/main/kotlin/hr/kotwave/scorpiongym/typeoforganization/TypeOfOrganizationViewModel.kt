@@ -12,5 +12,5 @@ class TypeOfOrganizationViewModel(dao: TypeOfOrganizationDao) : CrudViewModel<Ty
 
     fun addTypeOfOrganization(typeOfOrganization: TypeOfOrganization) = add(typeOfOrganization)
     fun updateTypeOfOrganization(typeOfOrganization: TypeOfOrganization) = update(typeOfOrganization)
-    fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization) = remove(typeOfOrganization)
+    fun deleteTypeOfOrganization(typeOfOrganization: TypeOfOrganization) = delete(typeOfOrganization)
 }

@@ -6,7 +6,7 @@ interface MembershipRecordDao {
     fun insertMembershipRecord(record: MembershipRecord): Int
     fun updateMembershipRecord(record: MembershipRecord)
     fun deleteMembershipRecord(membershipRecord: MembershipRecord)
-    fun getMembersMembershipRecords(id: Int): List<MembershipRecord>
+    fun getMembershipRecordsForMember(memberId: Int): List<MembershipRecord>
     fun deleteAllTrainingsAssociatedWithRecord(membershipRecord: MembershipRecord)
     fun validateMemberships()
 }

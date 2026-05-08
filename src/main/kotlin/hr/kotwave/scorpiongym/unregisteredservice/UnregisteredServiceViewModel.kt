@@ -6,7 +6,7 @@ class UnregisteredServiceViewModel(private val unregisteredServiceDao: Unregiste
     private val _unregisteredServices = mutableStateListOf<UnregisteredService>()
     val unregisteredServices: List<UnregisteredService> get() = _unregisteredServices
 
-    private val modifiedUnregisteredOtherServices = mutableListOf<UnregisteredService>()
+    private val modifiedUnregisteredServices = mutableListOf<UnregisteredService>()
 
     init {
         getUnregisteredServices()
@@ -27,31 +27,31 @@ class UnregisteredServiceViewModel(private val unregisteredServiceDao: Unregiste
         _unregisteredServices.remove(unregisteredServices)
     }
 
-    fun updateUnregisteredOtherService(index: Int, unregisteredService: UnregisteredService) {
+    fun updateUnregisteredService(index: Int, unregisteredService: UnregisteredService) {
         if (index in _unregisteredServices.indices) {
 
             _unregisteredServices[index] = unregisteredService
-            val existingService = modifiedUnregisteredOtherServices.find { it.id == unregisteredService.id}
+            val existingService = modifiedUnregisteredServices.find { it.id == unregisteredService.id}
 
             if (existingService != null) {
-                val existingIndex = modifiedUnregisteredOtherServices.indexOf(existingService)
-                modifiedUnregisteredOtherServices[existingIndex] = unregisteredService
+                val existingIndex = modifiedUnregisteredServices.indexOf(existingService)
+                modifiedUnregisteredServices[existingIndex] = unregisteredService
             } else if (unregisteredService.id != 0)
-                modifiedUnregisteredOtherServices.add(unregisteredService)
+                modifiedUnregisteredServices.add(unregisteredService)
         }
     }
 
-    fun confirmUnregisteredOtherServicesUpdates() {
+    fun confirmUnregisteredServicesUpdates() {
         _unregisteredServices.forEach { unregisteredService ->
             if(unregisteredService.id == 0)
                 unregisteredServiceDao.insertUnregisteredService(unregisteredService)
         }
-        modifiedUnregisteredOtherServices.forEach { unregisteredService ->
+        modifiedUnregisteredServices.forEach { unregisteredService ->
             if (unregisteredService.id != 0)
                 unregisteredServiceDao.updateUnregisteredService(unregisteredService)
         }
         _unregisteredServices.clear()
-        modifiedUnregisteredOtherServices.clear()
+        modifiedUnregisteredServices.clear()
         getUnregisteredServices()
     }
 }

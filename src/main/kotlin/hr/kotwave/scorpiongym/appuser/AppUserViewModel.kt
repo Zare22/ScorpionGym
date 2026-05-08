@@ -15,7 +15,7 @@ class AppUserViewModel(private val appUserDao: AppUserDao) {
 
     fun refreshUsers() {
         allUsers.clear()
-        allUsers.addAll(appUserDao.getAllUsers())
+        allUsers.addAll(appUserDao.getAllAppUsers())
     }
 
     fun loginAppUser(username: String, password: String) : Boolean {

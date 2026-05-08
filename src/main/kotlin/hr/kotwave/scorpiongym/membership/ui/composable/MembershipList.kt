@@ -14,7 +14,7 @@ fun MembershipList(onItemClick: (Membership) -> Unit) {
         entities = viewModel.memberships,
         nameOf = { it.name },
         onItemClick = onItemClick,
-        onDelete = viewModel::removeMembership,
+        onDelete = viewModel::deleteMembership,
         labels = CrudListLabels(
             searchHint = "Pretraži tip članarine",
             deleteDialogTitle = "Brisanje članarine",

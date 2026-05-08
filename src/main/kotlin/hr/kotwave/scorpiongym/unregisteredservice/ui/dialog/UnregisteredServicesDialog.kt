@@ -191,7 +191,7 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                                     val parsedDateTime =
                                         runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
                                     if (parsedDateTime != null && parsedDateTime != unregisteredOtherService.dateOfService) {
-                                        unregisteredServiceViewModel.updateUnregisteredOtherService(
+                                        unregisteredServiceViewModel.updateUnregisteredService(
                                             index,
                                             unregisteredOtherService.copy(dateOfService = parsedDateTime)
                                         )
@@ -209,7 +209,7 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                                 checked = isPaid,
                                 onCheckedChange = {
                                     isPaid = !isPaid
-                                    unregisteredServiceViewModel.updateUnregisteredOtherService(
+                                    unregisteredServiceViewModel.updateUnregisteredService(
                                         index,
                                         unregisteredOtherService.copy(
                                             isPaid = isPaid
@@ -249,7 +249,7 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                         text = "Povratak",
                         onClick = {
                             unregisteredOtherServices.forEachIndexed { index, record ->
-                                unregisteredServiceViewModel.updateUnregisteredOtherService(
+                                unregisteredServiceViewModel.updateUnregisteredService(
                                     index,
                                     record.copy(
                                         isPaid = initialIsPaidValues[index]
@@ -279,7 +279,7 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                         text = "Potvrdi promjene",
                         onClick = {
                             try {
-                                unregisteredServiceViewModel.confirmUnregisteredOtherServicesUpdates()
+                                unregisteredServiceViewModel.confirmUnregisteredServicesUpdates()
                                 onClose()
                             } catch (e: Exception) {
                                 infoMessage = "Greška pri ažuriranju ostale usluge"
