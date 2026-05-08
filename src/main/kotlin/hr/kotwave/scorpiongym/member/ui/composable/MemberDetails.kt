@@ -21,10 +21,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import hr.kotwave.scorpiongym.di.rememberMemberViewModel
+import hr.kotwave.scorpiongym.di.rememberMemberDetailsViewModel
 import hr.kotwave.scorpiongym.member.Gender
 import hr.kotwave.scorpiongym.member.Member
-import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.member.MemberDetailsViewModel
 import hr.kotwave.scorpiongym.member.MembersListViewModel
 import hr.kotwave.scorpiongym.membership.Membership
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
@@ -52,7 +52,7 @@ fun MemberDetails(
     onUpdateClick: (Member) -> Unit
 ) {
 
-    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    val memberDetailsViewModel: MemberDetailsViewModel = rememberMemberDetailsViewModel(member)
 
     val focusRequesters = List(9) { FocusRequester() }
     val verticalScrollState = rememberScrollState(0)
@@ -61,61 +61,61 @@ fun MemberDetails(
     var infoMessage by remember { mutableStateOf("") }
 
     // Member properties
-    var name by remember(memberViewModel.currentMember) {
+    var name by remember(memberDetailsViewModel.currentMember) {
         mutableStateOf(
             TextFieldValue(
-                memberViewModel.currentMember.name,
-                selection = TextRange(memberViewModel.currentMember.name.length)
+                memberDetailsViewModel.currentMember.name,
+                selection = TextRange(memberDetailsViewModel.currentMember.name.length)
             )
         )
     }
-    var surname by remember(memberViewModel.currentMember) {
+    var surname by remember(memberDetailsViewModel.currentMember) {
         mutableStateOf(
             TextFieldValue(
-                memberViewModel.currentMember.surname,
-                selection = TextRange(memberViewModel.currentMember.surname.length)
+                memberDetailsViewModel.currentMember.surname,
+                selection = TextRange(memberDetailsViewModel.currentMember.surname.length)
             )
         )
     }
-    var phoneNumber by remember(memberViewModel.currentMember) {
+    var phoneNumber by remember(memberDetailsViewModel.currentMember) {
         mutableStateOf(
             TextFieldValue(
-                memberViewModel.currentMember.phoneNumber ?: "",
-                selection = TextRange((memberViewModel.currentMember.phoneNumber ?: "").length)
+                memberDetailsViewModel.currentMember.phoneNumber ?: "",
+                selection = TextRange((memberDetailsViewModel.currentMember.phoneNumber ?: "").length)
             )
         )
     }
-    var remark by remember(memberViewModel.currentMember) {
+    var remark by remember(memberDetailsViewModel.currentMember) {
         mutableStateOf(
             TextFieldValue(
-                memberViewModel.currentMember.remark ?: "",
-                selection = TextRange(memberViewModel.currentMember.remark?.length ?: 0)
+                memberDetailsViewModel.currentMember.remark ?: "",
+                selection = TextRange(memberDetailsViewModel.currentMember.remark?.length ?: 0)
             )
         )
     }
 
     val dateOfBirthFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-    var dateOfBirth by remember(memberViewModel.currentMember) {
+    var dateOfBirth by remember(memberDetailsViewModel.currentMember) {
         mutableStateOf(
-            memberViewModel.currentMember.dateOfBirth?.let {
+            memberDetailsViewModel.currentMember.dateOfBirth?.let {
                 TextFieldValue(it.format(dateOfBirthFormatter))
             } ?: TextFieldValue("")
         )
     }
 
-    var gender by remember(memberViewModel.currentMember) {
-        mutableStateOf(memberViewModel.currentMember.gender)
+    var gender by remember(memberDetailsViewModel.currentMember) {
+        mutableStateOf(memberDetailsViewModel.currentMember.gender)
     }
 
-    var signedUpDate by remember(memberViewModel.currentMember) { mutableStateOf(memberViewModel.currentMember.signedUpDate) }
-    var organization by remember(memberViewModel.currentMember) { mutableStateOf(memberViewModel.currentMember.organizationId.toString()) }
+    var signedUpDate by remember(memberDetailsViewModel.currentMember) { mutableStateOf(memberDetailsViewModel.currentMember.signedUpDate) }
+    var organization by remember(memberDetailsViewModel.currentMember) { mutableStateOf(memberDetailsViewModel.currentMember.organizationId.toString()) }
 
-    var membership by remember(memberViewModel.currentMember) {
-        mutableStateOf(memberViewModel.activeMembershipRecord?.membershipId.toString())
+    var membership by remember(memberDetailsViewModel.currentMember) {
+        mutableStateOf(memberDetailsViewModel.activeMembershipRecord?.membershipId.toString())
     }
 
-    var currentRecordFinishDate by remember(memberViewModel.currentMember) { mutableStateOf(memberViewModel.activeMembershipRecord?.dateFinished) }
-    var currentRecordStartDate by remember(memberViewModel.currentMember) { mutableStateOf(memberViewModel.activeMembershipRecord?.dateStarted) }
+    var currentRecordFinishDate by remember(memberDetailsViewModel.currentMember) { mutableStateOf(memberDetailsViewModel.activeMembershipRecord?.dateFinished) }
+    var currentRecordStartDate by remember(memberDetailsViewModel.currentMember) { mutableStateOf(memberDetailsViewModel.activeMembershipRecord?.dateStarted) }
 
     // Dropdown states
     var expandedMembership by remember { mutableStateOf(false) }
@@ -128,48 +128,48 @@ fun MemberDetails(
 
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
-    var dateFinished by remember(memberViewModel.currentMember) {
+    var dateFinished by remember(memberDetailsViewModel.currentMember) {
         mutableStateOf(
             currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
         )
     }
 
-    var dateStarted by remember(memberViewModel.currentMember) {
+    var dateStarted by remember(memberDetailsViewModel.currentMember) {
         mutableStateOf(
             currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
         )
     }
 
-    LaunchedEffect(memberViewModel.currentMember) {
+    LaunchedEffect(memberDetailsViewModel.currentMember) {
         name = TextFieldValue(
-            memberViewModel.currentMember.name,
-            selection = TextRange(memberViewModel.currentMember.name.length)
+            memberDetailsViewModel.currentMember.name,
+            selection = TextRange(memberDetailsViewModel.currentMember.name.length)
         )
         surname = TextFieldValue(
-            memberViewModel.currentMember.surname,
-            selection = TextRange(memberViewModel.currentMember.surname.length)
+            memberDetailsViewModel.currentMember.surname,
+            selection = TextRange(memberDetailsViewModel.currentMember.surname.length)
         )
         phoneNumber = TextFieldValue(
-            memberViewModel.currentMember.phoneNumber ?: "",
-            selection = TextRange((memberViewModel.currentMember.phoneNumber ?: "").length)
+            memberDetailsViewModel.currentMember.phoneNumber ?: "",
+            selection = TextRange((memberDetailsViewModel.currentMember.phoneNumber ?: "").length)
         )
-        organization = memberViewModel.currentMember.organizationId.toString()
-        membership = memberViewModel.activeMembershipRecord?.membershipId.toString()
+        organization = memberDetailsViewModel.currentMember.organizationId.toString()
+        membership = memberDetailsViewModel.activeMembershipRecord?.membershipId.toString()
         remark = TextFieldValue(
-            memberViewModel.currentMember.remark ?: "",
-            selection = TextRange(memberViewModel.currentMember.remark?.length ?: 0)
+            memberDetailsViewModel.currentMember.remark ?: "",
+            selection = TextRange(memberDetailsViewModel.currentMember.remark?.length ?: 0)
         )
-        signedUpDate = memberViewModel.currentMember.signedUpDate
-        currentRecordFinishDate = memberViewModel.activeMembershipRecord?.dateFinished
-        currentRecordStartDate = memberViewModel.activeMembershipRecord?.dateStarted
+        signedUpDate = memberDetailsViewModel.currentMember.signedUpDate
+        currentRecordFinishDate = memberDetailsViewModel.activeMembershipRecord?.dateFinished
+        currentRecordStartDate = memberDetailsViewModel.activeMembershipRecord?.dateStarted
         dateFinished = currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
         dateStarted = currentRecordStartDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
 
         dateOfBirth = TextFieldValue(
-            memberViewModel.currentMember.dateOfBirth?.format(dateOfBirthFormatter) ?: ""
+            memberDetailsViewModel.currentMember.dateOfBirth?.format(dateOfBirthFormatter) ?: ""
         )
 
-        gender = memberViewModel.currentMember.gender
+        gender = memberDetailsViewModel.currentMember.gender
     }
 
     when {
@@ -188,14 +188,14 @@ fun MemberDetails(
                         text = "Potvrdi",
                         buttonBackgroundColor = Color.Green,
                         onClick = {
-                            val updatedMember = memberViewModel.currentMember.copy(
+                            val updatedMember = memberDetailsViewModel.currentMember.copy(
                                 name = name.text,
                                 surname = surname.text,
                                 phoneNumber = phoneNumber.text,
                                 signedUpDate = signedUpDate,
-                                membershipRecordId = memberViewModel.currentMember.membershipRecordId,
+                                membershipRecordId = memberDetailsViewModel.currentMember.membershipRecordId,
                                 organizationId = organization.toIntOrNull()
-                                    ?: memberViewModel.currentMember.organizationId,
+                                    ?: memberDetailsViewModel.currentMember.organizationId,
                                 remark = remark.text,
                                 dateOfBirth = runCatching {
                                     LocalDate.parse(
@@ -205,7 +205,7 @@ fun MemberDetails(
                                 }.getOrNull(),
                             )
                             try {
-                                memberViewModel.updateMember(updatedMember)
+                                memberDetailsViewModel.updateMember(updatedMember)
                             } catch (e: Exception) {
                                 infoMessage = "Greška pri ažuriranju člana"
                                 showInfoDialog = true
@@ -256,7 +256,7 @@ fun MemberDetails(
                                     append("Članu ")
 
                                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        append("${memberViewModel.currentMember.surname} ${memberViewModel.currentMember.name}")
+                                        append("${memberDetailsViewModel.currentMember.surname} ${memberDetailsViewModel.currentMember.name}")
                                     }
 
                                     append(" ćete upisati članarinu ")
@@ -310,10 +310,10 @@ fun MemberDetails(
                                     modifier = Modifier.wrapContentWidth(),
                                     onClick = {
                                         try {
-                                            memberViewModel.addNewMembershipRecord(
+                                            memberDetailsViewModel.addNewMembershipRecord(
                                                 MembershipRecord(
                                                     id = 0,
-                                                    memberId = memberViewModel.currentMember.id,
+                                                    memberId = memberDetailsViewModel.currentMember.id,
                                                     membershipId = membership.toInt(),
                                                     isActive = true,
                                                     isPaid = isPaid,
@@ -326,14 +326,14 @@ fun MemberDetails(
                                             infoMessage = "Greška pri produživanju članarine"
                                             showInfoDialog = true
                                         }
-                                        val updatedMember = memberViewModel.currentMember.copy(
+                                        val updatedMember = memberDetailsViewModel.currentMember.copy(
                                             name = name.text,
                                             surname = surname.text,
                                             phoneNumber = phoneNumber.text,
                                             signedUpDate = signedUpDate,
-                                            membershipRecordId = memberViewModel.currentMember.membershipRecordId,
+                                            membershipRecordId = memberDetailsViewModel.currentMember.membershipRecordId,
                                             organizationId = organization.toIntOrNull()
-                                                ?: memberViewModel.currentMember.organizationId,
+                                                ?: memberDetailsViewModel.currentMember.organizationId,
                                             remark = remark.text
                                         )
                                         try {
@@ -342,11 +342,11 @@ fun MemberDetails(
                                             infoMessage = "Greška pri ažuriranju člana"
                                             showInfoDialog = true
                                         }
-                                        memberViewModel.initViewModel()
+                                        memberDetailsViewModel.initViewModel()
                                         currentRecordFinishDate =
-                                            memberViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateFinished
+                                            memberDetailsViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateFinished
                                         currentRecordStartDate =
-                                            memberViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateStarted
+                                            memberDetailsViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateStarted
                                         dateFinished = currentRecordFinishDate?.format(dateFormatter)
                                             ?: "Nema trenutno aktivne članarine"
                                         dateStarted = currentRecordStartDate?.format(dateFormatter)
@@ -452,9 +452,9 @@ fun MemberDetails(
 
 
 
-                memberViewModel.currentMember.id.takeIf { it != 0 }?.let {
+                memberDetailsViewModel.currentMember.id.takeIf { it != 0 }?.let {
 
-                    if (memberViewModel.activeMembershipRecord != null) {
+                    if (memberDetailsViewModel.activeMembershipRecord != null) {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -473,7 +473,7 @@ fun MemberDetails(
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(end = 8.dp),
-                                readOnly = memberViewModel.activeMembershipRecord == null
+                                readOnly = memberDetailsViewModel.activeMembershipRecord == null
                             )
 
                             OutlinedTextField(
@@ -490,7 +490,7 @@ fun MemberDetails(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f),
-                                readOnly = memberViewModel.activeMembershipRecord == null
+                                readOnly = memberDetailsViewModel.activeMembershipRecord == null
                             )
                         }
                     }
@@ -513,7 +513,7 @@ fun MemberDetails(
                             itemLabel = { it.name }
                         )
 
-                        if (memberViewModel.activeMembershipRecord == null) {
+                        if (memberDetailsViewModel.activeMembershipRecord == null) {
                             HoverableButton(
                                 modifier = Modifier
                                     .wrapContentWidth()
@@ -532,8 +532,8 @@ fun MemberDetails(
                 }
 
                 val nextFocusIndex = when {
-                    memberViewModel.currentMember.id == 0 -> 4
-                    memberViewModel.currentMember.id != 0 && memberViewModel.activeMembershipRecord != null -> 5
+                    memberDetailsViewModel.currentMember.id == 0 -> 4
+                    memberDetailsViewModel.currentMember.id != 0 && memberDetailsViewModel.activeMembershipRecord != null -> 5
                     else -> 6
                 }
                 Dropdown(
@@ -579,7 +579,7 @@ fun MemberDetails(
                             },
                         onClick = {
                             if (getKoin().get<MembersListViewModel>().members.any {
-                                    it.id != memberViewModel.currentMember.id &&
+                                    it.id != memberDetailsViewModel.currentMember.id &&
                                             it.name.lowercase(Locales.CroatianLocale) == name.text.lowercase(
                                         Locales.CroatianLocale
                                     ) && it.surname.lowercase(Locales.CroatianLocale) == surname.text.lowercase(
@@ -588,14 +588,14 @@ fun MemberDetails(
                                 }) {
                                 showSameMemberDialog = true
                             } else {
-                                val updatedMember = memberViewModel.currentMember.copy(
+                                val updatedMember = memberDetailsViewModel.currentMember.copy(
                                     name = name.text,
                                     surname = surname.text,
                                     phoneNumber = phoneNumber.text,
                                     signedUpDate = signedUpDate,
-                                    membershipRecordId = memberViewModel.currentMember.membershipRecordId,
+                                    membershipRecordId = memberDetailsViewModel.currentMember.membershipRecordId,
                                     organizationId = organization.toIntOrNull()
-                                        ?: memberViewModel.currentMember.organizationId,
+                                        ?: memberDetailsViewModel.currentMember.organizationId,
                                     remark = remark.text,
                                     dateOfBirth = kotlin.runCatching {
                                         LocalDate.parse(
@@ -605,28 +605,28 @@ fun MemberDetails(
                                     }.getOrNull(),
                                     gender = gender
                                 )
-                                if (memberViewModel.activeMembershipRecord != null) {
-                                    val id = memberViewModel.activeMembershipRecord?.id
-                                    val index = memberViewModel.memberRecords.indexOfFirst { it.id == id }
-                                    memberViewModel.updateMembershipRecord(
+                                if (memberDetailsViewModel.activeMembershipRecord != null) {
+                                    val id = memberDetailsViewModel.activeMembershipRecord?.id
+                                    val index = memberDetailsViewModel.memberRecords.indexOfFirst { it.id == id }
+                                    memberDetailsViewModel.updateMembershipRecord(
                                         index,
-                                        memberViewModel.activeMembershipRecord!!.copy(
+                                        memberDetailsViewModel.activeMembershipRecord!!.copy(
                                             membershipId = membership.toInt(),
                                             dateStarted = currentRecordStartDate!!,
                                             dateFinished = currentRecordFinishDate!!
                                         )
                                     )
-                                    memberViewModel.confirmMembershipRecordsUpdates()
-                                    if (memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
+                                    memberDetailsViewModel.confirmMembershipRecordsUpdates()
+                                    if (memberDetailsViewModel.trainingSessionsInActiveMembership.size >= memberDetailsViewModel.numberOfTrainingsAvailable) {
                                         val membershipRecordDao: MembershipRecordDao = getKoin().get()
-                                        memberViewModel.activeMembershipRecord?.copy(isActive = false, dateFinished = LocalDate.now())
+                                        memberDetailsViewModel.activeMembershipRecord?.copy(isActive = false, dateFinished = LocalDate.now())
                                             ?.let { membershipRecordDao.updateMembershipRecord(it) }
-                                        memberViewModel.initViewModel()
+                                        memberDetailsViewModel.initViewModel()
                                         expiredMembershipDialogOpened = true
                                     }
                                 }
                                 try {
-                                    memberViewModel.updateMember(updatedMember)
+                                    memberDetailsViewModel.updateMember(updatedMember)
                                 } catch (e: Exception) {
                                     infoMessage = "Greška pri ažuriranju člana"
                                     showInfoDialog = true
@@ -634,14 +634,14 @@ fun MemberDetails(
                                 onUpdateClick(updatedMember)
                             }
                         },
-                        text = if (memberViewModel.currentMember.id != 0) "Ažuriraj" else "Dodaj",
+                        text = if (memberDetailsViewModel.currentMember.id != 0) "Ažuriraj" else "Dodaj",
                         buttonBackgroundColor = Color.Green
                     )
                 }
             }
             if (expiredMembershipDialogOpened) {
                 InformativeDialog(
-                    message = "Članu ${memberViewModel.currentMember.name} ${memberViewModel.currentMember.surname} je istekla trenutna članarina",
+                    message = "Članu ${memberDetailsViewModel.currentMember.name} ${memberDetailsViewModel.currentMember.surname} je istekla trenutna članarina",
                     onDismiss = {
                         expiredMembershipDialogOpened = false
                     }

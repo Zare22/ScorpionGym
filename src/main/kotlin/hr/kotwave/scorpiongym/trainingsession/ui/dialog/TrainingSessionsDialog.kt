@@ -21,9 +21,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import hr.kotwave.scorpiongym.di.rememberMemberViewModel
+import hr.kotwave.scorpiongym.di.rememberMemberDetailsViewModel
 import hr.kotwave.scorpiongym.member.Member
-import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.member.MemberDetailsViewModel
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.trainingsession.TrainingSession
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
@@ -36,15 +36,15 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecordId: Int = 0) {
-    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    val memberDetailsViewModel: MemberDetailsViewModel = rememberMemberDetailsViewModel(member)
     if (membershipRecordId > 0) {
-        memberViewModel.memberRecords.first { it.id == membershipRecordId }.let {
-            memberViewModel.assignActiveMembershipRecord(it)
+        memberDetailsViewModel.memberRecords.first { it.id == membershipRecordId }.let {
+            memberDetailsViewModel.assignActiveMembershipRecord(it)
         }
     }
     val membershipViewModel: MembershipViewModel = getKoin().get()
     val membership = membershipViewModel.memberships.find { membership ->
-        membership.id == (memberViewModel.activeMembershipRecord?.membershipId)
+        membership.id == (memberDetailsViewModel.activeMembershipRecord?.membershipId)
     }
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
     val listState = rememberLazyListState()
@@ -57,7 +57,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
     var showInfoDialog by remember { mutableStateOf(false) }
     var infoMessage by remember { mutableStateOf("") }
 
-    val trainingSessions by remember { derivedStateOf { memberViewModel.trainingSessionsInActiveMembership } }
+    val trainingSessions by remember { derivedStateOf { memberDetailsViewModel.trainingSessionsInActiveMembership } }
 
     when {
 
@@ -86,8 +86,8 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                         buttonBackgroundColor = Color.Red,
                         onClick = {
                             selectedSessionToDelete?.let {
-                                memberViewModel.deleteTrainingSession(it)
-                                memberViewModel.initViewModel()
+                                memberDetailsViewModel.deleteTrainingSession(it)
+                                memberDetailsViewModel.initViewModel()
                             }
                             confirmSessionDeleteDialog = false
                         }
@@ -105,7 +105,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
 
     Dialog(
         onDismissRequest = {
-            memberViewModel.removeTrainingSessionsWithoutId()
+            memberDetailsViewModel.removeTrainingSessionsWithoutId()
             onClose()
         }
     ) {
@@ -154,7 +154,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                             append("Istek članarine: ")
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                 append(
-                                    memberViewModel.activeMembershipRecord?.dateFinished?.format(
+                                    memberDetailsViewModel.activeMembershipRecord?.dateFinished?.format(
                                         DateTimeFormatter.ofPattern("dd.MM.yyyy")
                                     )
                                 )
@@ -169,7 +169,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                                     append("Odrađeni treninzi u članarini: ")
 
                                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        append("${memberViewModel.trainingSessionsInActiveMembership.size}")
+                                        append("${memberDetailsViewModel.trainingSessionsInActiveMembership.size}")
                                     }
                                 }
                             } ?: run {
@@ -177,7 +177,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
 
                                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                     val remainingTrainings =
-                                        memberViewModel.numberOfTrainingsAvailable - memberViewModel.trainingSessionsInActiveMembership.size
+                                        memberDetailsViewModel.numberOfTrainingsAvailable - memberDetailsViewModel.trainingSessionsInActiveMembership.size
                                     append("$remainingTrainings")
                                 }
                             }
@@ -221,7 +221,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                                                 )
                                             }.getOrNull()
                                         if (parsedDateTime != null && parsedDateTime != session.sessionDateTime) {
-                                            memberViewModel.updateTrainingSession(
+                                            memberDetailsViewModel.updateTrainingSession(
                                                 index,
                                                 session.copy(sessionDateTime = parsedDateTime)
                                             )
@@ -250,7 +250,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                                 }
                             }
                         }
-                        if (memberViewModel.trainingSessionsInActiveMembership.size < memberViewModel.numberOfTrainingsAvailable) {
+                        if (memberDetailsViewModel.trainingSessionsInActiveMembership.size < memberDetailsViewModel.numberOfTrainingsAvailable) {
                             item {
                                 Row(
                                     modifier = Modifier
@@ -263,9 +263,9 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                                         onClick = {
                                             val newSession = TrainingSession(
                                                 sessionDateTime = LocalDateTime.now(),
-                                                membershipRecordId = memberViewModel.activeMembershipRecord!!.id
+                                                membershipRecordId = memberDetailsViewModel.activeMembershipRecord!!.id
                                             )
-                                            memberViewModel.addTrainingSession(newSession)
+                                            memberDetailsViewModel.addTrainingSession(newSession)
                                             updateTrigger = !updateTrigger
                                         }
                                     )
@@ -296,8 +296,8 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                     HoverableButton(
                         text = "Povratak",
                         onClick = {
-                            memberViewModel.removeTrainingSessionsWithoutId()
-                            memberViewModel.initViewModel()
+                            memberDetailsViewModel.removeTrainingSessionsWithoutId()
+                            memberDetailsViewModel.initViewModel()
                             onClose()
                         }
                     )
@@ -305,16 +305,16 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                         text = "Potvrdi promjene",
                         onClick = {
                             try {
-                                memberViewModel.confirmTrainingSessionUpdates()
+                                memberDetailsViewModel.confirmTrainingSessionUpdates()
                             } catch (e: Exception) {
                                 infoMessage = "Greška pri dodavanju treninga"
                                 showInfoDialog = true
                             }
-                            if (memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
-                                memberViewModel.initViewModel()
+                            if (memberDetailsViewModel.trainingSessionsInActiveMembership.size >= memberDetailsViewModel.numberOfTrainingsAvailable) {
+                                memberDetailsViewModel.initViewModel()
                                 expiredMembershipDialogOpened = true
                             } else {
-                                memberViewModel.initViewModel()
+                                memberDetailsViewModel.initViewModel()
                                 onClose()
                             }
                         },
@@ -326,7 +326,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
     }
     if (expiredMembershipDialogOpened) {
         InformativeDialog(
-            message = "Članu ${memberViewModel.currentMember.name} ${memberViewModel.currentMember.surname} je istekla trenutna članarina",
+            message = "Članu ${memberDetailsViewModel.currentMember.name} ${memberDetailsViewModel.currentMember.surname} je istekla trenutna članarina",
             onDismiss = {
                 expiredMembershipDialogOpened = false
                 onClose()

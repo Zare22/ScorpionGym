@@ -24,9 +24,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import hr.kotwave.scorpiongym.di.rememberMemberViewModel
+import hr.kotwave.scorpiongym.di.rememberMemberDetailsViewModel
 import hr.kotwave.scorpiongym.member.Member
-import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.member.MemberDetailsViewModel
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
@@ -44,11 +44,11 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
-    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    val memberDetailsViewModel: MemberDetailsViewModel = rememberMemberDetailsViewModel(member)
     val membershipViewModel: MembershipViewModel = getKoin().get()
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
     val listState = rememberLazyListState()
-    val records by remember { derivedStateOf { memberViewModel.memberRecords } }
+    val records by remember { derivedStateOf { memberDetailsViewModel.memberRecords } }
 
     val initialIsPaidValues = remember { records.map { it.isPaid }.toMutableStateList() }
     val initialIsActiveValues = remember { records.map { it.isActive }.toMutableStateList() }
@@ -113,12 +113,12 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                         onClick = {
                             selectedRecordToDelete?.let {
                                 try {
-                                    memberViewModel.deleteMembershipRecord(it)
+                                    memberDetailsViewModel.deleteMembershipRecord(it)
                                 } catch (e: Exception) {
                                     infoMessage = "Greška pri brisanju članarine"
                                     showInfoDialog = true
                                 }
-                                if (it.id != 0) memberViewModel.initViewModel()
+                                if (it.id != 0) memberDetailsViewModel.initViewModel()
                             }
                             confirmRecordDeleteDialog = false
                         }
@@ -138,7 +138,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
     Dialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         onDismissRequest = {
-            memberViewModel.removeUnconfirmedFutureMembershipRecords()
+            memberDetailsViewModel.removeUnconfirmedFutureMembershipRecords()
             onClose()
         }
     ) {
@@ -232,7 +232,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             var isActive by remember { mutableStateOf(record.isActive) }
                             var price = membershipType?.price
 
-                            memberViewModel.currentMember.organizationId?.let { organizationId ->
+                            memberDetailsViewModel.currentMember.organizationId?.let { organizationId ->
                                 if (organizationId != 0) {
                                     val typeOfOrganizationViewModel: TypeOfOrganizationViewModel = getKoin().get()
                                     val typeOfOrganization =
@@ -289,7 +289,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                         val parsedDateTime =
                                             runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
                                         if (parsedDateTime != null && parsedDateTime != record.dateStarted) {
-                                            memberViewModel.updateMembershipRecord(
+                                            memberDetailsViewModel.updateMembershipRecord(
                                                 index,
                                                 record.copy(dateStarted = parsedDateTime),
                                             )
@@ -309,7 +309,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                         val parsedDateTime =
                                             runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
                                         if (parsedDateTime != null) {
-                                            memberViewModel.updateMembershipRecord(
+                                            memberDetailsViewModel.updateMembershipRecord(
                                                 index,
                                                 record.copy(dateFinished = parsedDateTime),
                                             )
@@ -327,7 +327,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                     checked = isPaid,
                                     onCheckedChange = {
                                         isPaid = !isPaid
-                                        memberViewModel.updateMembershipRecord(
+                                        memberDetailsViewModel.updateMembershipRecord(
                                             index,
                                             record.copy(
                                                 isPaid = isPaid
@@ -342,7 +342,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                     checked = record.isActive,
                                     onCheckedChange = {
                                         isActive = !isActive
-                                        memberViewModel.updateMembershipRecord(
+                                        memberDetailsViewModel.updateMembershipRecord(
                                             index,
                                             record.copy(
                                                 isActive = isActive
@@ -391,9 +391,9 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                     text = "+ Dodaj novu članarinu",
                                     onClick = {
                                         var dateStarted: LocalDate = LocalDate.now()
-                                        if (memberViewModel.activeMembershipRecord != null || memberViewModel.memberRecords.any { record -> record.isActive })
+                                        if (memberDetailsViewModel.activeMembershipRecord != null || memberDetailsViewModel.memberRecords.any { record -> record.isActive })
                                             dateStarted =
-                                                memberViewModel.memberRecords.maxOfOrNull { record -> record.dateFinished }
+                                                memberDetailsViewModel.memberRecords.maxOfOrNull { record -> record.dateFinished }
                                                     ?.plusDays(1) ?: dateStarted
                                         val dateFinished = dateStarted.plusMonths(1).minusDays(1)
                                         val newRecord = MembershipRecord(
@@ -405,7 +405,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                             isActive = false,
                                             isPaid = false
                                         )
-                                        memberViewModel.addFutureMembershipRecord(newRecord)
+                                        memberDetailsViewModel.addFutureMembershipRecord(newRecord)
                                     }
                                 )
                             }
@@ -428,9 +428,9 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                     HoverableButton(
                         text = "Povratak",
                         onClick = {
-                            memberViewModel.removeUnconfirmedFutureMembershipRecords()
+                            memberDetailsViewModel.removeUnconfirmedFutureMembershipRecords()
                             records.forEachIndexed { index, record ->
-                                memberViewModel.updateMembershipRecord(
+                                memberDetailsViewModel.updateMembershipRecord(
                                     index,
                                     record.copy(
                                         isPaid = initialIsPaidValues[index],
@@ -461,18 +461,18 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                         text = "Potvrdi promjene",
                         onClick = {
                             try {
-                                memberViewModel.confirmMembershipRecordsUpdates()
+                                memberDetailsViewModel.confirmMembershipRecordsUpdates()
                             } catch (_: Exception) {
                                 infoMessage = "Greška pri ažuriranju članarina"
                                 showInfoDialog = true
                             }
-                            if (memberViewModel.activeMembershipRecord != null && memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
+                            if (memberDetailsViewModel.activeMembershipRecord != null && memberDetailsViewModel.trainingSessionsInActiveMembership.size >= memberDetailsViewModel.numberOfTrainingsAvailable) {
                                 val membershipRecordDao: MembershipRecordDao = getKoin().get()
-                                memberViewModel.activeMembershipRecord?.copy(
+                                memberDetailsViewModel.activeMembershipRecord?.copy(
                                     isActive = false,
                                     dateFinished = LocalDate.now()
                                 )?.let { membershipRecordDao.updateMembershipRecord(it) }
-                                memberViewModel.initViewModel()
+                                memberDetailsViewModel.initViewModel()
                                 expiredMembershipDialogOpened = true
                             } else onClose()
                         },
@@ -484,7 +484,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
     }
     if (expiredMembershipDialogOpened) {
         InformativeDialog(
-            message = "Članu ${memberViewModel.currentMember.name} ${memberViewModel.currentMember.surname} je istekla trenutna članarina",
+            message = "Članu ${memberDetailsViewModel.currentMember.name} ${memberDetailsViewModel.currentMember.surname} je istekla trenutna članarina",
             onDismiss = {
                 expiredMembershipDialogOpened = false
                 onClose()

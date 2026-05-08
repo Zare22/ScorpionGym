@@ -19,15 +19,18 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import hr.kotwave.scorpiongym.appuser.ActivityLogEntry
 import hr.kotwave.scorpiongym.appuser.AppUserViewModel
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+private val FILTER_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+private val DISPLAY_DATETIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+
 @Composable
-fun UserActionsDialog(logs: List<Triple<String, String, String>>, onClose: () -> Unit) {
+fun UserActionsDialog(logs: List<ActivityLogEntry>, onClose: () -> Unit) {
     var filterDate by remember { mutableStateOf("") }
     var selectedUsername by remember { mutableStateOf<String?>(null) }
     var usernameDropdownExpanded by remember { mutableStateOf(false) }
@@ -39,16 +42,11 @@ fun UserActionsDialog(logs: List<Triple<String, String, String>>, onClose: () ->
 
     val filteredLogs by remember(filterDate, selectedUsername, logs) {
         derivedStateOf {
-            val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-            val parsedDate = runCatching { LocalDate.parse(filterDate, dateFormatter) }.getOrNull()
+            val parsedDate = runCatching { LocalDate.parse(filterDate, FILTER_DATE_FORMATTER) }.getOrNull()
 
             logs.filter { log ->
-                val logDateTime = runCatching {
-                    LocalDateTime.parse(log.second, DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
-                }.getOrNull()
-
-                val matchesDate = parsedDate?.let { logDateTime?.toLocalDate() == it } ?: true
-                val matchesUsername = selectedUsername?.let { log.third == it } ?: true
+                val matchesDate = parsedDate?.let { log.timestamp.toLocalDate() == it } ?: true
+                val matchesUsername = selectedUsername?.let { log.username == it } ?: true
 
                 matchesDate && matchesUsername
             }
@@ -108,16 +106,20 @@ fun UserActionsDialog(logs: List<Triple<String, String, String>>, onClose: () ->
                                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                                     Text(
                                         text = buildAnnotatedString {
-                                            append(log.first)
+                                            append(log.action)
                                             append(" (")
                                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                                append(log.third)
+                                                append(log.username)
                                             }
                                             append(")")
                                         },
                                         modifier = Modifier.weight(1f)
                                     )
-                                    Text(log.second, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+                                    Text(
+                                        log.timestamp.format(DISPLAY_DATETIME_FORMATTER),
+                                        textAlign = TextAlign.End,
+                                        modifier = Modifier.weight(1f),
+                                    )
                                 }
                             }
                         }

@@ -15,7 +15,7 @@ import hr.kotwave.scorpiongym.trainingsession.TrainingSessionDao
 import org.koin.core.component.KoinComponent
 import java.time.LocalDateTime
 
-class MemberViewModel(
+class MemberDetailsViewModel(
     member: Member,
     private val membershipDao: MembershipDao,
     private val membershipRecordDao: MembershipRecordDao,
@@ -154,7 +154,7 @@ class MemberViewModel(
     fun deleteMembershipRecord(record: MembershipRecord) {
         _memberRecords.remove(record)
         if (record.id != 0) {
-            membershipRecordDao.deleteAllTrainingsAssociatedWithRecord(record)
+            membershipRecordDao.deleteTrainingsForRecord(record)
             membershipRecordDao.deleteMembershipRecord(record)
         }
     }

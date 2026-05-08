@@ -15,9 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import hr.kotwave.scorpiongym.di.rememberMemberViewModel
+import hr.kotwave.scorpiongym.di.rememberMemberDetailsViewModel
 import hr.kotwave.scorpiongym.member.Member
-import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.member.MemberDetailsViewModel
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherService
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
@@ -30,7 +30,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
 
-    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    val memberDetailsViewModel: MemberDetailsViewModel = rememberMemberDetailsViewModel(member)
     val otherServiceViewModel: OtherServiceViewModel = getKoin().get()
 
     var selectedServiceId by remember { mutableStateOf("") }
@@ -124,12 +124,12 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                             selectedServiceId.toIntOrNull()?.let {
                                 val memberOtherService = MemberOtherService(
                                     dateOfService = LocalDateTime.now(),
-                                    memberId = memberViewModel.currentMember.id,
+                                    memberId = memberDetailsViewModel.currentMember.id,
                                     isPaid = isPaid,
                                     otherServiceId = selectedServiceId.toInt()
                                 )
                                 try {
-                                    memberViewModel.addNewMemberOtherService(memberOtherService)
+                                    memberDetailsViewModel.addNewMemberOtherService(memberOtherService)
                                 } catch (e: Exception) {
                                     infoMessage = "Greška pri dodavanju ostale usluge"
                                     showInfoDialog = true

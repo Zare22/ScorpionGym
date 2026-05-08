@@ -17,10 +17,10 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import hr.kotwave.scorpiongym.di.rememberMemberViewModel
+import hr.kotwave.scorpiongym.di.rememberMemberDetailsViewModel
 import hr.kotwave.scorpiongym.member.Member
 import hr.kotwave.scorpiongym.member.MemberFilterOption
-import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.member.MemberDetailsViewModel
 import hr.kotwave.scorpiongym.member.MembersListViewModel
 import hr.kotwave.scorpiongym.memberotherservice.ui.dialog.AddMemberOtherServiceDialog
 import hr.kotwave.scorpiongym.memberotherservice.ui.dialog.MemberOtherServicesDialog
@@ -172,7 +172,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
     var showManageMemberOtherServicesDialog by remember { mutableStateOf(false) }
 
     val membersListViewModel: MembersListViewModel = getKoin().get()
-    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    val memberDetailsViewModel: MemberDetailsViewModel = rememberMemberDetailsViewModel(member)
 
     var showInfoDialog by remember { mutableStateOf(false) }
     var infoMessage by remember { mutableStateOf("") }
@@ -205,7 +205,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                             append("Ukoliko nastavite pobrisat ćete člana ")
 
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append("${memberViewModel.currentMember.name} ${memberViewModel.currentMember.surname}")
+                                append("${memberDetailsViewModel.currentMember.name} ${memberDetailsViewModel.currentMember.surname}")
                             }
 
                             append(" i sve njegove vezane podatke!")
@@ -257,7 +257,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
             items = {
                 val items = mutableListOf<ContextMenuItem>()
 
-                if (memberViewModel.activeMembershipRecord != null) {
+                if (memberDetailsViewModel.activeMembershipRecord != null) {
                     items.add(ContextMenuItem(label = "Upiši trening članu") { showAddSingleTrainingSessionDialog = true })
                     items.add(ContextMenuItem("Pregled treninga aktivne članarine") {
                         showManageTrainingSessionsDialog = true
@@ -265,7 +265,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                 }
                 items.add(ContextMenuItem("Pregled svih članarina") { showManageMembershipRecordsDialog = true })
                 items.add(ContextMenuItem("Upiši dodatnu uslugu članu") { showAddMemberOtherServiceDialog = true })
-                if (memberViewModel.memberOtherServices.isNotEmpty())
+                if (memberDetailsViewModel.memberOtherServices.isNotEmpty())
                     items.add(ContextMenuItem("Pregled svih ostalih usluga") { showManageMemberOtherServicesDialog = true })
                 if (PreferencesHelper().isAdmin)
                     items.add(ContextMenuItem("Obriši člana") { showDeleteMemberDialogAlert = true })
@@ -279,11 +279,11 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
             ) {
                 Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
                     Text(
-                        text = "${memberViewModel.currentMember.surname} ${memberViewModel.currentMember.name}",
+                        text = "${memberDetailsViewModel.currentMember.surname} ${memberDetailsViewModel.currentMember.name}",
                         style = MaterialTheme.typography.h6
                     )
                     Divider(modifier = Modifier.padding(vertical = 8.dp))
-                    memberViewModel.currentMember.dateOfBirth?.let { dateOfBirth ->
+                    memberDetailsViewModel.currentMember.dateOfBirth?.let { dateOfBirth ->
                         Text(
                             text = buildAnnotatedString {
                                 append("Datum rođenja: ")
@@ -294,7 +294,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                             style = MaterialTheme.typography.body2
                         )
                     }
-                    memberViewModel.currentMember.phoneNumber?.takeIf { it.isNotEmpty() }?.let { phoneNumber ->
+                    memberDetailsViewModel.currentMember.phoneNumber?.takeIf { it.isNotEmpty() }?.let { phoneNumber ->
                         Text(
                             text = buildAnnotatedString {
                                 append("Broj telefona: ")
@@ -305,10 +305,10 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                             style = MaterialTheme.typography.body2
                         )
                     }
-                    if (memberViewModel.activeMembershipRecord != null) {
+                    if (memberDetailsViewModel.activeMembershipRecord != null) {
                         val membershipViewModel: MembershipViewModel = getKoin().get()
                         val typeOfMembership =
-                            membershipViewModel.memberships.find { memb -> memb.id == memberViewModel.activeMembershipRecord!!.membershipId }
+                            membershipViewModel.memberships.find { memb -> memb.id == memberDetailsViewModel.activeMembershipRecord!!.membershipId }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth(),
@@ -321,7 +321,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                                         typeOfMembership?.let {
                                             append(it.name)
                                             append(" do ")
-                                            append(memberViewModel.activeMembershipRecord!!.dateFinished.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")))
+                                            append(memberDetailsViewModel.activeMembershipRecord!!.dateFinished.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")))
                                         }
                                     }
                                 },
@@ -336,7 +336,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                                     } ?: run {
                                         append("Preostalo treninga u aktivnoj članarini: ")
                                         withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                            val remainingTrainings = memberViewModel.numberOfTrainingsAvailable - memberViewModel.trainingSessionsInActiveMembership.size
+                                            val remainingTrainings = memberDetailsViewModel.numberOfTrainingsAvailable - memberDetailsViewModel.trainingSessionsInActiveMembership.size
                                             append("$remainingTrainings")
                                         }
                                     }
@@ -351,7 +351,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                     modifier = Modifier.align(Alignment.TopEnd),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (memberViewModel.memberOtherServices.any { !it.isPaid }) {
+                    if (memberDetailsViewModel.memberOtherServices.any { !it.isPaid }) {
                         Box(
                             modifier = Modifier
                                 .width(20.dp)
@@ -373,11 +373,11 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
 
 @Composable
 fun getRibbonColor(member: Member): Color {
-    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    val memberDetailsViewModel: MemberDetailsViewModel = rememberMemberDetailsViewModel(member)
 
     return when {
-        memberViewModel.memberRecords.count { record -> !record.isPaid } >= 1 -> Color.Red
-        memberViewModel.memberRecords.find { record -> record.isActive } == null -> Gold
+        memberDetailsViewModel.memberRecords.count { record -> !record.isPaid } >= 1 -> Color.Red
+        memberDetailsViewModel.memberRecords.find { record -> record.isActive } == null -> Gold
         else -> Color.Green
     }
 }

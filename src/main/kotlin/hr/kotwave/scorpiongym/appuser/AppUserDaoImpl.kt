@@ -3,7 +3,10 @@ package hr.kotwave.scorpiongym.appuser
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
-import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+private val DB_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
 class AppUserDaoImpl(private val connection: Connection) : AppUserDao {
 
@@ -63,23 +66,19 @@ class AppUserDaoImpl(private val connection: Connection) : AppUserDao {
         }
     }
 
-    override fun getAllActivityLogs(): List<Triple<String, String, String>> {
-        val activityLogs = mutableListOf<Triple<String, String, String>>()
+    override fun getAllActivityLogs(): List<ActivityLogEntry> {
+        val activityLogs = mutableListOf<ActivityLogEntry>()
         val query = "SELECT action, dateOfAction, au.username FROM UserActivityLog ual INNER JOIN AppUser au on ual.appUserId = au.id"
 
         connection.prepareStatement(query).use { statement ->
             val resultSet = statement.executeQuery()
 
-            val inputDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-            val outputDateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm")
-
             while (resultSet.next()) {
                 val action = resultSet.getString("action")
-                val dateOfActionString = resultSet.getString("dateOfAction")
+                val timestamp = LocalDateTime.parse(resultSet.getString("dateOfAction"), DB_DATE_FORMATTER)
                 val username = resultSet.getString("username")
-                val formattedDate = outputDateFormat.format(inputDateFormat.parse(dateOfActionString) ?: "")
 
-                activityLogs.add(Triple(action, formattedDate, username))
+                activityLogs.add(ActivityLogEntry(action, timestamp, username))
             }
         }
         return activityLogs

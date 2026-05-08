@@ -21,9 +21,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import hr.kotwave.scorpiongym.di.rememberMemberViewModel
+import hr.kotwave.scorpiongym.di.rememberMemberDetailsViewModel
 import hr.kotwave.scorpiongym.member.Member
-import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.member.MemberDetailsViewModel
 import hr.kotwave.scorpiongym.memberotherservice.MemberOtherService
 import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
@@ -38,11 +38,11 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
-    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    val memberDetailsViewModel: MemberDetailsViewModel = rememberMemberDetailsViewModel(member)
     val otherServiceViewModel: OtherServiceViewModel = getKoin().get()
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy 'u' HH:mm")
     val listState = rememberLazyListState()
-    val memberOtherServices by remember { derivedStateOf { memberViewModel.memberOtherServices } }
+    val memberOtherServices by remember { derivedStateOf { memberDetailsViewModel.memberOtherServices } }
     val initialIsPaidValues = remember { memberOtherServices.map { it.isPaid }.toMutableStateList() }
 
     var countOfPaidOtherServices by remember { mutableStateOf(memberOtherServices.count { it.isPaid }) }
@@ -60,7 +60,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
 
     val individualTrainingCount by remember {
         derivedStateOf {
-            memberViewModel.memberOtherServices.count { memberOtherService ->
+            memberDetailsViewModel.memberOtherServices.count { memberOtherService ->
                 val otherServiceType = otherServiceViewModel.otherServices.find { otherService ->
                     otherService.id == memberOtherService.otherServiceId
                 }
@@ -102,7 +102,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                         buttonBackgroundColor = Color.Red,
                         onClick = {
                             try {
-                                selectedMemberOtherServiceToDelete?.let { memberViewModel.deleteMemberOtherService(it) }
+                                selectedMemberOtherServiceToDelete?.let { memberDetailsViewModel.deleteMemberOtherService(it) }
                             } catch (e: Exception) {
                                 infoMessage = "Greška pri brisanju usluge"
                                 showInfoDialog = true
@@ -202,7 +202,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                                 selectedItem = otherServiceViewModel.otherServices.find { it.id.toString() == memberOtherService.otherServiceId.toString() },
                                 onItemSelected = {
                                     memberOtherService.otherServiceId = it.id
-                                    memberOtherService.memberId = memberViewModel.currentMember.id
+                                    memberOtherService.memberId = memberDetailsViewModel.currentMember.id
                                     memberOtherService.dateOfService = memberOtherService.dateOfService
                                     expandedOtherService[index] = false
                                 },
@@ -217,7 +217,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                                     val parsedDateTime =
                                         runCatching { LocalDateTime.parse(newValue.text, dateFormatter) }.getOrNull()
                                     if (parsedDateTime != null && parsedDateTime != memberOtherService.dateOfService) {
-                                        memberViewModel.updateMemberOtherService(
+                                        memberDetailsViewModel.updateMemberOtherService(
                                             index,
                                             memberOtherService.copy(dateOfService = parsedDateTime)
                                         )
@@ -235,7 +235,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                                 checked = isPaid,
                                 onCheckedChange = {
                                     isPaid = !isPaid
-                                    memberViewModel.updateMemberOtherService(
+                                    memberDetailsViewModel.updateMemberOtherService(
                                         index,
                                         memberOtherService.copy(
                                             isPaid = isPaid
@@ -273,11 +273,11 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                                 onClick = {
                                     val newOtherService = MemberOtherService(
                                         dateOfService = LocalDateTime.now(),
-                                        memberId = memberViewModel.currentMember.id,
+                                        memberId = memberDetailsViewModel.currentMember.id,
                                         isPaid = false,
                                         otherServiceId = 0
                                     )
-                                    memberViewModel.addNewMemberOtherService(newOtherService, true)
+                                    memberDetailsViewModel.addNewMemberOtherService(newOtherService, true)
                                     updateTrigger = !updateTrigger
                                 }
                             )
@@ -302,9 +302,9 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                     HoverableButton(
                         text = "Povratak",
                         onClick = {
-                            memberViewModel.removeUnconfirmedMemberOtherServices()
+                            memberDetailsViewModel.removeUnconfirmedMemberOtherServices()
                             memberOtherServices.forEachIndexed { index, record ->
-                                memberViewModel.updateMemberOtherService(
+                                memberDetailsViewModel.updateMemberOtherService(
                                     index,
                                     record.copy(
                                         isPaid = initialIsPaidValues[index]
@@ -339,7 +339,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                         text = "Potvrdi promjene",
                         onClick = {
                             try {
-                                memberViewModel.confirmMemberOtherServicesUpdates()
+                                memberDetailsViewModel.confirmMemberOtherServicesUpdates()
                                 onClose()
                             } catch (e: Exception) {
                                 infoMessage = "Greška pri ažuriranju ostale usluge"

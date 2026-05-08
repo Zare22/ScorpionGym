@@ -58,7 +58,7 @@ val appModule = module {
     single<UnregisteredServiceDao> { UnregisteredServiceDaoImpl(get()) }
     single<PaymentAuditLogDao> { PaymentAuditLogDaoImpl(get()) }
 
-    factory { (member: Member) -> MemberViewModel(member, get(), get(), get(), get()) }
+    factory { (member: Member) -> MemberDetailsViewModel(member, get(), get(), get(), get()) }
     single { MembersListViewModel(get()) }
     single { MembershipViewModel(get()) }
     single { MembershipRecordViewModel(get()) }
@@ -74,7 +74,7 @@ val appModule = module {
 
 val memberScopeModule = module {
     scope(named<Member>()) {
-        scoped { (member: Member) -> MemberViewModel(member, get(), get(), get(), get()) }
+        scoped { (member: Member) -> MemberDetailsViewModel(member, get(), get(), get(), get()) }
     }
 }
 
@@ -84,7 +84,7 @@ fun closeMemberScope(member: Member) {
 }
 
 @Composable
-fun rememberMemberViewModel(member: Member): MemberViewModel {
+fun rememberMemberDetailsViewModel(member: Member): MemberDetailsViewModel {
     val koin = getKoin()
     val scope = remember(member) {
         koin.getScopeOrNull(member.id.toString())

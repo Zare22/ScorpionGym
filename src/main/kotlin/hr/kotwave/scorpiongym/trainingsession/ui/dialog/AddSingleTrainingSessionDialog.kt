@@ -13,9 +13,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import hr.kotwave.scorpiongym.di.rememberMemberViewModel
+import hr.kotwave.scorpiongym.di.rememberMemberDetailsViewModel
 import hr.kotwave.scorpiongym.member.Member
-import hr.kotwave.scorpiongym.member.MemberViewModel
+import hr.kotwave.scorpiongym.member.MemberDetailsViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import java.time.LocalDateTime
@@ -23,7 +23,7 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun AddSingleTrainingSessionDialog(member: Member, onClose: () -> Unit) {
-    val memberViewModel: MemberViewModel = rememberMemberViewModel(member)
+    val memberDetailsViewModel: MemberDetailsViewModel = rememberMemberDetailsViewModel(member)
     var expiredMembershipDialogOpened by remember { mutableStateOf(false) }
 
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -50,7 +50,7 @@ fun AddSingleTrainingSessionDialog(member: Member, onClose: () -> Unit) {
                             append("Upisat ćete trening za člana ")
 
                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                append("${memberViewModel.currentMember.surname} ${memberViewModel.currentMember.name}")
+                                append("${memberDetailsViewModel.currentMember.surname} ${memberDetailsViewModel.currentMember.name}")
                             }
 
                             append(" na datum: ")
@@ -72,13 +72,13 @@ fun AddSingleTrainingSessionDialog(member: Member, onClose: () -> Unit) {
                         HoverableButton(
                             onClick = {
                                 try {
-                                    memberViewModel.addNewTrainingSessionToMember()
+                                    memberDetailsViewModel.addNewTrainingSessionToMember()
                                 } catch (e: Exception) {
                                     infoMessage = "Greška pri dodavanju treninga"
                                     showInfoDialog = true
                                 }
-                                if (memberViewModel.trainingSessionsInActiveMembership.size >= memberViewModel.numberOfTrainingsAvailable) {
-                                    memberViewModel.initViewModel()
+                                if (memberDetailsViewModel.trainingSessionsInActiveMembership.size >= memberDetailsViewModel.numberOfTrainingsAvailable) {
+                                    memberDetailsViewModel.initViewModel()
                                     expiredMembershipDialogOpened = true
                                 } else
                                     onClose()
@@ -93,7 +93,7 @@ fun AddSingleTrainingSessionDialog(member: Member, onClose: () -> Unit) {
     }
     if (expiredMembershipDialogOpened) {
         InformativeDialog(
-            message = "Članu ${memberViewModel.currentMember.name} ${memberViewModel.currentMember.surname} je istekla trenutna članarina",
+            message = "Članu ${memberDetailsViewModel.currentMember.name} ${memberDetailsViewModel.currentMember.surname} je istekla trenutna članarina",
             onDismiss = {
                 expiredMembershipDialogOpened = false
                 onClose()

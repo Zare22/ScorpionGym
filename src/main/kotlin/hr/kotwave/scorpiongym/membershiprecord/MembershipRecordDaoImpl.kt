@@ -151,7 +151,7 @@ class MembershipRecordDaoImpl(private val dbConnection: Connection) : Membership
         return memberRecords
     }
 
-    override fun deleteAllTrainingsAssociatedWithRecord(membershipRecord: MembershipRecord) {
+    override fun deleteTrainingsForRecord(membershipRecord: MembershipRecord) {
         val deleteTrainingSessionsQuery = "DELETE FROM TrainingSession WHERE membershipRecordId = ?"
 
         logActionOnMembershipRecord(membershipRecord.memberId, membershipRecord.membershipId, "Obrisani su treninzi vezani za članarinu")
