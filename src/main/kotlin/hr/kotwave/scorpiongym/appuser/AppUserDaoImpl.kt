@@ -85,19 +85,15 @@ class AppUserDaoImpl(private val connection: Connection) : AppUserDao {
     }
 
     override fun deleteAppUser(user: AppUser) {
+        // PaymentAuditLog rows are removed automatically via ON DELETE CASCADE.
+        // UserActivityLog has no FK rule, so it must be cleared manually first.
         connection.autoCommit = false
 
         try {
             val deleteLogs = "DELETE FROM UserActivityLog WHERE appUserId = ?"
-            val deleteAudits = "DELETE FROM PaymentAuditLog WHERE loggedInUserId = ?"
             val deleteUser = "DELETE FROM AppUser WHERE id = ?"
 
             connection.prepareStatement(deleteLogs).use { stmt ->
-                stmt.setInt(1, user.id)
-                stmt.executeUpdate()
-            }
-
-            connection.prepareStatement(deleteAudits).use { stmt ->
                 stmt.setInt(1, user.id)
                 stmt.executeUpdate()
             }
