@@ -281,7 +281,7 @@ fun UnregisteredServiceDialog(onClose: () -> Unit) {
                             try {
                                 unregisteredServiceViewModel.confirmUnregisteredServicesUpdates()
                                 onClose()
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 infoMessage = "Greška pri ažuriranju ostale usluge"
                                 showInfoDialog = true
                             }

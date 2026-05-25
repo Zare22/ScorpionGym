@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter
 fun parseToLocalDateTime(dateString: String): LocalDateTime {
     return try {
         LocalDateTime.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         LocalDateTime.parse("${dateString}T00:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME)
     }
 }

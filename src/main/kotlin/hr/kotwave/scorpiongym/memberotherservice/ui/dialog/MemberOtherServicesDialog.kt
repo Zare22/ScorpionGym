@@ -103,7 +103,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                         onClick = {
                             try {
                                 selectedMemberOtherServiceToDelete?.let { memberDetailsViewModel.deleteMemberOtherService(it) }
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 infoMessage = "Greška pri brisanju usluge"
                                 showInfoDialog = true
                             }
@@ -341,7 +341,7 @@ fun MemberOtherServicesDialog(member: Member, onClose: () -> Unit) {
                             try {
                                 memberDetailsViewModel.confirmMemberOtherServicesUpdates()
                                 onClose()
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 infoMessage = "Greška pri ažuriranju ostale usluge"
                                 showInfoDialog = true
                             }

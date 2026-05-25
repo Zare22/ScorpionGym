@@ -44,7 +44,7 @@ class LoginScreen(private val onLoginSuccess: () -> Unit) : Screen {
             try {
                 appUserViewModel.loginAppUser(username, password)
                 onLoginSuccess()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 loginError = true
             }
         }

@@ -40,7 +40,7 @@ fun CreateNewAppUserDialog(onDismiss: () -> Unit) {
             appUserViewModel.registerAppUser(username, password, isAdmin)
             infoMessage = "Korisnik je uspješno registriran"
             showInfoDialog = true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             showInfoDialog = true
             infoMessage = "Greška pri registraciji novog korisnika"
         }

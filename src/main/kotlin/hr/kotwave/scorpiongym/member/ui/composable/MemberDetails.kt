@@ -181,7 +181,7 @@ fun MemberDetails(
                             )
                             try {
                                 memberDetailsViewModel.updateMember(updatedMember)
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 infoMessage = "Greška pri ažuriranju člana"
                                 showInfoDialog = true
                             }
@@ -297,7 +297,7 @@ fun MemberDetails(
                                                     } ?: LocalDate.now().plusMonths(1).minusDays(1)
                                                 )
                                             )
-                                        } catch (e: Exception) {
+                                        } catch (_: Exception) {
                                             infoMessage = "Greška pri produživanju članarine"
                                             showInfoDialog = true
                                         }
@@ -313,7 +313,7 @@ fun MemberDetails(
                                         )
                                         try {
                                             onUpdateClick(updatedMember)
-                                        } catch (e: Exception) {
+                                        } catch (_: Exception) {
                                             infoMessage = "Greška pri ažuriranju člana"
                                             showInfoDialog = true
                                         }
@@ -574,7 +574,7 @@ fun MemberDetails(
                                 }
                                 try {
                                     memberDetailsViewModel.updateMember(updatedMember)
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     infoMessage = "Greška pri ažuriranju člana"
                                     showInfoDialog = true
                                 }

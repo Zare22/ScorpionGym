@@ -130,7 +130,7 @@ fun AddMemberOtherServiceDialog(member: Member, onClose: () -> Unit) {
                                 )
                                 try {
                                     memberDetailsViewModel.addNewMemberOtherService(memberOtherService)
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     infoMessage = "Greška pri dodavanju ostale usluge"
                                     showInfoDialog = true
                                 }

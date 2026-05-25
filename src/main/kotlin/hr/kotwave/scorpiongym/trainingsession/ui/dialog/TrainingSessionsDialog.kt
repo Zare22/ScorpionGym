@@ -286,7 +286,7 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                         onClick = {
                             try {
                                 memberDetailsViewModel.confirmTrainingSessionUpdates()
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 infoMessage = "Greška pri dodavanju treninga"
                                 showInfoDialog = true
                             }

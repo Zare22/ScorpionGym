@@ -104,7 +104,7 @@ class AppUserDaoImpl(private val connection: Connection) : AppUserDao {
             }
 
             connection.commit()
-        } catch (e: SQLException) {
+        } catch (_: SQLException) {
             connection.rollback()
             throw SQLException("Greška pri brisanju korisnika")
         } finally {

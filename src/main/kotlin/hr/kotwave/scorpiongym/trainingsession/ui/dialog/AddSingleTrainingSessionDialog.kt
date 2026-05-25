@@ -73,7 +73,7 @@ fun AddSingleTrainingSessionDialog(member: Member, onClose: () -> Unit) {
                             onClick = {
                                 try {
                                     memberDetailsViewModel.addNewTrainingSessionToMember()
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     infoMessage = "Greška pri dodavanju treninga"
                                     showInfoDialog = true
                                 }

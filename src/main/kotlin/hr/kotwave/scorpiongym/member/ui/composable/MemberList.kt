@@ -219,7 +219,7 @@ fun MemberItem(member: Member, onClick: () -> Unit) {
                         onClick = {
                             try {
                                 membersListViewModel.deleteMember(member)
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 infoMessage = "Greška kod brisanja člana"
                                 showInfoDialog = true
                             }

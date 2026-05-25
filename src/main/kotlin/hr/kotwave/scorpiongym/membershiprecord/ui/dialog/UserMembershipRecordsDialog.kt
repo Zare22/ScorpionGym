@@ -114,7 +114,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                             selectedRecordToDelete?.let {
                                 try {
                                     memberDetailsViewModel.deleteMembershipRecord(it)
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     infoMessage = "Greška pri brisanju članarine"
                                     showInfoDialog = true
                                 }

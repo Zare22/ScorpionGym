@@ -112,7 +112,7 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
 
     try {
         membershipRecordDao.refreshMembershipStatuses()
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         infoMessage = "Greška pri ažuriranju aktivnosti članarina"
         showInfoDialog = true
     }
@@ -156,7 +156,7 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
                                 createDatabaseBackup()
                                 infoMessage = "Uspješno kreiran backup"
                                 showInfoDialog = true
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 infoMessage = "Greška kod izrade backup-a"
                                 showInfoDialog = true
                             }
@@ -170,7 +170,7 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
                                 try {
                                     con?.prepareStatement("UPDATE CurrentSessionUser SET currentAppUserId = null")?.executeUpdate()
                                     con?.commit()
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     con?.rollback()
                                     infoMessage = "Greška pri postavljanju logiranog korisnika u bazu"
                                     showInfoDialog = true
@@ -226,7 +226,7 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
                                             preparedStatement?.executeUpdate()
                                         }
                                         con?.commit()
-                                    } catch (e: Exception) {
+                                    } catch (_: Exception) {
                                         con?.rollback()
                                         infoMessage = "Greška pri postavljanju logiranog korisnika u bazu"
                                         showInfoDialog = true
@@ -234,7 +234,7 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
                                 }
                                 try {
                                     membershipRecordDao.refreshMembershipStatuses()
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     infoMessage = "Greška pri ažuriranju aktivnosti članarina"
                                     showInfoDialog = true
                                 }

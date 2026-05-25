@@ -160,7 +160,7 @@ fun AddUnregisteredServiceDialog(onClose: () -> Unit) {
                                 )
                                 try {
                                     unregisteredServiceViewModel.addUnregisteredService(unregisteredService)
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     infoMessage = "Greška pri dodavanju usluge"
                                     showInfoDialog = true
                                 }
