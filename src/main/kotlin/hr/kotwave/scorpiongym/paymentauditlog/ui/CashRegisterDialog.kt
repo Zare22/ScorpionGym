@@ -17,29 +17,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import hr.kotwave.scorpiongym.paymentauditlog.PaymentAuditLogViewModel
+import hr.kotwave.scorpiongym.ui.custom.elements.DatePickerField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 
 @Composable
 fun CashRegisterDialog(onClose: () -> Unit) {
 
     val paymentAuditLogViewModel: PaymentAuditLogViewModel = getKoin().get()
-    var fromDate by remember { mutableStateOf("") }
-    var toDate by remember { mutableStateOf("") }
+    var fromDate by remember { mutableStateOf<LocalDate?>(null) }
+    var toDate by remember { mutableStateOf<LocalDate?>(null) }
     var userSums by remember { mutableStateOf<Map<String, Double>>(emptyMap()) }
     val lazyListState = rememberLazyListState(0)
     var periodSum by remember { mutableStateOf(0.0) }
 
     val triggerShowPaymentAuditLogs = {
-        val parsedFromDate =
-            runCatching { LocalDate.parse(fromDate, DateTimeFormatter.ofPattern("dd.MM.yyyy")) }.getOrNull()
-        val parsedToDate =
-            runCatching { LocalDate.parse(toDate, DateTimeFormatter.ofPattern("dd.MM.yyyy")) }.getOrNull()
-
-        userSums = paymentAuditLogViewModel.getUserTotalByDateRange(parsedFromDate, parsedToDate)
+        userSums = paymentAuditLogViewModel.getUserTotalByDateRange(fromDate, toDate)
         periodSum = userSums.values.sum()
     }
 
@@ -65,24 +60,22 @@ fun CashRegisterDialog(onClose: () -> Unit) {
                 Divider(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
 
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                    OutlinedTextField(
+                    DatePickerField(
                         value = fromDate,
-                        onValueChange = { newValue -> fromDate = newValue },
-                        label = { Text("Od (DD.MM.YYYY)") },
+                        onValueChange = { fromDate = it },
+                        label = "Od",
                         modifier = Modifier.weight(1f),
-                        singleLine = true
                     )
-                    OutlinedTextField(
+                    DatePickerField(
                         value = toDate,
-                        onValueChange = { newValue -> toDate = newValue },
-                        label = { Text("Do (DD.MM.YYYY)") },
+                        onValueChange = { toDate = it },
+                        label = "Do",
                         modifier = Modifier.weight(1f).padding(start = 16.dp),
-                        singleLine = true
                     )
                     HoverableButton(
                         text = "Danas",
                         onClick = {
-                            val today = LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+                            val today = LocalDate.now()
                             fromDate = today
                             toDate = today
                             triggerShowPaymentAuditLogs()

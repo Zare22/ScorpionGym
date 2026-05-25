@@ -12,12 +12,10 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -27,7 +25,7 @@ import hr.kotwave.scorpiongym.member.MemberDetailsViewModel
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.trainingsession.TrainingSession
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
-import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
+import hr.kotwave.scorpiongym.ui.custom.elements.DateTimePickerField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDateTime
@@ -194,43 +192,25 @@ fun TrainingSessionsDialog(member: Member, onClose: () -> Unit, membershipRecord
                         contentPadding = PaddingValues(16.dp)
                     ) {
                         itemsIndexed(trainingSessions) { index, session ->
-                            var sessionDateTime by remember {
-                                mutableStateOf(
-                                    TextFieldValue(
-                                        session.sessionDateTime.format(
-                                            dateFormatter
-                                        )
-                                    )
-                                )
-                            }
+                            var sessionDateTime by remember { mutableStateOf(session.sessionDateTime) }
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                             ) {
-                                FocusableOutlinedTextField(
+                                DateTimePickerField(
                                     modifier = Modifier.weight(0.8f),
                                     value = sessionDateTime,
                                     onValueChange = { newValue ->
-                                        sessionDateTime = newValue
-                                        val parsedDateTime =
-                                            runCatching {
-                                                LocalDateTime.parse(
-                                                    newValue.text,
-                                                    dateFormatter
-                                                )
-                                            }.getOrNull()
-                                        if (parsedDateTime != null && parsedDateTime != session.sessionDateTime) {
+                                        if (newValue != null && newValue != session.sessionDateTime) {
+                                            sessionDateTime = newValue
                                             memberDetailsViewModel.updateTrainingSession(
                                                 index,
-                                                session.copy(sessionDateTime = parsedDateTime)
+                                                session.copy(sessionDateTime = newValue)
                                             )
                                         }
                                     },
                                     label = "Datum treninga",
-                                    currentFocusRequester = FocusRequester(),
-                                    nextFocusRequester = FocusRequester(),
-                                    canSwitchWithTab = false
                                 )
                                 session.id.takeIf { it != 0 }?.let {
                                     IconButton(

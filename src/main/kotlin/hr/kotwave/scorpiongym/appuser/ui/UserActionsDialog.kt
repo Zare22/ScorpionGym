@@ -21,17 +21,17 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import hr.kotwave.scorpiongym.appuser.ActivityLogEntry
 import hr.kotwave.scorpiongym.appuser.AppUserViewModel
+import hr.kotwave.scorpiongym.ui.custom.elements.DatePickerField
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-private val FILTER_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 private val DISPLAY_DATETIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 
 @Composable
 fun UserActionsDialog(logs: List<ActivityLogEntry>, onClose: () -> Unit) {
-    var filterDate by remember { mutableStateOf("") }
+    var filterDate by remember { mutableStateOf<LocalDate?>(null) }
     var selectedUsername by remember { mutableStateOf<String?>(null) }
     var usernameDropdownExpanded by remember { mutableStateOf(false) }
 
@@ -42,10 +42,8 @@ fun UserActionsDialog(logs: List<ActivityLogEntry>, onClose: () -> Unit) {
 
     val filteredLogs by remember(filterDate, selectedUsername, logs) {
         derivedStateOf {
-            val parsedDate = runCatching { LocalDate.parse(filterDate, FILTER_DATE_FORMATTER) }.getOrNull()
-
             logs.filter { log ->
-                val matchesDate = parsedDate?.let { log.timestamp.toLocalDate() == it } ?: true
+                val matchesDate = filterDate?.let { log.timestamp.toLocalDate() == it } ?: true
                 val matchesUsername = selectedUsername?.let { log.username == it } ?: true
 
                 matchesDate && matchesUsername
@@ -65,16 +63,13 @@ fun UserActionsDialog(logs: List<ActivityLogEntry>, onClose: () -> Unit) {
 
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
 
-                    OutlinedTextField(
+                    DatePickerField(
                         value = filterDate,
-                        onValueChange = { newValue ->
-                            filterDate = newValue
-                        },
-                        label = { Text("Unesite datum (DD.MM.YYYY)") },
+                        onValueChange = { filterDate = it },
+                        label = "Datum",
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 8.dp, top = 8.dp),
-                        singleLine = true
                     )
 
                     Dropdown(

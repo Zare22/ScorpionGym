@@ -20,6 +20,7 @@ dependencies {
     // (in a separate module for demo project and in testMain).
     // With compose.desktop.common you will also lose @Preview functionality
     implementation(compose.desktop.currentOs)
+    implementation(compose.material3)
     implementation("org.xerial:sqlite-jdbc:3.43.0.0")
     implementation("io.insert-koin:koin-core:3.2.0")
     implementation("cafe.adriel.voyager:voyager-navigator:1.1.0-beta01")

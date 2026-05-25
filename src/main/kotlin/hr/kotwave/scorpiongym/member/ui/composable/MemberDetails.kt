@@ -32,6 +32,7 @@ import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
 import hr.kotwave.scorpiongym.organization.Organization
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
+import hr.kotwave.scorpiongym.ui.custom.elements.DatePickerField
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
 import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
@@ -94,13 +95,8 @@ fun MemberDetails(
         )
     }
 
-    val dateOfBirthFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
     var dateOfBirth by remember(memberDetailsViewModel.currentMember) {
-        mutableStateOf(
-            memberDetailsViewModel.currentMember.dateOfBirth?.let {
-                TextFieldValue(it.format(dateOfBirthFormatter))
-            } ?: TextFieldValue("")
-        )
+        mutableStateOf(memberDetailsViewModel.currentMember.dateOfBirth)
     }
 
     var gender by remember(memberDetailsViewModel.currentMember) {
@@ -128,18 +124,6 @@ fun MemberDetails(
 
     val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
-    var dateFinished by remember(memberDetailsViewModel.currentMember) {
-        mutableStateOf(
-            currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
-        )
-    }
-
-    var dateStarted by remember(memberDetailsViewModel.currentMember) {
-        mutableStateOf(
-            currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
-        )
-    }
-
     LaunchedEffect(memberDetailsViewModel.currentMember) {
         name = TextFieldValue(
             memberDetailsViewModel.currentMember.name,
@@ -162,12 +146,8 @@ fun MemberDetails(
         signedUpDate = memberDetailsViewModel.currentMember.signedUpDate
         currentRecordFinishDate = memberDetailsViewModel.activeMembershipRecord?.dateFinished
         currentRecordStartDate = memberDetailsViewModel.activeMembershipRecord?.dateStarted
-        dateFinished = currentRecordFinishDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
-        dateStarted = currentRecordStartDate?.format(dateFormatter) ?: "Nema trenutno aktivne članarine"
 
-        dateOfBirth = TextFieldValue(
-            memberDetailsViewModel.currentMember.dateOfBirth?.format(dateOfBirthFormatter) ?: ""
-        )
+        dateOfBirth = memberDetailsViewModel.currentMember.dateOfBirth
 
         gender = memberDetailsViewModel.currentMember.gender
     }
@@ -197,12 +177,7 @@ fun MemberDetails(
                                 organizationId = organization.toIntOrNull()
                                     ?: memberDetailsViewModel.currentMember.organizationId,
                                 remark = remark.text,
-                                dateOfBirth = runCatching {
-                                    LocalDate.parse(
-                                        dateOfBirth.text,
-                                        dateOfBirthFormatter
-                                    )
-                                }.getOrNull(),
+                                dateOfBirth = dateOfBirth,
                             )
                             try {
                                 memberDetailsViewModel.updateMember(updatedMember)
@@ -347,10 +322,6 @@ fun MemberDetails(
                                             memberDetailsViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateFinished
                                         currentRecordStartDate =
                                             memberDetailsViewModel.memberRecords.find { membershipRecord -> membershipRecord.isActive }?.dateStarted
-                                        dateFinished = currentRecordFinishDate?.format(dateFormatter)
-                                            ?: "Nema trenutno aktivne članarine"
-                                        dateStarted = currentRecordStartDate?.format(dateFormatter)
-                                            ?: "Nema trenutno aktivne članarine"
                                         renewMembershipDialogOpened = false
                                     },
                                     text = "Obnovi",
@@ -410,14 +381,11 @@ fun MemberDetails(
                     currentFocusRequester = focusRequesters[2],
                     nextFocusRequester = focusRequesters[3]
                 )
-                FocusableOutlinedTextField(
+                DatePickerField(
                     value = dateOfBirth,
-                    onValueChange = { newValue ->
-                        dateOfBirth = newValue
-                    },
+                    onValueChange = { dateOfBirth = it },
                     label = "Datum rođenja",
-                    currentFocusRequester = focusRequesters[3],
-                    nextFocusRequester = focusRequesters[4]
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Row(
@@ -459,38 +427,22 @@ fun MemberDetails(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedTextField(
-                                value = dateStarted,
-                                onValueChange = { newValue ->
-                                    dateStarted = newValue
-                                    val parsedDateTime = runCatching {
-                                        LocalDate.parse(newValue, dateFormatter)
-                                    }.getOrNull()
-
-                                    currentRecordStartDate = parsedDateTime
-                                },
-                                label = { Text("Datum početka trenutne članarine") },
+                            DatePickerField(
+                                value = currentRecordStartDate,
+                                onValueChange = { currentRecordStartDate = it },
+                                label = "Datum početka trenutne članarine",
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(end = 8.dp),
-                                readOnly = memberDetailsViewModel.activeMembershipRecord == null
                             )
 
-                            OutlinedTextField(
-                                value = dateFinished,
-                                onValueChange = { newValue ->
-                                    dateFinished = newValue
-                                    val parsedDateTime = runCatching {
-                                        LocalDate.parse(newValue, dateFormatter)
-                                    }.getOrNull()
-
-                                    currentRecordFinishDate = parsedDateTime
-                                },
-                                label = { Text("Datum isteka trenutne članarine") },
+                            DatePickerField(
+                                value = currentRecordFinishDate,
+                                onValueChange = { currentRecordFinishDate = it },
+                                label = "Datum isteka trenutne članarine",
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f),
-                                readOnly = memberDetailsViewModel.activeMembershipRecord == null
                             )
                         }
                     }
@@ -597,12 +549,7 @@ fun MemberDetails(
                                     organizationId = organization.toIntOrNull()
                                         ?: memberDetailsViewModel.currentMember.organizationId,
                                     remark = remark.text,
-                                    dateOfBirth = kotlin.runCatching {
-                                        LocalDate.parse(
-                                            dateOfBirth.text,
-                                            dateOfBirthFormatter
-                                        )
-                                    }.getOrNull(),
+                                    dateOfBirth = dateOfBirth,
                                     gender = gender
                                 )
                                 if (memberDetailsViewModel.activeMembershipRecord != null) {

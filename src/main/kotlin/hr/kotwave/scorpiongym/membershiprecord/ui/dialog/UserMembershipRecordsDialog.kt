@@ -33,8 +33,8 @@ import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
 import hr.kotwave.scorpiongym.trainingsession.ui.dialog.TrainingSessionsDialog
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
+import hr.kotwave.scorpiongym.ui.custom.elements.DatePickerField
 import hr.kotwave.scorpiongym.ui.custom.elements.Dropdown
-import hr.kotwave.scorpiongym.ui.custom.elements.FocusableOutlinedTextField
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableCheckbox
 import hr.kotwave.scorpiongym.ui.theme.Typography
@@ -209,24 +209,8 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 membershipViewModel.memberships.find { membership -> membership.id == record.membershipId }
 
                             val membershipTypeName = membershipType?.name?.let { TextFieldValue(it) }
-                            var recordDateStart by remember {
-                                mutableStateOf(
-                                    TextFieldValue(
-                                        record.dateStarted.format(
-                                            dateFormatter
-                                        )
-                                    )
-                                )
-                            }
-                            var recordDateFinished by remember {
-                                mutableStateOf(
-                                    TextFieldValue(
-                                        record.dateFinished.format(
-                                            dateFormatter
-                                        )
-                                    )
-                                )
-                            }
+                            var recordDateStart by remember { mutableStateOf(record.dateStarted) }
+                            var recordDateFinished by remember { mutableStateOf(record.dateFinished) }
 
                             var isPaid by remember { mutableStateOf(record.isPaid) }
                             var isActive by remember { mutableStateOf(record.isActive) }
@@ -270,11 +254,7 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                                 memberships.find { membership -> membership.id == record.membershipId }?.duration
                                                     ?: 1
                                             ).minusDays(1)
-                                        recordDateFinished = TextFieldValue(
-                                            record.dateFinished.format(
-                                                dateFormatter
-                                            )
-                                        )
+                                        recordDateFinished = record.dateFinished
 
                                         expandedMembership[index] = false
                                     },
@@ -282,44 +262,33 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                     nextFocusRequester = FocusRequester(),
                                     itemLabel = { it.name }
                                 )
-                                FocusableOutlinedTextField(
+                                DatePickerField(
                                     value = recordDateStart,
                                     onValueChange = { newValue ->
-                                        recordDateStart = newValue
-                                        val parsedDateTime =
-                                            runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
-                                        if (parsedDateTime != null && parsedDateTime != record.dateStarted) {
+                                        if (newValue != null && newValue != record.dateStarted) {
+                                            recordDateStart = newValue
                                             memberDetailsViewModel.updateMembershipRecord(
                                                 index,
-                                                record.copy(dateStarted = parsedDateTime),
+                                                record.copy(dateStarted = newValue),
                                             )
                                         }
                                     },
                                     label = "",
-                                    currentFocusRequester = FocusRequester(),
-                                    nextFocusRequester = FocusRequester(),
-                                    canSwitchWithTab = false,
-                                    readOnly = !record.isActive && record.dateFinished.isBefore(LocalDate.now()),
+                                    enabled = !(!record.isActive && record.dateFinished.isBefore(LocalDate.now())),
                                     modifier = Modifier.weight(1f).padding(end = 8.dp)
                                 )
-                                FocusableOutlinedTextField(
+                                DatePickerField(
                                     value = recordDateFinished,
                                     onValueChange = { newValue ->
-                                        recordDateFinished = newValue
-                                        val parsedDateTime =
-                                            runCatching { LocalDate.parse(newValue.text, dateFormatter) }.getOrNull()
-                                        if (parsedDateTime != null) {
+                                        if (newValue != null) {
+                                            recordDateFinished = newValue
                                             memberDetailsViewModel.updateMembershipRecord(
                                                 index,
-                                                record.copy(dateFinished = parsedDateTime),
+                                                record.copy(dateFinished = newValue),
                                             )
                                         }
                                     },
                                     label = "",
-                                    currentFocusRequester = FocusRequester(),
-                                    nextFocusRequester = FocusRequester(),
-                                    canSwitchWithTab = false,
-                                    readOnly = false,
                                     modifier = Modifier.weight(1f).padding(end = 8.dp)
                                 )
                                 HoverableCheckbox(
