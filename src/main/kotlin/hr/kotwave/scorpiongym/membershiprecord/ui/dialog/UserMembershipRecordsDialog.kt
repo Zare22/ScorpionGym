@@ -30,6 +30,7 @@ import hr.kotwave.scorpiongym.member.MemberDetailsViewModel
 import hr.kotwave.scorpiongym.membership.MembershipViewModel
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecord
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
+import hr.kotwave.scorpiongym.membershiprecord.chooseRenewalStartDate
 import hr.kotwave.scorpiongym.trainingsession.ui.dialog.TrainingSessionsDialog
 import hr.kotwave.scorpiongym.typeoforganization.TypeOfOrganizationViewModel
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
@@ -359,16 +360,10 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                 HoverableButton(
                                     text = "+ Dodaj novu članarinu",
                                     onClick = {
-                                        var dateStarted: LocalDate = LocalDate.now()
-                                        // Chain the new record onto the latest unexpired record (if any).
-                                        // Comparing dateFinished against today instead of the stale isActive
-                                        // flag avoids stacking a renewal on top of a record that ended weeks
-                                        // ago but is still flagged isActive=1 because refreshMembershipStatuses()
-                                        // hasn't fired since the previous app start.
-                                        if (memberDetailsViewModel.memberRecords.any { record -> record.dateFinished >= dateStarted })
-                                            dateStarted =
-                                                memberDetailsViewModel.memberRecords.maxOfOrNull { record -> record.dateFinished }
-                                                    ?.plusDays(1) ?: dateStarted
+                                        val dateStarted = chooseRenewalStartDate(
+                                            today = LocalDate.now(),
+                                            existingRecords = memberDetailsViewModel.memberRecords
+                                        )
                                         val dateFinished = dateStarted.plusMonths(1).minusDays(1)
                                         val newRecord = MembershipRecord(
                                             id = 0,
