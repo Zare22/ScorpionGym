@@ -360,7 +360,12 @@ fun UserMembershipRecordsDialog(member: Member, onClose: () -> Unit) {
                                     text = "+ Dodaj novu članarinu",
                                     onClick = {
                                         var dateStarted: LocalDate = LocalDate.now()
-                                        if (memberDetailsViewModel.activeMembershipRecord != null || memberDetailsViewModel.memberRecords.any { record -> record.isActive })
+                                        // Chain the new record onto the latest unexpired record (if any).
+                                        // Comparing dateFinished against today instead of the stale isActive
+                                        // flag avoids stacking a renewal on top of a record that ended weeks
+                                        // ago but is still flagged isActive=1 because refreshMembershipStatuses()
+                                        // hasn't fired since the previous app start.
+                                        if (memberDetailsViewModel.memberRecords.any { record -> record.dateFinished >= dateStarted })
                                             dateStarted =
                                                 memberDetailsViewModel.memberRecords.maxOfOrNull { record -> record.dateFinished }
                                                     ?.plusDays(1) ?: dateStarted
