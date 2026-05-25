@@ -25,6 +25,13 @@ dependencies {
     implementation("io.insert-koin:koin-core:3.2.0")
     implementation("cafe.adriel.voyager:voyager-navigator:1.1.0-beta01")
     implementation("cafe.adriel.voyager:voyager-transitions:1.1.0-beta01")
+
+    testImplementation(kotlin("test"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 compose.desktop {
