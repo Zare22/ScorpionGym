@@ -25,6 +25,9 @@ import hr.kotwave.scorpiongym.otherservice.OtherServiceViewModel
 import hr.kotwave.scorpiongym.paymentauditlog.PaymentAuditLogDao
 import hr.kotwave.scorpiongym.paymentauditlog.PaymentAuditLogDaoImpl
 import hr.kotwave.scorpiongym.paymentauditlog.PaymentAuditLogViewModel
+import hr.kotwave.scorpiongym.report.ReportDao
+import hr.kotwave.scorpiongym.report.ReportDaoImpl
+import hr.kotwave.scorpiongym.report.ReportViewModel
 import hr.kotwave.scorpiongym.status.StatusDao
 import hr.kotwave.scorpiongym.status.StatusDaoImpl
 import hr.kotwave.scorpiongym.status.StatusViewModel
@@ -57,6 +60,7 @@ val appModule = module {
     single<AppUserDao> { AppUserDaoImpl(get()) }
     single<UnregisteredServiceDao> { UnregisteredServiceDaoImpl(get()) }
     single<PaymentAuditLogDao> { PaymentAuditLogDaoImpl(get()) }
+    single<ReportDao> { ReportDaoImpl(get()) }
 
     factory { (member: Member) -> MemberDetailsViewModel(member, get(), get(), get(), get()) }
     single { MembersListViewModel(get()) }
@@ -70,6 +74,7 @@ val appModule = module {
     single { AppUserViewModel(get()) }
     single { UnregisteredServiceViewModel(get()) }
     single { PaymentAuditLogViewModel(get()) }
+    single { ReportViewModel(get()) }
 }
 
 val memberScopeModule = module {

@@ -107,16 +107,6 @@ fun CustomMenu(
                     .padding(8.dp),
                 style = MaterialTheme.typography.body1
             )
-//            Text(
-//                text = "Kasa",
-//                modifier = Modifier
-//                    .clickable {
-//                        getKoin().get<PaymentAuditLogViewModel>().initPaymentAuditLogs()
-//                        onCashRegisterSelected()
-//                    }
-//                    .padding(8.dp),
-//                style = MaterialTheme.typography.body1
-//            )
         }
 
     }
