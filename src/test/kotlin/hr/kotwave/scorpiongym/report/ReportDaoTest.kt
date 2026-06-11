@@ -127,10 +127,145 @@ class ReportDaoTest {
         // The paid record's payment is stamped today by the trigger; an open range includes it.
         assertEquals(30.0, report.row("A").netCollected, 0.001)
     }
+
+    // ----- R2: revenue breakdown ---------------------------------------------
+
+    @Test
+    fun `revenue breakdown splits net cash into the four categories`() {
+        val memberId = connection.insertMember()
+        val typeA = connection.insertMembership(name = "A", price = 30.0)
+        val svc = connection.insertOtherService(name = "Solarij", price = 5.0)
+        val today = LocalDate.now()
+
+        connection.insertMembershipRecord(memberId, typeA, dateStarted = today, isPaid = true) // +30 member membership
+        connection.insertMemberOtherService(memberId, svc, isPaid = true)                      // +5  member service
+        connection.insertWalkInMembership(typeA, LocalDateTime.now(), isPaid = true)           // +30 walk-in membership
+        connection.insertWalkInOtherService(svc, LocalDateTime.now(), isPaid = true)           // +5  walk-in service
+
+        val report = dao.revenueBreakdown(today, today)
+
+        assertEquals(30.0, report.net(RevenueCategory.MEMBER_MEMBERSHIP), 0.001)
+        assertEquals(5.0, report.net(RevenueCategory.MEMBER_SERVICE), 0.001)
+        assertEquals(30.0, report.net(RevenueCategory.WALKIN_MEMBERSHIP), 0.001)
+        assertEquals(5.0, report.net(RevenueCategory.WALKIN_SERVICE), 0.001)
+        assertEquals(70.0, report.total, 0.001)
+    }
+
+    @Test
+    fun `revenue breakdown always returns all four categories, even when empty`() {
+        val report = dao.revenueBreakdown(null, null)
+
+        assertEquals(4, report.rows.size)
+        assertEquals(0.0, report.total, 0.001)
+    }
+
+    @Test
+    fun `revenue breakdown respects the changedAt range`() {
+        val memberId = connection.insertMember()
+        val typeA = connection.insertMembership(name = "A", price = 30.0)
+        val rec = connection.insertMembershipRecord(memberId, typeA, isPaid = true)
+        connection.backdatePayments(rec, LocalDate.of(2020, 6, 1))
+
+        val today = LocalDate.now()
+        assertEquals(
+            0.0,
+            dao.revenueBreakdown(today, today).net(RevenueCategory.MEMBER_MEMBERSHIP),
+            0.001,
+            "payment is dated 2020, out of today's range",
+        )
+        assertEquals(
+            30.0,
+            dao.revenueBreakdown(LocalDate.of(2020, 1, 1), LocalDate.of(2020, 12, 31))
+                .net(RevenueCategory.MEMBER_MEMBERSHIP),
+            0.001,
+        )
+    }
+
+    // ----- R3: revenue over time ---------------------------------------------
+
+    @Test
+    fun `revenue over time groups net cash by month, oldest first`() {
+        val memberId = connection.insertMember()
+        val typeA = connection.insertMembership(name = "A", price = 30.0)
+
+        // Three paid records; backdate their ledger rows into specific months.
+        val r1 = connection.insertMembershipRecord(memberId, typeA, isPaid = true)
+        connection.backdatePayments(r1, LocalDate.of(2025, 1, 15))
+        val r2 = connection.insertMembershipRecord(memberId, typeA, isPaid = true)
+        connection.backdatePayments(r2, LocalDate.of(2025, 3, 2))
+        val r3 = connection.insertMembershipRecord(memberId, typeA, isPaid = true)
+        connection.backdatePayments(r3, LocalDate.of(2025, 1, 20))
+
+        val report = dao.revenueOverTime(LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
+
+        assertEquals(2, report.rows.size, "two distinct months")
+        assertEquals("2025-01", report.rows[0].month, "oldest first")
+        assertEquals(60.0, report.rows[0].netCollected, 0.001, "two payments in January")
+        assertEquals("2025-03", report.rows[1].month)
+        assertEquals(30.0, report.rows[1].netCollected, 0.001)
+        assertEquals(90.0, report.total, 0.001)
+    }
+
+    @Test
+    fun `revenue over time respects the period bounds`() {
+        val memberId = connection.insertMember()
+        val typeA = connection.insertMembership(name = "A", price = 30.0)
+
+        val before = connection.insertMembershipRecord(memberId, typeA, isPaid = true)
+        connection.backdatePayments(before, LocalDate.of(2024, 12, 31))
+        val inside = connection.insertMembershipRecord(memberId, typeA, isPaid = true)
+        connection.backdatePayments(inside, LocalDate.of(2025, 1, 10))
+
+        val report = dao.revenueOverTime(LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 31))
+
+        assertEquals(1, report.rows.size)
+        assertEquals("2025-01", report.rows[0].month)
+        assertEquals(30.0, report.total, 0.001)
+    }
 }
 
 private fun MembershipSalesReport.row(name: String): MembershipSalesRow =
     rows.first { it.membershipName == name }
+
+private fun RevenueBreakdownReport.net(category: RevenueCategory): Double =
+    rows.first { it.category == category }.netCollected
+
+private fun Connection.insertOtherService(name: String, price: Double): Int {
+    prepareStatement("INSERT INTO OtherService (name, price) VALUES (?, ?) RETURNING id").use {
+        it.setString(1, name)
+        it.setDouble(2, price)
+        val rs = it.executeQuery()
+        return if (rs.next()) rs.getInt(1) else error("OtherService insert returned no id")
+    }
+}
+
+/** Member buys an other service; fires LogOtherServicePaymentInsert when paid. */
+private fun Connection.insertMemberOtherService(
+    memberId: Int,
+    otherServiceId: Int,
+    dateOfService: LocalDateTime = LocalDateTime.now(),
+    isPaid: Boolean,
+) {
+    prepareStatement(
+        "INSERT INTO MemberOtherService (dateOfService, memberId, otherServiceId, isPaid) VALUES (?, ?, ?, ?)"
+    ).use {
+        it.setString(1, dateOfService.toString())
+        it.setInt(2, memberId)
+        it.setInt(3, otherServiceId)
+        it.setBoolean(4, isPaid)
+        it.executeUpdate()
+    }
+}
+
+/** Walk-in (unregistered) other-service purchase; fires LogUnregisteredServicePaymentInsert when paid. */
+private fun Connection.insertWalkInOtherService(otherServiceId: Int, dateOfService: LocalDateTime, isPaid: Boolean) {
+    prepareStatement("INSERT INTO UnregisteredService (dateOfService, otherServiceId, isPaid) VALUES (?, ?, ?)").use {
+        it.setString(1, dateOfService.toString())
+        it.setInt(2, otherServiceId)
+        it.setBoolean(3, isPaid)
+        it.executeUpdate()
+    }
+}
 
 /** Raw-SQL flip of isPaid; fires the LogMembershipRecordPayment* triggers. */
 private fun Connection.setIsPaid(recordId: Int, paid: Boolean) {

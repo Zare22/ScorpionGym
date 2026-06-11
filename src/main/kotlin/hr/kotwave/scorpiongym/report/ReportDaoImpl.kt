@@ -53,6 +53,48 @@ class ReportDaoImpl(private val dbConnection: Connection) : ReportDao {
         )
     }
 
+    override fun revenueBreakdown(from: LocalDate?, to: LocalDate?): RevenueBreakdownReport {
+        val fromStr = from?.toString()
+        val toStr = to?.toString()
+
+        val byCategory = mutableMapOf<RevenueCategory, Double>()
+        dbConnection.prepareStatement(REVENUE_BREAKDOWN_QUERY).use { statement ->
+            statement.setString(1, fromStr)
+            statement.setString(2, toStr)
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
+                val code = resultSet.getString("category")
+                val category = RevenueCategory.entries.firstOrNull { it.name == code } ?: continue
+                byCategory[category] = resultSet.getDouble("netCollected")
+            }
+        }
+
+        // Always emit all four categories in declaration order (zeros included).
+        val rows = RevenueCategory.entries.map { RevenueCategoryRow(it, byCategory[it] ?: 0.0) }
+        return RevenueBreakdownReport(rows)
+    }
+
+    override fun revenueOverTime(from: LocalDate?, to: LocalDate?): RevenueOverTimeReport {
+        val fromStr = from?.toString()
+        val toStr = to?.toString()
+
+        val rows = mutableListOf<MonthlyRevenueRow>()
+        dbConnection.prepareStatement(REVENUE_OVER_TIME_QUERY).use { statement ->
+            statement.setString(1, fromStr)
+            statement.setString(2, toStr)
+            val resultSet = statement.executeQuery()
+            while (resultSet.next()) {
+                rows.add(
+                    MonthlyRevenueRow(
+                        month = resultSet.getString("ym"),
+                        netCollected = resultSet.getDouble("netCollected"),
+                    )
+                )
+            }
+        }
+        return RevenueOverTimeReport(rows)
+    }
+
     companion object {
         // One row per membership type. "soldCount" counts member memberships started in
         // the period; "netCollected" sums ledger payments (net of reversals) booked in the
@@ -97,6 +139,35 @@ class ReportDaoImpl(private val dbConnection: Connection) : ReportDao {
             JOIN UnregisteredService u ON pal.unregisteredServiceId = u.id
             WHERE u.membershipId IS NOT NULL
               AND pal.changedAt BETWEEN COALESCE(?, '0001-01-01') AND COALESCE(?, '9999-12-31')
+        """.trimIndent()
+
+        // Net cash per category. Every ledger row has exactly one source set; the
+        // walk-in source is sub-split by whether it bought a membership or a service.
+        // Category codes match RevenueCategory enum names.
+        private val REVENUE_BREAKDOWN_QUERY = """
+            SELECT
+                CASE
+                    WHEN pal.membershipRecordId   IS NOT NULL THEN 'MEMBER_MEMBERSHIP'
+                    WHEN pal.memberOtherServiceId IS NOT NULL THEN 'MEMBER_SERVICE'
+                    WHEN u.membershipId           IS NOT NULL THEN 'WALKIN_MEMBERSHIP'
+                    WHEN u.otherServiceId         IS NOT NULL THEN 'WALKIN_SERVICE'
+                    ELSE 'OTHER'
+                END AS category,
+                SUM((pal.isPaidNew - pal.isPaidOld) * pal.price) AS netCollected
+            FROM PaymentAuditLog pal
+            LEFT JOIN UnregisteredService u ON pal.unregisteredServiceId = u.id
+            WHERE pal.changedAt BETWEEN COALESCE(?, '0001-01-01') AND COALESCE(?, '9999-12-31')
+            GROUP BY category
+        """.trimIndent()
+
+        // Net cash per calendar month (YYYY-MM taken from the changedAt text date), oldest first.
+        private val REVENUE_OVER_TIME_QUERY = """
+            SELECT substr(pal.changedAt, 1, 7) AS ym,
+                   SUM((pal.isPaidNew - pal.isPaidOld) * pal.price) AS netCollected
+            FROM PaymentAuditLog pal
+            WHERE pal.changedAt BETWEEN COALESCE(?, '0001-01-01') AND COALESCE(?, '9999-12-31')
+            GROUP BY ym
+            ORDER BY ym
         """.trimIndent()
     }
 }
