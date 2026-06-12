@@ -21,23 +21,26 @@ import hr.kotwave.scorpiongym.report.print.formatPeriod
 import hr.kotwave.scorpiongym.report.print.toPrintable
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
-/** R1 — "Prodaja članarina po tipu": per-type sold count + net collected. */
+private val DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy.")
+
+/** R5 — "Dugovanja": list of every currently-unpaid item so debts can be chased. */
 @Composable
-fun MembershipSalesSection() {
+fun OutstandingSection() {
     val reportViewModel: ReportViewModel = getKoin().get()
 
     var fromDate by remember { mutableStateOf<LocalDate?>(null) }
     var toDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    val report = reportViewModel.membershipSales
+    val report = reportViewModel.outstanding
     val listState = rememberLazyListState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         ReportSectionHeader(
-            "Prodaja članarina po tipu",
+            "Nepodmirena dugovanja",
             onPrint = report?.let { r ->
-                { ReportExporter.exportAndOpen(r.toPrintable("Prodaja članarina po tipu", formatPeriod(fromDate, toDate))) }
+                { ReportExporter.exportAndOpen(r.toPrintable("Nepodmirena dugovanja", formatPeriod(fromDate, toDate))) }
             },
         )
         Spacer(Modifier.height(8.dp))
@@ -47,18 +50,22 @@ fun MembershipSalesSection() {
             to = toDate,
             onFromChange = { fromDate = it },
             onToChange = { toDate = it },
-            onShow = { reportViewModel.loadMembershipSales(fromDate, toDate) },
+            onShow = { reportViewModel.loadOutstanding(fromDate, toDate) },
         )
 
         Spacer(Modifier.height(16.dp))
 
         if (report == null) {
-            Text("Odaberite razdoblje i kliknite Prikaži.", style = MaterialTheme.typography.body2)
+            Text(
+                "Ostavite datume prazne za sva dugovanja, ili odaberite razdoblje. Kliknite Prikaži.",
+                style = MaterialTheme.typography.body2,
+            )
         } else {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                Text("Tip članarine", modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold)
-                Text("Prodano", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-                Text("Naplaćeno", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+                Text("Član", modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold)
+                Text("Stavka", modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold)
+                Text("Datum", modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold)
+                Text("Iznos", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
             }
             Divider()
 
@@ -67,7 +74,7 @@ fun MembershipSalesSection() {
                     if (report.rows.isEmpty()) {
                         item {
                             Text(
-                                "Nema prodaje članarina u odabranom razdoblju.",
+                                "Nema nepodmirenih dugovanja.",
                                 modifier = Modifier.padding(vertical = 8.dp),
                                 style = MaterialTheme.typography.body2,
                             )
@@ -75,9 +82,10 @@ fun MembershipSalesSection() {
                     }
                     items(report.rows) { row ->
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                            Text(row.membershipName, modifier = Modifier.weight(2f))
-                            Text(row.soldCount.toString(), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-                            Text("%.2f €".format(row.netCollected), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                            Text(row.memberName ?: "Neregistrirano", modifier = Modifier.weight(2f))
+                            Text(row.description, modifier = Modifier.weight(2f))
+                            Text(row.date.format(DATE_FORMAT), modifier = Modifier.weight(1.5f))
+                            Text("%.2f €".format(row.amount), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                         }
                         Divider()
                     }
@@ -88,18 +96,9 @@ fun MembershipSalesSection() {
                 )
             }
 
-            // Walk-in memberships reported on their own line (Q2).
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                Text("Neregistrirane (walk-in) članarine", modifier = Modifier.weight(2f))
-                Text(report.walkInCount.toString(), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-                Text("%.2f €".format(report.walkInCollected), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-            }
-            Divider(modifier = Modifier.padding(top = 4.dp))
-
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                Text("Ukupno", modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold)
-                Text(report.totalSold.toString(), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-                Text("%.2f €".format(report.totalCollected), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+                Text("Ukupno (${report.count})", modifier = Modifier.weight(5.5f), fontWeight = FontWeight.Bold)
+                Text("%.2f €".format(report.total), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
             }
         }
     }

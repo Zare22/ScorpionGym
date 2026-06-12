@@ -16,6 +16,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import hr.kotwave.scorpiongym.report.ReportViewModel
+import hr.kotwave.scorpiongym.report.print.ReportExporter
+import hr.kotwave.scorpiongym.report.print.formatPeriod
+import hr.kotwave.scorpiongym.report.print.toPrintable
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDate
 
@@ -31,7 +34,12 @@ fun RevenueOverTimeSection() {
     val listState = rememberLazyListState()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Text("Prihodi kroz vrijeme (mjesečno)", style = MaterialTheme.typography.h6)
+        ReportSectionHeader(
+            "Prihodi kroz vrijeme (mjesečno)",
+            onPrint = report?.let { r ->
+                { ReportExporter.exportAndOpen(r.toPrintable("Prihodi kroz vrijeme", formatPeriod(fromDate, toDate))) }
+            },
+        )
         Spacer(Modifier.height(8.dp))
 
         PeriodPickerRow(
@@ -86,8 +94,8 @@ fun RevenueOverTimeSection() {
     }
 }
 
-/** "2025-01" -> "01.2025." (Croatian month display); falls back to the raw value. */
-private fun formatMonth(ym: String): String {
+/** "2025-01" -> "01.2025." (Croatian month display); falls back to the raw value. Shared by month-bucketed report sections. */
+fun formatMonth(ym: String): String {
     val parts = ym.split("-")
     return if (parts.size == 2) "${parts[1]}.${parts[0]}." else ym
 }

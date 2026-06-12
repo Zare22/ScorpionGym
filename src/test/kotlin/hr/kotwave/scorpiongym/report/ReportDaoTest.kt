@@ -1,9 +1,6 @@
 package hr.kotwave.scorpiongym.report
 
-import hr.kotwave.scorpiongym.testutil.createTestDatabase
-import hr.kotwave.scorpiongym.testutil.insertMember
-import hr.kotwave.scorpiongym.testutil.insertMembership
-import hr.kotwave.scorpiongym.testutil.insertMembershipRecord
+import hr.kotwave.scorpiongym.testutil.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -222,6 +219,156 @@ class ReportDaoTest {
         assertEquals("2025-01", report.rows[0].month)
         assertEquals(30.0, report.total, 0.001)
     }
+
+    // ----- R4: new members per month -----------------------------------------
+
+    @Test
+    fun `new members grouped by signup month, oldest first`() {
+        connection.insertMember(signedUpDate = LocalDate.of(2025, 1, 5))
+        connection.insertMember(signedUpDate = LocalDate.of(2025, 1, 20))
+        connection.insertMember(signedUpDate = LocalDate.of(2025, 3, 2))
+
+        val report = dao.newMembersByMonth(LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
+
+        assertEquals(2, report.rows.size, "two distinct signup months")
+        assertEquals("2025-01", report.rows[0].month, "oldest first")
+        assertEquals(2, report.rows[0].count)
+        assertEquals("2025-03", report.rows[1].month)
+        assertEquals(1, report.rows[1].count)
+        assertEquals(3, report.total)
+    }
+
+    @Test
+    fun `new members respects the period bounds`() {
+        connection.insertMember(signedUpDate = LocalDate.of(2024, 12, 31))
+        connection.insertMember(signedUpDate = LocalDate.of(2025, 1, 10))
+
+        val report = dao.newMembersByMonth(LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 31))
+
+        assertEquals(1, report.rows.size)
+        assertEquals("2025-01", report.rows[0].month)
+        assertEquals(1, report.total)
+    }
+
+    // ----- R5: outstanding / unpaid ------------------------------------------
+
+    @Test
+    fun `outstanding lists unpaid items across all sources and excludes paid`() {
+        val memberId = connection.insertMember(name = "Ana", surname = "Anić")
+        val typeA = connection.insertMembership(name = "Mjesečna", price = 30.0)
+        val svc = connection.insertOtherService(name = "Solarij", price = 5.0)
+
+        // Unpaid — should all appear.
+        connection.insertMembershipRecord(memberId, typeA, isPaid = false)            // owes 30 (member membership)
+        connection.insertMemberOtherService(memberId, svc, isPaid = false)            // owes 5  (member service)
+        connection.insertWalkInMembership(typeA, LocalDateTime.now(), isPaid = false) // owes 30 (walk-in membership)
+        connection.insertWalkInOtherService(svc, LocalDateTime.now(), isPaid = false) // owes 5  (walk-in service)
+        // Paid — must be excluded.
+        connection.insertMembershipRecord(memberId, typeA, isPaid = true)
+        connection.insertMemberOtherService(memberId, svc, isPaid = true)
+
+        val report = dao.outstanding(null, null)
+
+        assertEquals(4, report.count, "four unpaid items")
+        assertEquals(70.0, report.total, 0.001)
+        assertEquals(2, report.rows.count { it.memberName == "Ana Anić" }, "member items carry the name")
+        assertEquals(2, report.rows.count { it.memberName == null }, "walk-ins have no name")
+    }
+
+    @Test
+    fun `outstanding respects the period filter on item date`() {
+        val memberId = connection.insertMember()
+        val typeA = connection.insertMembership(name = "A", price = 30.0)
+
+        connection.insertMembershipRecord(memberId, typeA, dateStarted = LocalDate.of(2025, 1, 10), isPaid = false)
+        connection.insertMembershipRecord(memberId, typeA, dateStarted = LocalDate.of(2024, 1, 10), isPaid = false)
+
+        val report = dao.outstanding(LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
+
+        assertEquals(1, report.count)
+        assertEquals(30.0, report.total, 0.001)
+    }
+
+    // ----- R6: utilization ---------------------------------------------------
+
+    @Test
+    fun `utilization buckets sessions by weekday, hour and month`() {
+        val memberId = connection.insertMember()
+        val typeA = connection.insertMembership(name = "A")
+        val rec = connection.insertMembershipRecord(memberId, typeA)
+
+        // 2025-01-06 and 2025-02-03 are Mondays; 2025-01-08 is a Wednesday.
+        connection.insertTrainingSession(rec, LocalDateTime.of(2025, 1, 6, 7, 30))  // Mon 07h, 2025-01
+        connection.insertTrainingSession(rec, LocalDateTime.of(2025, 1, 6, 18, 0))  // Mon 18h, 2025-01
+        connection.insertTrainingSession(rec, LocalDateTime.of(2025, 1, 8, 7, 15))  // Wed 07h, 2025-01
+        connection.insertTrainingSession(rec, LocalDateTime.of(2025, 2, 3, 18, 45)) // Mon 18h, 2025-02
+
+        val report = dao.utilization(null, null)
+
+        assertEquals(4, report.total)
+
+        assertEquals(7, report.byWeekday.size, "always Monday..Sunday")
+        assertEquals(3, report.byWeekday.first { it.isoDay == 1 }.count, "three Monday sessions")
+        assertEquals(1, report.byWeekday.first { it.isoDay == 3 }.count, "one Wednesday session")
+        assertEquals(0, report.byWeekday.first { it.isoDay == 7 }.count, "no Sunday sessions")
+
+        assertEquals(2, report.byHour.first { it.hour == 7 }.count)
+        assertEquals(2, report.byHour.first { it.hour == 18 }.count)
+
+        assertEquals(2, report.byMonth.size)
+        assertEquals(3, report.byMonth.first { it.month == "2025-01" }.count)
+        assertEquals(1, report.byMonth.first { it.month == "2025-02" }.count)
+    }
+
+    @Test
+    fun `utilization respects the period filter`() {
+        val memberId = connection.insertMember()
+        val typeA = connection.insertMembership(name = "A")
+        val rec = connection.insertMembershipRecord(memberId, typeA)
+
+        connection.insertTrainingSession(rec, LocalDateTime.of(2024, 12, 31, 10, 0))
+        connection.insertTrainingSession(rec, LocalDateTime.of(2025, 1, 2, 10, 0))
+
+        val report = dao.utilization(LocalDate.of(2025, 1, 1), LocalDate.of(2025, 1, 31))
+
+        assertEquals(1, report.total)
+        assertEquals(1, report.byMonth.size)
+        assertEquals("2025-01", report.byMonth[0].month)
+    }
+
+    // ----- R7: demographics --------------------------------------------------
+
+    @Test
+    fun `demographics splits members by gender and age band`() {
+        connection.insertMemberDemographic(gender = "MALE", dateOfBirth = LocalDate.now().minusYears(30))
+        connection.insertMemberDemographic(gender = "MALE", dateOfBirth = LocalDate.now().minusYears(40))
+        connection.insertMemberDemographic(gender = "FEMALE", dateOfBirth = LocalDate.now().minusYears(20))
+        connection.insertMemberDemographic(gender = null, dateOfBirth = null)
+
+        val report = dao.demographics(null, null)
+
+        assertEquals(4, report.total)
+        assertEquals(2, report.byGender.first { it.label == "Muško" }.count)
+        assertEquals(1, report.byGender.first { it.label == "Žensko" }.count)
+        assertEquals(1, report.byGender.first { it.label == "Nepoznato" }.count)
+
+        assertEquals(8, report.byAgeBand.size, "fixed band list")
+        assertEquals(1, report.byAgeBand.first { it.label == "18-25" }.count)
+        assertEquals(1, report.byAgeBand.first { it.label == "26-35" }.count)
+        assertEquals(1, report.byAgeBand.first { it.label == "36-45" }.count)
+        assertEquals(1, report.byAgeBand.first { it.label == "Nepoznato" }.count)
+    }
+
+    @Test
+    fun `demographics respects the signup period filter`() {
+        connection.insertMemberDemographic(gender = "MALE", dateOfBirth = null, signedUpDate = LocalDate.of(2025, 1, 10))
+        connection.insertMemberDemographic(gender = "FEMALE", dateOfBirth = null, signedUpDate = LocalDate.of(2024, 1, 10))
+
+        val report = dao.demographics(LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
+
+        assertEquals(1, report.total)
+        assertEquals(1, report.byGender.first { it.label == "Muško" }.count)
+    }
 }
 
 private fun MembershipSalesReport.row(name: String): MembershipSalesRow =
@@ -264,6 +411,24 @@ private fun Connection.insertWalkInOtherService(otherServiceId: Int, dateOfServi
         it.setInt(2, otherServiceId)
         it.setBoolean(3, isPaid)
         it.executeUpdate()
+    }
+}
+
+/** Member with explicit gender / dateOfBirth (the standard fixture sets neither). */
+private fun Connection.insertMemberDemographic(
+    gender: String?,
+    dateOfBirth: LocalDate?,
+    signedUpDate: LocalDate = LocalDate.now(),
+): Int {
+    prepareStatement(
+        "INSERT INTO Member (name, surname, signedUpDate, organizationId, statusId, gender, dateOfBirth) " +
+            "VALUES ('T', 'T', ?, 1, 1, ?, ?) RETURNING id"
+    ).use {
+        it.setString(1, signedUpDate.toString())
+        if (gender != null) it.setString(2, gender) else it.setNull(2, java.sql.Types.VARCHAR)
+        if (dateOfBirth != null) it.setString(3, dateOfBirth.toString()) else it.setNull(3, java.sql.Types.VARCHAR)
+        val rs = it.executeQuery()
+        return if (rs.next()) rs.getInt(1) else error("Member insert returned no id")
     }
 }
 

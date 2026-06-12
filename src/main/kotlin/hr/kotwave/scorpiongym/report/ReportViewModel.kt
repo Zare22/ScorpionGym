@@ -19,6 +19,22 @@ class ReportViewModel(private val reportDao: ReportDao) {
     var revenueOverTime by mutableStateOf<RevenueOverTimeReport?>(null)
         private set
 
+    /** Last loaded R4 result, or null before the first "Prikaži". */
+    var newMembers by mutableStateOf<NewMembersReport?>(null)
+        private set
+
+    /** Last loaded R5 result, or null before the first "Prikaži". */
+    var outstanding by mutableStateOf<OutstandingReport?>(null)
+        private set
+
+    /** Last loaded R6 result, or null before the first "Prikaži". */
+    var utilization by mutableStateOf<UtilizationReport?>(null)
+        private set
+
+    /** Last loaded R7 result, or null before the first "Prikaži". */
+    var demographics by mutableStateOf<DemographicsReport?>(null)
+        private set
+
     fun loadMembershipSales(from: LocalDate?, to: LocalDate?) {
         val report = reportDao.membershipSalesByType(from, to)
         // Show only types with activity in the period (every type is returned by the
@@ -33,5 +49,21 @@ class ReportViewModel(private val reportDao: ReportDao) {
 
     fun loadRevenueOverTime(from: LocalDate?, to: LocalDate?) {
         revenueOverTime = reportDao.revenueOverTime(from, to)
+    }
+
+    fun loadNewMembers(from: LocalDate?, to: LocalDate?) {
+        newMembers = reportDao.newMembersByMonth(from, to)
+    }
+
+    fun loadOutstanding(from: LocalDate?, to: LocalDate?) {
+        outstanding = reportDao.outstanding(from, to)
+    }
+
+    fun loadUtilization(from: LocalDate?, to: LocalDate?) {
+        utilization = reportDao.utilization(from, to)
+    }
+
+    fun loadDemographics(from: LocalDate?, to: LocalDate?) {
+        demographics = reportDao.demographics(from, to)
     }
 }

@@ -22,7 +22,7 @@ class ReportScreen : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         var selectedTab by remember { mutableStateOf(0) }
-        val tabs = listOf("Prodaja članarina", "Prihodi po kategoriji", "Prihodi kroz vrijeme")
+        val tabs = listOf("Prodaja članarina", "Prihodi po kategoriji", "Prihodi kroz vrijeme", "Novi članovi", "Dugovanja", "Iskorištenost", "Demografija")
 
         Column(modifier = Modifier.fillMaxSize()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -46,6 +46,10 @@ class ReportScreen : Screen {
                     0 -> MembershipSalesSection()
                     1 -> RevenueBreakdownSection()
                     2 -> RevenueOverTimeSection()
+                    3 -> NewMembersSection()
+                    4 -> OutstandingSection()
+                    5 -> UtilizationSection()
+                    6 -> DemographicsSection()
                 }
             }
         }

@@ -10,6 +10,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import hr.kotwave.scorpiongym.report.ReportViewModel
+import hr.kotwave.scorpiongym.report.print.ReportExporter
+import hr.kotwave.scorpiongym.report.print.formatPeriod
+import hr.kotwave.scorpiongym.report.print.toPrintable
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDate
 
@@ -24,7 +27,12 @@ fun RevenueBreakdownSection() {
     val report = reportViewModel.revenueBreakdown
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Text("Prihodi po kategoriji", style = MaterialTheme.typography.h6)
+        ReportSectionHeader(
+            "Prihodi po kategoriji",
+            onPrint = report?.let { r ->
+                { ReportExporter.exportAndOpen(r.toPrintable("Prihodi po kategoriji", formatPeriod(fromDate, toDate))) }
+            },
+        )
         Spacer(Modifier.height(8.dp))
 
         PeriodPickerRow(

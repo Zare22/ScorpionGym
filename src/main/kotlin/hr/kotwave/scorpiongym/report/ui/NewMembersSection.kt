@@ -22,22 +22,22 @@ import hr.kotwave.scorpiongym.report.print.toPrintable
 import org.koin.java.KoinJavaComponent.getKoin
 import java.time.LocalDate
 
-/** R1 — "Prodaja članarina po tipu": per-type sold count + net collected. */
+/** R4 — "Novi članovi": count of members who signed up, per calendar month. */
 @Composable
-fun MembershipSalesSection() {
+fun NewMembersSection() {
     val reportViewModel: ReportViewModel = getKoin().get()
 
     var fromDate by remember { mutableStateOf<LocalDate?>(null) }
     var toDate by remember { mutableStateOf<LocalDate?>(null) }
 
-    val report = reportViewModel.membershipSales
+    val report = reportViewModel.newMembers
     val listState = rememberLazyListState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         ReportSectionHeader(
-            "Prodaja članarina po tipu",
+            "Novi članovi (mjesečno)",
             onPrint = report?.let { r ->
-                { ReportExporter.exportAndOpen(r.toPrintable("Prodaja članarina po tipu", formatPeriod(fromDate, toDate))) }
+                { ReportExporter.exportAndOpen(r.toPrintable("Novi članovi", formatPeriod(fromDate, toDate))) }
             },
         )
         Spacer(Modifier.height(8.dp))
@@ -47,7 +47,7 @@ fun MembershipSalesSection() {
             to = toDate,
             onFromChange = { fromDate = it },
             onToChange = { toDate = it },
-            onShow = { reportViewModel.loadMembershipSales(fromDate, toDate) },
+            onShow = { reportViewModel.loadNewMembers(fromDate, toDate) },
         )
 
         Spacer(Modifier.height(16.dp))
@@ -56,9 +56,8 @@ fun MembershipSalesSection() {
             Text("Odaberite razdoblje i kliknite Prikaži.", style = MaterialTheme.typography.body2)
         } else {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                Text("Tip članarine", modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold)
-                Text("Prodano", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-                Text("Naplaćeno", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+                Text("Mjesec", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                Text("Novi članovi", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
             }
             Divider()
 
@@ -67,7 +66,7 @@ fun MembershipSalesSection() {
                     if (report.rows.isEmpty()) {
                         item {
                             Text(
-                                "Nema prodaje članarina u odabranom razdoblju.",
+                                "Nema novih članova u odabranom razdoblju.",
                                 modifier = Modifier.padding(vertical = 8.dp),
                                 style = MaterialTheme.typography.body2,
                             )
@@ -75,9 +74,8 @@ fun MembershipSalesSection() {
                     }
                     items(report.rows) { row ->
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                            Text(row.membershipName, modifier = Modifier.weight(2f))
-                            Text(row.soldCount.toString(), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-                            Text("%.2f €".format(row.netCollected), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                            Text(formatMonth(row.month), modifier = Modifier.weight(1f))
+                            Text(row.count.toString(), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                         }
                         Divider()
                     }
@@ -88,18 +86,9 @@ fun MembershipSalesSection() {
                 )
             }
 
-            // Walk-in memberships reported on their own line (Q2).
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                Text("Neregistrirane (walk-in) članarine", modifier = Modifier.weight(2f))
-                Text(report.walkInCount.toString(), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-                Text("%.2f €".format(report.walkInCollected), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-            }
-            Divider(modifier = Modifier.padding(top = 4.dp))
-
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                Text("Ukupno", modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold)
-                Text(report.totalSold.toString(), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-                Text("%.2f €".format(report.totalCollected), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+                Text("Ukupno", modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold)
+                Text(report.total.toString(), modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
             }
         }
     }
