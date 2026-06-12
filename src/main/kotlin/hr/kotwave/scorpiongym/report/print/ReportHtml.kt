@@ -2,8 +2,15 @@ package hr.kotwave.scorpiongym.report.print
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Base64
 
 private val GENERATED: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy. HH:mm")
+
+/** Brand logo base64-embedded so the standalone HTML carries no external files. Null if the resource is missing. */
+private val LOGO_DATA_URI: String? by lazy {
+    val bytes = object {}.javaClass.getResourceAsStream("/ScorpionBlack_transparent.png")?.use { it.readBytes() }
+    bytes?.let { "data:image/png;base64," + Base64.getEncoder().encodeToString(it) }
+}
 
 /** Renders a [PrintableReport] to a standalone, print-friendly HTML document. */
 fun renderReportHtml(report: PrintableReport): String = buildString {
@@ -12,6 +19,7 @@ fun renderReportHtml(report: PrintableReport): String = buildString {
     append("<style>\n").append(CSS).append("\n</style>\n</head>\n<body>\n")
 
     append("<header>\n")
+    LOGO_DATA_URI?.let { append("<img class=\"logo\" src=\"").append(it).append("\" alt=\"Scorpion Gym\">\n") }
     append("<div class=\"brand\">Scorpion Gym</div>\n")
     append("<h1>").append(esc(report.title)).append("</h1>\n")
     append("<div class=\"meta\">Razdoblje: ").append(esc(report.period)).append("</div>\n")
@@ -63,7 +71,8 @@ private fun esc(s: String): String = buildString {
 private val CSS = """
     * { box-sizing: border-box; }
     body { font-family: Arial, Helvetica, sans-serif; color: #1b1f24; margin: 32px; }
-    header { border-bottom: 3px solid #b3361f; padding-bottom: 12px; margin-bottom: 20px; }
+    header { position: relative; border-bottom: 3px solid #b3361f; padding-bottom: 12px; margin-bottom: 20px; padding-right: 150px; }
+    .logo { position: absolute; top: 0; right: 0; height: 84px; width: auto; }
     .brand { color: #b3361f; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; }
     h1 { font-size: 22px; margin: 6px 0 8px; }
     h2 { font-size: 16px; margin: 22px 0 8px; }
