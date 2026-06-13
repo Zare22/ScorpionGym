@@ -15,6 +15,7 @@ out/
 
 ### Claude Code ###
 .claude/
+CLAUDE.md
 
 ### Agent-generated notes ###
 docs/
