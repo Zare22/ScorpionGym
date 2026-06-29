@@ -29,6 +29,7 @@ import hr.kotwave.scorpiongym.member.ui.screen.MainScreen
 import hr.kotwave.scorpiongym.membershiprecord.MembershipRecordDao
 import hr.kotwave.scorpiongym.paymentauditlog.PaymentAuditLogViewModel
 import hr.kotwave.scorpiongym.paymentauditlog.ui.CashRegisterDialog
+import hr.kotwave.scorpiongym.report.ui.ReportScreen
 import hr.kotwave.scorpiongym.ui.custom.dialog.CreateNewAppUserDialog
 import hr.kotwave.scorpiongym.ui.custom.dialog.InformativeDialog
 import hr.kotwave.scorpiongym.ui.custom.menu.CustomMenu
@@ -56,6 +57,7 @@ fun main() = application {
 
     val windowState = rememberWindowState(placement = WindowPlacement.Maximized)
     var showCashRegisterDialog by remember { mutableStateOf(false) }
+    var showReportScreen by remember { mutableStateOf(false) }
 
     Window(
         onCloseRequest = {
@@ -80,18 +82,31 @@ fun main() = application {
                 getKoin().get<PaymentAuditLogViewModel>().initPaymentAuditLogs()
                 showCashRegisterDialog = true
                 true
+            } else if (it.type == KeyEventType.KeyDown && it.isCtrlPressed && it.isShiftPressed && it.key == Key.I && PreferencesHelper().isAdmin) {
+                showReportScreen = true
+                true
             } else {
                 false
             }
         }
     ) {
         window.minimumSize = Dimension(1000, 800)
-        ScorpionGymApp(showCashRegisterDialog, onCloseCashRegister = { showCashRegisterDialog = false })
+        ScorpionGymApp(
+            showCashRegisterDialog,
+            onCloseCashRegister = { showCashRegisterDialog = false },
+            showReportScreen = showReportScreen,
+            onReportScreenConsumed = { showReportScreen = false }
+        )
     }
 }
 
 @Composable
-fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> Unit) {
+fun ScorpionGymApp(
+    showCashRegisterDialog: Boolean,
+    onCloseCashRegister: () -> Unit,
+    showReportScreen: Boolean,
+    onReportScreenConsumed: () -> Unit
+) {
     val preferencesHelper = remember { PreferencesHelper() }
     var darkTheme by remember { mutableStateOf(preferencesHelper.isDarkTheme) }
     val coroutineScope = rememberCoroutineScope()
@@ -214,6 +229,14 @@ fun ScorpionGymApp(showCashRegisterDialog: Boolean, onCloseCashRegister: () -> U
                     Column(modifier = Modifier.fillMaxSize()) {
                         if (isLoggedIn) {
                             Navigator(MainScreen()) { navigator ->
+                                LaunchedEffect(showReportScreen) {
+                                    if (showReportScreen) {
+                                        if (navigator.lastItem is MainScreen) {
+                                            navigator.push(ReportScreen())
+                                        }
+                                        onReportScreenConsumed()
+                                    }
+                                }
                                 SlideTransition(navigator)
                             }
                         } else {

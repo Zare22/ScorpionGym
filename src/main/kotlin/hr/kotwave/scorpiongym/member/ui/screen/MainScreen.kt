@@ -23,13 +23,12 @@ import hr.kotwave.scorpiongym.membership.ui.screen.MembershipScreen
 import hr.kotwave.scorpiongym.organization.OrganizationViewModel
 import hr.kotwave.scorpiongym.organization.ui.screen.OrganizationScreen
 import hr.kotwave.scorpiongym.otherservice.ui.screen.OtherServiceScreen
-import hr.kotwave.scorpiongym.report.ui.ReportScreen
 import hr.kotwave.scorpiongym.typeoforganization.ui.screen.TypeOfOrganizationScreen
 import hr.kotwave.scorpiongym.ui.custom.elements.HoverableButton
-import hr.kotwave.scorpiongym.util.PreferencesHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent.getKoin
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainScreen : Screen {
 
@@ -90,13 +89,6 @@ class MainScreen : Screen {
                             onClick = { navigator.push(OtherServiceScreen()) },
                             text = "Ostale usluge"
                         )
-                        if (PreferencesHelper().isAdmin) {
-                            HoverableButton(
-                                padding = 8.dp,
-                                onClick = { navigator.push(ReportScreen()) },
-                                text = "Izvještaji"
-                            )
-                        }
                     }
 
                     MemberList(
@@ -128,7 +120,7 @@ class MainScreen : Screen {
                         onBackClick = {
                             detailsVisible = false
                             coroutineScope.launch {
-                                delay(450)
+                                delay(450.milliseconds)
                                 selectedMember = null
                             }
                         },
