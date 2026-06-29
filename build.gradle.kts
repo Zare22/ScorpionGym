@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "hr.kotwave"
-version = "1.2.1"
+version = "1.2.2"
 
 repositories {
     mavenCentral()
@@ -43,7 +43,7 @@ compose.desktop {
             includeAllModules = true
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "ScorpionGym"
-            packageVersion = "1.2.1"
+            packageVersion = "1.2.2"
 
             windows {
                 upgradeUuid = "123e4567-e89b-12d3-a456-426614174000"
